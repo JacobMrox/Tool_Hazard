@@ -1,0 +1,3854 @@
+{
+  "00": {
+    "Opcode Name": "Nop",
+    "Opcode Number": "00",
+    "Opcode Length": "01 Byte",
+    "Opcode Description": "This bytecode is used for alignment of 1-byte opcodes and ending ElseIf blocks.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x00"
+      }
+    }
+  },
+  "01": {
+    "Opcode Name": "Evt_end",
+    "Opcode Number": "01",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This bytecode ends the current Main/Sub script.",
+    "Bytes": {
+        "Opcode": {
+            "Type": "UCHAR",
+            "Description": "0x01"
+        },
+        "Nop": {
+            "Type": "UCHAR",
+            "Description": "Always Zero (Opcode for Nop)"
+        }
+    }
+  },
+  "02": {
+    "Opcode Name": "Evt_next",
+    "Opcode Number": "02",
+    "Opcode Length": "01 Byte",
+    "Opcode Description": "This bytecode moves to the next event in the sequence.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x02"
+      }
+    }
+  },
+  "03": {
+    "Opcode Name": "Evt_chain",
+    "Opcode Number": "03",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This bytecode chains the current event to the specified next event ID, allowing the script to continue execution from the linked event.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x03"
+      },
+      "Nop": {
+        "Type": "UCHAR",
+        "Description": "Always 0x00 (Opcode for Nop)"
+      },
+      "GoSub": {
+        "Type": "UCHAR",
+        "Description": "Always 0x18 (Opcode for Gosub)"
+      },
+      "Evt_no": {
+        "Type": "UCHAR",
+        "Description": "Event number (Numerical ID of SCD file)"
+      }
+    }
+  },
+  "04": {
+    "Opcode Name": "Evt_exec",
+    "Opcode Number": "04",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This bytecode executes the specified event with given parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x04"
+      },
+      "data1": {
+        "Type": "UCHAR",
+        "Description": "Typically FF"
+      },
+      "GoSub": {
+        "Type": "UCHAR",
+        "Description": "Opcode for GoSub 0x18"
+      },
+      "ScdId": {
+        "Type": "UCHAR",
+        "Description": "Sub Script ID to Jump to"
+      }
+    }
+  },
+  "05": {
+    "Opcode Name": "Evt_kill",
+    "Opcode Number": "05",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This bytecode terminates the specified event.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x05"
+      },
+      "EventId": {
+        "Type": "UCHAR",
+        "Description": "Event ID to terminate"
+      }
+    }
+  },
+  "06": {
+    "Opcode Name": "Ifel_ck",
+    "Opcode Number": "06",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This bytecode checks a condition and branches accordingly.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x06"
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "Always Zero (Alignment byte)"
+      },
+      "Size": {
+        "Type": "USHORT",
+        "Description": "Size of the block to check"
+      }
+    }
+  },
+  "07": {
+    "Opcode Name": "Else_ck",
+    "Opcode Number": "07",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This bytecode specifies the size of the block to check if the corresponding Ifel_ck condition is met.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x07"
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "Always Zero (Alignment byte)"
+      },
+      "Size": {
+        "Type": "USHORT",
+        "Description": "Size of the block to check"
+      }
+    }
+  },
+  "08": {
+    "Opcode Name": "Endif",
+    "Opcode Number": "08",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This bytecode marks the end of an If/ElseIf/Else block.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x08"
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "Always Zero (Alignment byte)"
+      }
+    }
+  },
+  "09": {
+    "Opcode Name": "Sleep",
+    "Opcode Number": "09",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This bytecode pauses script execution for the specified duration.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x09"
+      },
+      "Sleeping": {
+        "Type": "UCHAR",
+        "Description": "Opcode for Sleeping 0x0A"
+      },
+      "Count": {
+        "Type": "USHORT",
+        "Description": "Timer / Sleep Duration"
+      }
+    }
+  },
+  "0A": {
+    "Opcode Name": "Sleeping",
+    "Opcode Number": "0A",
+    "Opcode Length": "03 Bytes",
+    "Opcode Description": "This bytecode pauses script execution for the specified duration.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x0A"
+      },
+      "Count": {
+        "Type": "USHORT",
+        "Description": "Timer / Sleep Duration"
+      }
+    }
+  },
+  "0B": {
+    "Opcode Name": "Wsleep",
+    "Opcode Number": "0B",
+    "Opcode Length": "01 Byte",
+    "Opcode Description": "This bytecode, used before 0C, waits until the current XA sound has finished playing before proceeding.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x0B"
+      }
+    }
+  },
+  "0C": {
+    "Opcode Name": "Wsleeping",
+    "Opcode Number": "0C",
+    "Opcode Length": "01 Byte",
+    "Opcode Description": "This bytecode, used after 0B, waits until the current XA sound has finished playing before proceeding.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x0C"
+      }
+    }
+  },
+  "0D": {
+    "Opcode Name": "For",
+    "Opcode Number": "0D",
+    "Opcode Length": "06 Bytes",
+    "Opcode Description": "This bytecode begins a for-loop with the specified start and end values.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x0D"
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "Always Zero (Alignment byte)"
+      },
+      "Size": {
+        "Type": "USHORT",
+        "Description": "Size of the block to check"
+      },
+      "Count": {
+        "Type": "USHORT",
+        "Description": "Amount of times block is looped"
+      }
+    }
+  },
+  "0E": {
+    "Opcode Name": "Next",
+    "Opcode Number": "0E",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This bytecode marks the end of a for-loop.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x0E"
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "Always Zero (Alignment byte)"
+      }
+    }
+  },
+  "0F": {
+    "Opcode Name": "While",
+    "Opcode Number": "0F",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This bytecode begins a while-loop that continues as long as the specified condition is true.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x0F"
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "Always Zero (Alignment byte)"
+      },
+      "Size": {
+        "Type": "USHORT",
+        "Description": "Size of the block to check"
+      }
+    }
+  },
+  "10": {
+    "Opcode Name": "Ewhile",
+    "Opcode Number": "10",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This bytecode ends the specified while-loop.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x10"
+      },
+      "LoopId": {
+        "Type": "UCHAR",
+        "Description": "ID of the while-loop to end"
+      }
+    }
+  },
+  "11": {
+    "Opcode Name": "Do",
+    "Opcode Number": "11",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This bytecode begins a do-while loop that executes the loop body once before checking the condition.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x11"
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "Always Zero (Alignment byte)"
+      },
+      "Size": {
+        "Type": "USHORT",
+        "Description": "Size of the block to check"
+      }
+    }
+  },
+  "12": {
+    "Opcode Name": "Edwhile",
+    "Opcode Number": "12",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This bytecode ends the specified do-while loop.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x12"
+      },
+      "LoopId": {
+        "Type": "UCHAR",
+        "Description": "ID of the do-while loop to end"
+      }
+    }
+  },
+  "13": {
+    "Opcode Name": "Switch",
+    "Opcode Number": "13",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This bytecode begins a switch-case block with the specified switch variable and default size.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x13"
+      },
+      "SwitchId": {
+        "Type": "UCHAR",
+        "Description": "ID of the switch variable"
+      },
+      "Size": {
+        "Type": "USHORT",
+        "Description": "Size of the block to check"
+      }
+    }
+  },
+  "14": {
+    "Opcode Name": "Case",
+    "Opcode Number": "14",
+    "Opcode Length": "06 Bytes",
+    "Opcode Description": "This bytecode defines a case within a switch-case block.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x14"
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "Always Zero (Alignment byte)"
+      },
+      "Size": {
+        "Type": "USHORT",
+        "Description": "Size of the block to check"
+      },
+      "CaseValue": {
+        "Type": "USHORT",
+        "Description": "Value to compare with the switch variable"
+      }
+    }
+  },
+  "15": {
+    "Opcode Name": "Default",
+    "Opcode Number": "15",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This bytecode marks the default case in a switch-case block.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x15"
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "Always Zero (Alignment byte)"
+      }
+    }
+  },
+  "16": {
+    "Opcode Name": "Eswitch",
+    "Opcode Number": "16",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This bytecode ends the switch-case block.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x16"
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "Always Zero (Alignment byte)"
+      }
+    }
+  },
+  "17": {
+    "Opcode Name": "Goto",
+    "Opcode Number": "17",
+    "Opcode Length": "06 Bytes",
+    "Opcode Description": "This bytecode jumps to the specified offset within the script.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x17"
+      },
+      "Ifel_ctr": {
+        "Type": "UCHAR",
+        "Description": "Always 0xFF (or 0x01 in specific cases)"
+      },
+      "Loop_ctr": {
+        "Type": "UCHAR",
+        "Description": "Always 0xFF (or 0x00 in specific cases)"
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "Always 0x00"
+      },
+      "Offset": {
+        "Type": "SHORT",
+        "Description": "Relative Pointer, always references the same script"
+      }
+    }
+  },
+  "18": {
+    "Opcode Name": "Gosub",
+    "Opcode Number": "18",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This bytecode calls the specified subroutine.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x18"
+      },
+      "SubroutineId": {
+        "Type": "UCHAR",
+        "Description": "ID of the subroutine to call"
+      }
+    }
+  },
+  "19": {
+    "Opcode Name": "Return",
+    "Opcode Number": "19",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This bytecode returns from the specified subroutine.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x19"
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "Always Zero (Alignment byte)"
+      }
+    }
+  },
+  "1A": {
+    "Opcode Name": "Break",
+    "Opcode Number": "1A",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This bytecode breaks out of the specified loop.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x1A"
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "Always Zero (Alignment byte)"
+      }
+    }
+  },
+  "1B": {
+    "Opcode Name": "For2",
+    "Opcode Number": "1B",
+    "Opcode Length": "06 Bytes",
+    "Opcode Description": "This bytecode begins a for-loop with the specified start and end values.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x1B"
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "Always Zero (Alignment byte)"
+      },
+      "StartValue": {
+        "Type": "SHORT",
+        "Description": "Start value of the loop counter"
+      },
+      "EndValue": {
+        "Type": "SHORT",
+        "Description": "End value of the loop counter"
+      }
+    }
+  },
+  "1C": {
+    "Opcode Name": "Break_point",
+    "Opcode Number": "1C",
+    "Opcode Length": "01 Byte",
+    "Opcode Description": "This bytecode sets a breakpoint for debugging purposes.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x1C"
+      }
+    }
+  },
+  "1D": {
+    "Opcode Name": "Work_copy",
+    "Opcode Number": "1D",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This bytecode copies a value from the source index to the destination index with an optional typecast.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x1D"
+      },
+      "Source": {
+        "Type": "UCHAR",
+        "Description": "Source index"
+      },
+      "DestinationId": {
+        "Type": "UCHAR",
+        "Description": "Destination index"
+      },
+      "Typecast": {
+        "Type": "UCHAR",
+        "Description": "Typecast operation"
+      }
+    }
+  },
+  "1E": {
+    "Opcode Name": "Nop",
+    "Opcode Number": "1E",
+    "Opcode Length": "01 Byte",
+    "Opcode Description": "This bytecode is used for alignment of 1-byte opcodes and ending ElseIf blocks.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x1E"
+      }
+    }
+  },
+  "1F": {
+    "Opcode Name": "Nop",
+    "Opcode Number": "1F",
+    "Opcode Length": "01 Byte",
+    "Opcode Description": "This bytecode is used for alignment of 1-byte opcodes and ending ElseIf blocks.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x1F"
+      }
+    }
+  },
+  "20": {
+    "Opcode Name": "Nop",
+    "Opcode Number": "20",
+    "Opcode Length": "01 Byte",
+    "Opcode Description": "This bytecode is used for alignment of 1-byte opcodes and ending ElseIf blocks.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x20"
+      }
+    }
+  },
+  "21": {
+    "Opcode Name": "Ck",
+    "Opcode Number": "21",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This bytecode checks the specified system flag and bit ID for the given On/Off state.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x21"
+      },
+      "Flag": {
+        "Type": "UCHAR",
+        "Description": "System flag to check"
+      },
+      "Id": {
+        "Type": "UCHAR",
+        "Description": "Bit ID to check"
+      },
+      "OnOff": {
+        "Type": "UCHAR",
+        "Description": "On/Off state to check"
+      }
+    }
+  },
+  "22": {
+    "Opcode Name": "Set",
+    "Opcode Number": "22",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This bytecode sets the specified system flag and bit ID to the given On/Off state.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x22"
+      },
+      "Flag": {
+        "Type": "UCHAR",
+        "Description": "System flag to set"
+      },
+      "Id": {
+        "Type": "UCHAR",
+        "Description": "Bit ID to set"
+      },
+      "OnOff": {
+        "Type": "UCHAR",
+        "Description": "On/Off state to set"
+      }
+    }
+  },
+  "23": {
+    "Opcode Name": "Cmp",
+    "Opcode Number": "23",
+    "Opcode Length": "06 Bytes",
+    "Opcode Description": "This bytecode compares the specified system flag with the given value using the provided comparison operator.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x23"
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "Always 0x00"
+      },
+      "MemberId": {
+        "Type": "UCHAR",
+        "Description": "ID of the member to compare"
+      },
+      "Operator": {
+        "Type": "UCHAR",
+        "Description": "Type of comparison"
+      },
+      "Value": {
+        "Type": "SHORT",
+        "Description": "Value to compare the member to"
+      }
+    }
+  },
+  "24": {
+    "Opcode Name": "Save",
+    "Opcode Number": "24",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This bytecode saves the specified source value to the destination index.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x24"
+      },
+      "Destination": {
+        "Type": "UCHAR",
+        "Description": "Destination index"
+      },
+      "Source": {
+        "Type": "SHORT",
+        "Description": "Source value"
+      }
+    }
+  },
+  "25": {
+    "Opcode Name": "Copy",
+    "Opcode Number": "25",
+    "Opcode Length": "03 Bytes",
+    "Opcode Description": "This bytecode copies the value from the source index to the destination index.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x25"
+      },
+      "Destination": {
+        "Type": "UCHAR",
+        "Description": "Destination index"
+      },
+      "Source": {
+        "Type": "UCHAR",
+        "Description": "Source index"
+      }
+    }
+  },
+  "26": {
+    "Opcode Name": "Calc",
+    "Opcode Number": "26",
+    "Opcode Length": "06 Bytes",
+    "Opcode Description": "This bytecode performs the specified arithmetic operation on the operands and stores the result.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x26"
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "Always Zero (Alignment byte)"
+      },
+      "Operator": {
+        "Type": "UCHAR",
+        "Description": "Arithmetic operation to perform"
+      },
+      "Flag": {
+        "Type": "UCHAR",
+        "Description": "Memory Location to apply math to"
+      },
+      "Value": {
+        "Type": "SHORT",
+        "Description": "Amount used in operation"
+      }
+    }
+  },
+  "27": {
+    "Opcode Name": "Calc2",
+    "Opcode Number": "27",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This bytecode performs the specified arithmetic operation on the two operands and stores the result.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x27"
+      },
+      "Operator": {
+        "Type": "UCHAR",
+        "Description": "Type of operation"
+      },
+      "Flag": {
+        "Type": "UCHAR",
+        "Description": "F_atari, etc."
+      },
+      "Value": {
+        "Type": "UCHAR",
+        "Description": "Value to use in the operation"
+      }
+    }
+  },
+  "28": {
+    "Opcode Name": "Sce_rnd",
+    "Opcode Number": "28",
+    "Opcode Length": "01 Byte",
+    "Opcode Description": "This bytecode generates a random value.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x28"
+      }
+    }
+  },
+  "29": {
+    "Opcode Name": "Cut_chg",
+    "Opcode Number": "29",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This bytecode changes the current camera to the specified camera ID.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x29"
+      },
+      "CutId": {
+        "Type": "UCHAR",
+        "Description": "ID of the cutscene"
+      }
+    }
+  },
+  "2A": {
+    "Opcode Name": "Cut_old",
+    "Opcode Number": "2A",
+    "Opcode Length": "01 Byte",
+    "Opcode Description": "This bytecode reverts to the previous camera.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x2A"
+      }
+    }
+  },
+  "2B": {
+    "Opcode Name": "Message_on",
+    "Opcode Number": "2B",
+    "Opcode Length": "06 Bytes",
+    "Opcode Description": "This bytecode displays the specified message.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x2B"
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "Always Zero (Alignment byte)"
+      },
+      "Type": {
+        "Type": "UCHAR",
+        "Description": "Message type"
+      },
+      "MessageId": {
+        "Type": "UCHAR",
+        "Description": "ID of the message to display"
+      },
+      "DisplayTime": {
+        "Type": "USHORT",
+        "Description": "Time to display the message"
+      }
+    }
+  },
+  "2C": {
+    "Opcode Name": "Aot_set",
+    "Opcode Number": "2C",
+    "Opcode Length": "20 Bytes",
+    "Opcode Description": "This bytecode sets the properties of the specified AOT.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x2C"
+      },
+      "Aot": {
+        "Type": "CHAR",
+        "Description": "Aot"
+      },
+      "SCE": {
+        "Type": "UCHAR",
+        "Description": "Id"
+      },
+      "SAT": {
+        "Type": "UCHAR",
+        "Description": "Type"
+      },
+      "nFloor": {
+        "Type": "UCHAR",
+        "Description": "nFloor"
+      },
+      "Super": {
+        "Type": "UCHAR",
+        "Description": "Super"
+      },
+      "X": {
+        "Type": "SHORT",
+        "Description": "Position X"
+      },
+      "Z": {
+        "Type": "SHORT",
+        "Description": "Position Z"
+      },
+      "W": {
+        "Type": "USHORT",
+        "Description": "Size W"
+      },
+      "D": {
+        "Type": "USHORT",
+        "Description": "Size D"
+      },
+      "Data0": {
+        "Type": "USHORT",
+        "Description": "Sce_Message / Flag Type / Always 0x00FF"
+      },
+      "Data1": {
+        "Type": "USHORT",
+        "Description": "Sce_Message / Flag Id / Script Id Init & Complete"
+      },
+      "Data2": {
+        "Type": "USHORT",
+        "Description": "Always 0xFFFF"
+      }
+    }
+  },
+  "2D": {
+    "Opcode Name": "Obj_model_set",
+    "Opcode Number": "2D",
+    "Opcode Length": "38 Bytes",
+    "Opcode Description": "This bytecode sets the properties of the specified object model.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x2D"
+      },
+      "MD1": {
+        "Type": "UCHAR",
+        "Description": "MD1 File ID"
+      },
+      "Id": {
+        "Type": "UCHAR",
+        "Description": "Global->Ob_model[].Id"
+      },
+      "Ccol_old": {
+        "Type": "UCHAR",
+        "Description": "CC_WORK structure"
+      },
+      "Ccol_no": {
+        "Type": "UCHAR",
+        "Description": "CC_WORK structure"
+      },
+      "Ctex_old": {
+        "Type": "UCHAR",
+        "Description": "CC_WORK structure"
+      },
+      "nFloor": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Super": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Type": {
+        "Type": "USHORT",
+        "Description": "Global->Ob_model[].Type"
+      },
+      "BeFlag": {
+        "Type": "USHORT",
+        "Description": "Global->Ob_model[].Be_flg"
+      },
+      "Attribute": {
+        "Type": "SHORT",
+        "Description": "Global->Ob_model[].Attribute"
+      },
+      "X": {
+        "Type": "SHORT",
+        "Description": ""
+      },
+      "Y": {
+        "Type": "SHORT",
+        "Description": ""
+      },
+      "Z": {
+        "Type": "SHORT",
+        "Description": ""
+      },
+      "DirX": {
+        "Type": "SHORT",
+        "Description": ""
+      },
+      "DirY": {
+        "Type": "SHORT",
+        "Description": ""
+      },
+      "DirZ": {
+        "Type": "SHORT",
+        "Description": ""
+      },
+      "AtariOffsetX": {
+        "Type": "SHORT",
+        "Description": ""
+      },
+      "AtariOffsetY": {
+        "Type": "SHORT",
+        "Description": ""
+      },
+      "AtariOffsetZ": {
+        "Type": "SHORT",
+        "Description": ""
+      },
+      "AtariSizeX": {
+        "Type": "SHORT",
+        "Description": ""
+      },
+      "AtariSizeY": {
+        "Type": "SHORT",
+        "Description": ""
+      },
+      "AtariSizeZ": {
+        "Type": "SHORT",
+        "Description": ""
+      }
+    }
+  },
+  "2E": {
+    "Opcode Name": "Work_set",
+    "Opcode Number": "2E",
+    "Opcode Length": "03 Bytes",
+    "Opcode Description": "This bytecode sets the properties of the specified work (task).",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x2E"
+      },
+      "Type": {
+        "Type": "UCHAR",
+        "Description": "Type of Work Set to Select"
+      },
+      "EntityId": {
+        "Type": "UCHAR",
+        "Description": "ID of Entity to select"
+      }
+    }
+  },
+  "2F": {
+    "Opcode Name": "Speed_set",
+    "Opcode Number": "2F",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This bytecode sets the specified speed setting.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x2F"
+      },
+      "SpeedId": {
+        "Type": "UCHAR",
+        "Description": "ID of the speed setting"
+      },
+      "SpeedValue": {
+        "Type": "USHORT",
+        "Description": "Value of the speed setting"
+      }
+    }
+  },
+  "30": {
+    "Opcode Name": "Add_speed",
+    "Opcode Number": "30",
+    "Opcode Length": "01 Byte",
+    "Opcode Description": "This bytecode increments the speed setting.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x30"
+      }
+    }
+  },
+  "31": {
+    "Opcode Name": "Add_aspeed",
+    "Opcode Number": "31",
+    "Opcode Length": "01 Byte",
+    "Opcode Description": "This bytecode increments the angular speed setting.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x31"
+      }
+    }
+  },
+  "32": {
+    "Opcode Name": "Pos_set",
+    "Opcode Number": "32",
+    "Opcode Length": "08 Bytes",
+    "Opcode Description": "This bytecode sets the position in 3D space.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x32"
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "Always Zero (Alignment byte)"
+      },
+      "PosX": {
+        "Type": "SHORT",
+        "Description": "X position"
+      },
+      "PosY": {
+        "Type": "SHORT",
+        "Description": "Y position"
+      },
+      "PosZ": {
+        "Type": "SHORT",
+        "Description": "Z position"
+      }
+    }
+  },
+  "33": {
+    "Opcode Name": "Dir_set",
+    "Opcode Number": "33",
+    "Opcode Length": "08 Bytes",
+    "Opcode Description": "This bytecode sets the direction in 3D space.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x33"
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "Always Zero (Alignment byte)"
+      },
+      "DirX": {
+        "Type": "SHORT",
+        "Description": "X direction"
+      },
+      "DirY": {
+        "Type": "SHORT",
+        "Description": "Y direction"
+      },
+      "DirZ": {
+        "Type": "SHORT",
+        "Description": "Z direction"
+      }
+    }
+  },
+  "34": {
+    "Opcode Name": "Member_set",
+    "Opcode Number": "34",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This bytecode sets the properties of the specified member.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x34"
+      },
+      "Destination": {
+        "Type": "UCHAR",
+        "Description": "Destination"
+      },
+      "Source": {
+        "Type": "SHORT",
+        "Description": "Source"
+      }
+    }
+  },
+  "35": {
+    "Opcode Name": "Member_set2",
+    "Opcode Number": "35",
+    "Opcode Length": "03 Bytes",
+    "Opcode Description": "This bytecode sets a single property of the specified member.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x35"
+      },
+      "Destination": {
+        "Type": "UCHAR",
+        "Description": "Destination"
+      },
+      "Source": {
+        "Type": "UCHAR",
+        "Description": "Source"
+      }
+    }
+  },
+  "36": {
+    "Opcode Name": "Se_on",
+    "Opcode Number": "36",
+    "Opcode Length": "12 Bytes",
+    "Opcode Description": "This bytecode plays the specified sound effect with the given parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x36"
+      },
+      "VAB": {
+        "Type": "UCHAR",
+        "Description": "VAB Bank ID"
+      },
+      "EDT": {
+        "Type": "SHORT",
+        "Description": "EDT Sample ID"
+      },
+      "data0": {
+        "Type": "SHORT",
+        "Description": "Sound Reverberation, Work Aot/Obj No"
+      },
+      "X": {
+        "Type": "SHORT",
+        "Description": "Position X"
+      },
+      "Y": {
+        "Type": "SHORT",
+        "Description": ""
+      },
+      "Z": {
+        "Type": "SHORT",
+        "Description": ""
+      }
+    }
+  },
+  "37": {
+    "Opcode Name": "Sca_id_set",
+    "Opcode Number": "37",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This bytecode sets the specified scale ID to the given value.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x37"
+      },
+      "iEntry": {
+        "Type": "UCHAR",
+        "Description": "SCA Collision Entry"
+      },
+      "Id": {
+        "Type": "USHORT",
+        "Description": "New Collision ID"
+      }
+    }
+  },
+  "38": {
+    "Opcode Name": "Flr_set",
+    "Opcode Number": "38",
+    "Opcode Length": "03 Bytes",
+    "Opcode Description": "This bytecode sets the specified floor ID to the given value.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x38"
+      },
+      "Id": {
+        "Type": "UCHAR",
+        "Description": "Floor ID"
+      },
+      "Flag": {
+        "Type": "UCHAR",
+        "Description": "Flag"
+      }
+    }
+  },
+  "39": {
+    "Opcode Name": "Dir_ck",
+    "Opcode Number": "39",
+    "Opcode Length": "08 Bytes",
+    "Opcode Description": "This bytecode checks the specified direction coordinates.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x39"
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "Always Zero (Alignment byte)"
+      },
+      "X": {
+        "Type": "SHORT",
+        "Description": "X coordinate"
+      },
+      "Z": {
+        "Type": "SHORT",
+        "Description": "Z coordinate"
+      },
+      "Add": {
+        "Type": "SHORT",
+        "Description": "Additional value"
+      }
+    }
+  },
+  "3A": {
+    "Opcode Name": "Sce_espr_on",
+    "Opcode Number": "3A",
+    "Opcode Length": "16 Bytes",
+    "Opcode Description": "This bytecode turns on the specified espr with the given parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x3A"
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "Always Zero (Alignment byte)"
+      },
+      "data0": {
+        "Type": "USHORT",
+        "Description": ""
+      },
+      "data1": {
+        "Type": "USHORT",
+        "Description": ""
+      },
+      "data2": {
+        "Type": "USHORT",
+        "Description": ""
+      },
+      "X": {
+        "Type": "SHORT",
+        "Description": "Position X"
+      },
+      "Y": {
+        "Type": "SHORT",
+        "Description": "Position Y"
+      },
+      "Z": {
+        "Type": "SHORT",
+        "Description": "Position Z"
+      },
+      "DirY": {
+        "Type": "SHORT",
+        "Description": "Direction Y"
+      }
+    }
+  },
+  "3B": {
+    "Opcode Name": "Door_aot_set",
+    "Opcode Number": "3B",
+    "Opcode Length": "32 Bytes",
+    "Opcode Description": "This bytecode sets the specified door AOT parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x3B"
+      },
+      "Aot": {
+        "Type": "UCHAR",
+        "Description": "Aot"
+      },
+      "SCE": {
+        "Type": "UCHAR",
+        "Description": "Id"
+      },
+      "SAT": {
+        "Type": "UCHAR",
+        "Description": "Type"
+      },
+      "nFloor": {
+        "Type": "UCHAR",
+        "Description": "nFloor"
+      },
+      "Super": {
+        "Type": "UCHAR",
+        "Description": "Super"
+      },
+      "X": {
+        "Type": "SHORT",
+        "Description": "Position X"
+      },
+      "Z": {
+        "Type": "SHORT",
+        "Description": "Position Z"
+      },
+      "W": {
+        "Type": "USHORT",
+        "Description": "Width"
+      },
+      "D": {
+        "Type": "USHORT",
+        "Description": "Depth"
+      },
+      "Next_pos_x": {
+        "Type": "SHORT",
+        "Description": "Next position X"
+      },
+      "Next_pos_y": {
+        "Type": "SHORT",
+        "Description": "Next position Y"
+      },
+      "Next_pos_z": {
+        "Type": "SHORT",
+        "Description": "Next position Z"
+      },
+      "Next_cdir_y": {
+        "Type": "SHORT",
+        "Description": "Next direction Y"
+      },
+      "Next_stage": {
+        "Type": "UCHAR",
+        "Description": "Next stage"
+      },
+      "Next_room": {
+        "Type": "UCHAR",
+        "Description": "Next room"
+      },
+      "Next_cut": {
+        "Type": "UCHAR",
+        "Description": "Next cut"
+      },
+      "Next_nfloor": {
+        "Type": "UCHAR",
+        "Description": "Next floor"
+      },
+      "Dtex_type": {
+        "Type": "UCHAR",
+        "Description": "DO2 File ID"
+      },
+      "Door_type": {
+        "Type": "UCHAR",
+        "Description": "DO2 Animation Set"
+      },
+      "Knock_type": {
+        "Type": "UCHAR",
+        "Description": "Sound"
+      },
+      "Key_id": {
+        "Type": "UCHAR",
+        "Description": "Key ID"
+      },
+      "Key_type": {
+        "Type": "UCHAR",
+        "Description": "Key type"
+      },
+      "Free": {
+        "Type": "UCHAR",
+        "Description": ""
+      }
+    }
+  },
+  "3C": {
+    "Opcode Name": "Cut_auto",
+    "Opcode Number": "3C",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This bytecode sets the specified auto cutscene parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x3C"
+      },
+      "OnOff": {
+        "Type": "UCHAR",
+        "Description": "00 OFF, 01 ON"
+      }
+    }
+  },
+  "3D": {
+    "Opcode Name": "Member_copy",
+    "Opcode Number": "3D",
+    "Opcode Length": "03 Bytes",
+    "Opcode Description": "This bytecode copies the specified member parameters from the source to the destination.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x3D"
+      },
+      "Destination": {
+        "Type": "UCHAR",
+        "Description": "Destination"
+      },
+      "Source": {
+        "Type": "UCHAR",
+        "Description": "Source"
+      }
+    }
+  },
+  "3E": {
+    "Opcode Name": "Member_cmp",
+    "Opcode Number": "3E",
+    "Opcode Length": "06 Bytes",
+    "Opcode Description": "This bytecode compares the specified member parameters with the given value.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x3E"
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "Always Zero (Alignment byte)"
+      },
+      "Flag": {
+        "Type": "UCHAR",
+        "Description": "Load_member_addr_branch() argv[1]"
+      },
+      "Operator": {
+        "Type": "UCHAR",
+        "Description": "Comparison operator"
+      },
+      "Value": {
+        "Type": "SHORT",
+        "Description": "Value to compare"
+      }
+    }
+  },
+  "3F": {
+    "Opcode Name": "Plc_motion",
+    "Opcode Number": "3F",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This bytecode sets the specified motion parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x3F"
+      },
+      "MotionId": {
+        "Type": "UCHAR",
+        "Description": "EDD/EMR Id"
+      },
+      "Mode": {
+        "Type": "UCHAR",
+        "Description": "Mode to set the motion to"
+      },
+      "Param": {
+        "Type": "UCHAR",
+        "Description": "Parameter for the motion"
+      }
+    }
+  },
+  "40": {
+    "Opcode Name": "Plc_dest",
+    "Opcode Number": "40",
+    "Opcode Length": "08 Bytes",
+    "Opcode Description": "This bytecode sets the specified destination parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x40"
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "Always Zero (Alignment byte)"
+      },
+      "Animation": {
+        "Type": "UCHAR",
+        "Description": "EDD/EMR Id"
+      },
+      "Bit": {
+        "Type": "UCHAR",
+        "Description": "Room_flg"
+      },
+      "X": {
+        "Type": "SHORT",
+        "Description": "Destination X"
+      },
+      "Z": {
+        "Type": "SHORT",
+        "Description": "Destination Z"
+      }
+    }
+  },
+  "41": {
+    "Opcode Name": "Plc_neck",
+    "Opcode Number": "41",
+    "Opcode Length": "10 Bytes",
+    "Opcode Description": "This bytecode sets the specified neck parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x41"
+      },
+      "Op": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "X": {
+        "Type": "SHORT",
+        "Description": "X coordinate"
+      },
+      "Y": {
+        "Type": "SHORT",
+        "Description": "Y coordinate"
+      },
+      "Z": {
+        "Type": "SHORT",
+        "Description": "Z coordinate"
+      },
+      "SpeedX": {
+        "Type": "UCHAR",
+        "Description": "Speed X"
+      },
+      "SpeedZ": {
+        "Type": "UCHAR",
+        "Description": "Speed Z"
+      }
+    }
+  },
+  "42": {
+    "Opcode Name": "Plc_ret",
+    "Opcode Number": "42",
+    "Opcode Length": "01 Bytes",
+    "Opcode Description": "This bytecode returns from the specified plc function.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x42"
+      }
+    }
+  },
+  "43": {
+    "Opcode Name": "Plc_flg",
+    "Opcode Number": "43",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This bytecode sets the specified flag parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x43"
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "Always Zero (Alignment byte)"
+      },
+      "data0": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "data1": {
+        "Type": "UCHAR",
+        "Description": ""
+      }
+    }
+  },
+  "44": {
+    "Opcode Name": "Sce_em_set",
+    "Opcode Number": "44",
+    "Opcode Length": "22 Bytes",
+    "Opcode Description": "This bytecode sets the specified enemy parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x44"
+      },
+      "Nop": {
+        "Type": "UCHAR",
+        "Description": "0x00"
+      },
+      "Em_no": {
+        "Type": "CHAR",
+        "Description": "Em_no"
+      },
+      "Id": {
+        "Type": "UCHAR",
+        "Description": "EMD File Id for Em_bin_load() function"
+      },
+      "Type": {
+        "Type": "USHORT",
+        "Description": "Type"
+      },
+      "nFloor": {
+        "Type": "UCHAR",
+        "Description": "nFloor"
+      },
+      "Sound_flg": {
+        "Type": "UCHAR",
+        "Description": "Sound_flg"
+      },
+      "Model_type": {
+        "Type": "UCHAR",
+        "Description": "Model_type"
+      },
+      "Em_set_flg": {
+        "Type": "UCHAR",
+        "Description": "Em_set_flg"
+      },
+      "Pos_x": {
+        "Type": "SHORT",
+        "Description": "Position X"
+      },
+      "Pos_y": {
+        "Type": "SHORT",
+        "Description": "Position Y"
+      },
+      "Pos_z": {
+        "Type": "SHORT",
+        "Description": "Position Z"
+      },
+      "Cdir_y": {
+        "Type": "SHORT",
+        "Description": "Rotation Y"
+      },
+      "Motion": {
+        "Type": "SHORT",
+        "Description": "Motion"
+      },
+      "Ctr_flg": {
+        "Type": "SHORT",
+        "Description": "Ctr_flg"
+      }
+    }
+  },
+  "45": {
+    "Opcode Name": "Col_chg_set",
+    "Opcode Number": "45",
+    "Opcode Length": "05 Bytes",
+    "Opcode Description": "This bytecode sets the specified color parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x45"
+      },
+      "Data0": {
+        "Type": "UCHAR",
+        "Description": "Data0"
+      },
+      "Data1": {
+        "Type": "UCHAR",
+        "Description": "Data1"
+      },
+      "Data2": {
+        "Type": "UCHAR",
+        "Description": "Data2"
+      },
+      "Data3": {
+        "Type": "UCHAR",
+        "Description": "Data3"
+      }
+    }
+  },
+  "46": {
+    "Opcode Name": "Aot_reset",
+    "Opcode Number": "46",
+    "Opcode Length": "10 Bytes",
+    "Opcode Description": "This bytecode resets the specified AOT parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x46"
+      },
+      "Aot": {
+        "Type": "CHAR",
+        "Description": "Aot"
+      },
+      "SCE": {
+        "Type": "UCHAR",
+        "Description": "SCE"
+      },
+      "SAT": {
+        "Type": "UCHAR",
+        "Description": "SAT"
+      },
+      "Data0": {
+        "Type": "SHORT",
+        "Description": "Data0"
+      },
+      "Data1": {
+        "Type": "SHORT",
+        "Description": "Data1"
+      },
+      "Data2": {
+        "Type": "SHORT",
+        "Description": "Data2"
+      }
+    }
+  },
+  "47": {
+    "Opcode Name": "Aot_on",
+    "Opcode Number": "47",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This bytecode turns on the specified AOT.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x47"
+      },
+      "Aot": {
+        "Type": "CHAR",
+        "Description": "Aot"
+      }
+    }
+  },
+  "48": {
+    "Opcode Name": "Super_set",
+    "Opcode Number": "48",
+    "Opcode Length": "16 Bytes",
+    "Opcode Description": "This bytecode sets the specified super parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x48"
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "Alignment byte (always 0x00)"
+      },
+      "Work": {
+        "Type": "UCHAR",
+        "Description": "Work Type"
+      },
+      "Id": {
+        "Type": "UCHAR",
+        "Description": "Work Aot/Obj No"
+      },
+      "pX": {
+        "Type": "SHORT",
+        "Description": "Parent X"
+      },
+      "pY": {
+        "Type": "SHORT",
+        "Description": "Parent Y"
+      },
+      "pZ": {
+        "Type": "SHORT",
+        "Description": "Parent Z"
+      },
+      "dX": {
+        "Type": "SHORT",
+        "Description": "Destination X"
+      },
+      "dY": {
+        "Type": "SHORT",
+        "Description": "Destination Y"
+      },
+      "dZ": {
+        "Type": "SHORT",
+        "Description": "Destination Z"
+      }
+    }
+  },
+  "49": {
+    "Opcode Name": "Super_reset",
+    "Opcode Number": "49",
+    "Opcode Length": "08 Bytes",
+    "Opcode Description": "This bytecode resets the specified super parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x49"
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "Alignment byte (always 0x00)"
+      },
+      "dX": {
+        "Type": "SHORT",
+        "Description": "Destination X"
+      },
+      "dY": {
+        "Type": "SHORT",
+        "Description": "Destination Y"
+      },
+      "dZ": {
+        "Type": "SHORT",
+        "Description": "Destination Z"
+      }
+    }
+  },
+  "4A": {
+    "Opcode Name": "Plc_gun",
+    "Opcode Number": "4A",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This bytecode sets the specified gun parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x4A"
+      },
+      "GunId": {
+        "Type": "UCHAR",
+        "Description": "ID of the gun to set"
+      }
+    }
+  },
+  "4B": {
+    "Opcode Name": "Cut_replace",
+    "Opcode Number": "4B",
+    "Opcode Length": "03 Bytes",
+    "Opcode Description": "This bytecode replaces the specified cutscene parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x4B"
+      },
+      "Id": {
+        "Type": "UCHAR",
+        "Description": "Id"
+      },
+      "Value": {
+        "Type": "UCHAR",
+        "Description": "Value"
+      }
+    }
+  },
+  "4C": {
+    "Opcode Name": "Sce_espr_kill",
+    "Opcode Number": "4C",
+    "Opcode Length": "05 Bytes",
+    "Opcode Description": "This bytecode kills the specified espr with the given parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x4C"
+      },
+      "id": {
+        "Type": "UCHAR",
+        "Description": "Esp_kill() argv[0]"
+      },
+      "tp": {
+        "Type": "UCHAR",
+        "Description": "Esp_kill() argv[1]"
+      },
+      "WorkKind": {
+        "Type": "CHAR",
+        "Description": "Get_matrix() argv[0]"
+      },
+      "WorkNo": {
+        "Type": "CHAR",
+        "Description": "Get_matrix() argv[1]"
+      }
+    }
+  },
+  "4D": {
+    "Opcode Name": "Door_model_set",
+    "Opcode Number": "4D",
+    "Opcode Length": "22 Bytes",
+    "Opcode Description": "This bytecode sets the specified door model parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x4D"
+      },
+      "data0": {
+        "Type": "UCHAR",
+        "Description": "data0"
+      },
+      "Id": {
+        "Type": "UCHAR",
+        "Description": "DOOR_WORK.Id"
+      },
+      "OfsY": {
+        "Type": "UCHAR",
+        "Description": "DOOR_WORK.Atd[3]"
+      },
+      "BeFlg": {
+        "Type": "UCHAR",
+        "Description": "DOOR_WORK.Be_flg"
+      },
+      "data5": {
+        "Type": "UCHAR",
+        "Description": "data5"
+      },
+      "data6": {
+        "Type": "USHORT",
+        "Description": "data6"
+      },
+      "X": {
+        "Type": "SHORT",
+        "Description": "DOOR_WORK.Atd[3]"
+      },
+      "Y": {
+        "Type": "SHORT",
+        "Description": "DOOR_WORK.Atd[3]"
+      },
+      "Z": {
+        "Type": "SHORT",
+        "Description": "DOOR_WORK.Atd[3]"
+      },
+      "DirY": {
+        "Type": "SHORT",
+        "Description": "DOOR_WORK.Atd[3]"
+      },
+      "data10": {
+        "Type": "USHORT",
+        "Description": "DOOR_WORK.MATRIX"
+      },
+      "data11": {
+        "Type": "USHORT",
+        "Description": "DOOR_WORK.MATRIX"
+      },
+      "data12": {
+        "Type": "USHORT",
+        "Description": "DOOR_WORK.MATRIX"
+      }
+    }
+  },
+  "4E": {
+    "Opcode Name": "Item_aot_set",
+    "Opcode Number": "4E",
+    "Opcode Length": "22 Bytes",
+    "Opcode Description": "This bytecode sets the specified item AOT parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x4E"
+      },
+      "Aot": {
+        "Type": "UCHAR",
+        "Description": "Aot"
+      },
+      "SCE": {
+        "Type": "UCHAR",
+        "Description": "SCE"
+      },
+      "SAT": {
+        "Type": "UCHAR",
+        "Description": "SAT"
+      },
+      "nFloor": {
+        "Type": "UCHAR",
+        "Description": "nFloor"
+      },
+      "Super": {
+        "Type": "UCHAR",
+        "Description": "Super"
+      },
+      "X": {
+        "Type": "SHORT",
+        "Description": "Position X"
+      },
+      "Z": {
+        "Type": "SHORT",
+        "Description": "Position Z"
+      },
+      "W": {
+        "Type": "USHORT",
+        "Description": "Width"
+      },
+      "D": {
+        "Type": "USHORT",
+        "Description": "Depth"
+      },
+      "iItem": {
+        "Type": "USHORT",
+        "Description": "Item ID"
+      },
+      "nItem": {
+        "Type": "USHORT",
+        "Description": "Number of items"
+      },
+      "Flag": {
+        "Type": "USHORT",
+        "Description": "Flag"
+      },
+      "MD1": {
+        "Type": "UCHAR",
+        "Description": "MD1"
+      },
+      "Action": {
+        "Type": "UCHAR",
+        "Description": "Action"
+      }
+    }
+  },
+  "4F": {
+    "Opcode Name": "Sce_key_ck",
+    "Opcode Number": "4F",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This bytecode checks the specified key parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x4F"
+      },
+      "Flag": {
+        "Type": "UCHAR",
+        "Description": "Flag"
+      },
+      "Value": {
+        "Type": "USHORT",
+        "Description": "Value"
+      }
+    }
+  },
+  "50": {
+    "Opcode Name": "Sce_trg_ck",
+    "Opcode Number": "50",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This bytecode checks the specified trigger parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x50"
+      },
+      "Flag": {
+        "Type": "UCHAR",
+        "Description": "Flag"
+      },
+      "Value": {
+        "Type": "USHORT",
+        "Description": "Value"
+      }
+    }
+  },
+  "51": {
+    "Opcode Name": "Sce_bgm_control",
+    "Opcode Number": "51",
+    "Opcode Length": "06 Bytes",
+    "Opcode Description": "This bytecode controls the specified BGM parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x51"
+      },
+      "Id": {
+        "Type": "UCHAR",
+        "Description": "Id"
+      },
+      "Op": {
+        "Type": "UCHAR",
+        "Description": "Operation"
+      },
+      "Type": {
+        "Type": "UCHAR",
+        "Description": "Type"
+      },
+      "VolL": {
+        "Type": "UCHAR",
+        "Description": "Volume Left"
+      },
+      "VolR": {
+        "Type": "UCHAR",
+        "Description": "Volume Right"
+      }
+    }
+  },
+  "52": {
+    "Opcode Name": "Sce_espr_control",
+    "Opcode Number": "52",
+    "Opcode Length": "06 Bytes",
+    "Opcode Description": "This bytecode controls the specified espr parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x52"
+      },
+      "Id": {
+        "Type": "UCHAR",
+        "Description": "Id"
+      },
+      "Type": {
+        "Type": "UCHAR",
+        "Description": "Type"
+      },
+      "Return": {
+        "Type": "UCHAR",
+        "Description": "Return value"
+      },
+      "WorkKind": {
+        "Type": "CHAR",
+        "Description": "WorkKind"
+      },
+      "WorkNo": {
+        "Type": "CHAR",
+        "Description": "WorkNo"
+      }
+    }
+  },
+  "53": {
+    "Opcode Name": "Sce_fade_set",
+    "Opcode Number": "53",
+    "Opcode Length": "06 Bytes",
+    "Opcode Description": "This bytecode sets the specified fade parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x53"
+      },
+      "data0": {
+        "Type": "UCHAR",
+        "Description": "data0"
+      },
+      "data1": {
+        "Type": "UCHAR",
+        "Description": "data1"
+      },
+      "data2": {
+        "Type": "UCHAR",
+        "Description": "data2"
+      },
+      "data3": {
+        "Type": "USHORT",
+        "Description": "data3"
+      }
+    }
+  },
+  "54": {
+    "Opcode Name": "Sce_espr3d_on",
+    "Opcode Number": "54",
+    "Opcode Length": "22 Bytes",
+    "Opcode Description": "This bytecode turns on the specified 3D espr with the given parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x54"
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "zAlign"
+      },
+      "data0": {
+        "Type": "USHORT",
+        "Description": "data0"
+      },
+      "data1": {
+        "Type": "USHORT",
+        "Description": "data1"
+      },
+      "data2": {
+        "Type": "USHORT",
+        "Description": "data2"
+      },
+      "X": {
+        "Type": "SHORT",
+        "Description": "X"
+      },
+      "Y": {
+        "Type": "SHORT",
+        "Description": "Y"
+      },
+      "Z": {
+        "Type": "SHORT",
+        "Description": "Z"
+      },
+      "DirX": {
+        "Type": "SHORT",
+        "Description": "DirX"
+      },
+      "DirY": {
+        "Type": "SHORT",
+        "Description": "DirY"
+      },
+      "DirZ": {
+        "Type": "SHORT",
+        "Description": "DirZ"
+      },
+      "data3": {
+        "Type": "SHORT",
+        "Description": "data3"
+      }
+    }
+  },
+  "55": {
+    "Opcode Name": "Member_calc",
+    "Opcode Number": "55",
+    "Opcode Length": "06 Bytes",
+    "Opcode Description": "This bytecode performs the specified arithmetic operation on the member with the given value.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x55"
+      },
+      "Operator": {
+        "Type": "UCHAR",
+        "Description": "Operator"
+      },
+      "Flag": {
+        "Type": "USHORT",
+        "Description": "Flag"
+      },
+      "Value": {
+        "Type": "SHORT",
+        "Description": "Value"
+      }
+    }
+  },
+  "56": {
+    "Opcode Name": "Member_calc2",
+    "Opcode Number": "56",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This bytecode performs the specified arithmetic operation on the member with the given value.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x56"
+      },
+      "Operator": {
+        "Type": "UCHAR",
+        "Description": "Operator"
+      },
+      "Flag": {
+        "Type": "UCHAR",
+        "Description": "Flag"
+      },
+      "Value": {
+        "Type": "UCHAR",
+        "Description": "Value"
+      }
+    }
+  },
+  "57": {
+    "Opcode Name": "Sce_bgmtbl_set",
+    "Opcode Number": "57",
+    "Opcode Length": "08 Bytes",
+    "Opcode Description": "This bytecode sets the specified BGM table parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x57"
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "zAlign"
+      },
+      "Stage": {
+        "Type": "UCHAR",
+        "Description": "Stage"
+      },
+      "Room": {
+        "Type": "UCHAR",
+        "Description": "Room"
+      },
+      "data1": {
+        "Type": "USHORT",
+        "Description": "data1"
+      },
+      "data2": {
+        "Type": "USHORT",
+        "Description": "data2"
+      }
+    }
+  },
+  "58": {
+    "Opcode Name": "Plc_rot",
+    "Opcode Number": "58",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This bytecode sets the specified rotation parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x58"
+      },
+      "Axis": {
+        "Type": "UCHAR",
+        "Description": "Axis of rotation (X, Y, Z)"
+      },
+      "Angle": {
+        "Type": "USHORT",
+        "Description": "Angle of rotation"
+      }
+    }
+  },
+  "59": {
+    "Opcode Name": "Xa_on",
+    "Opcode Number": "59",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This bytecode turns on the specified XA with the given parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x59"
+      },
+      "Mode": {
+        "Type": "UCHAR",
+        "Description": "Mode"
+      },
+      "Number": {
+        "Type": "USHORT",
+        "Description": "Number"
+      }
+    }
+  },
+  "5A": {
+    "Opcode Name": "Weapon_chg",
+    "Opcode Number": "5A",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This bytecode changes the specified weapon parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x5A"
+      },
+      "WeaponId": {
+        "Type": "UCHAR",
+        "Description": "ID of the weapon to change"
+      }
+    }
+  },
+  "5B": {
+    "Opcode Name": "Plc_cnt",
+    "Opcode Number": "5B",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This bytecode performs the specified arithmetic operation on the counter with the given value.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x5B"
+      },
+      "Id": {
+        "Type": "UCHAR",
+        "Description": "Id"
+      }
+    }
+  },
+  "5C": {
+    "Opcode Name": "Sce_shake_on",
+    "Opcode Number": "5C",
+    "Opcode Length": "03 Bytes",
+    "Opcode Description": "This bytecode turns on the specified shake effect with the given parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x5C"
+      },
+      "Slide_ofs": {
+        "Type": "CHAR",
+        "Description": "Slide offset"
+      },
+      "Copy_ofs": {
+        "Type": "CHAR",
+        "Description": "Copy offset"
+      }
+    }
+  },
+  "5D": {
+    "Opcode Name": "Mizu_div_set",
+    "Opcode Number": "5D",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This bytecode sets the specified water division parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x5D"
+      },
+      "Id": {
+        "Type": "UCHAR",
+        "Description": "Id"
+      }
+    }
+  },
+  "5E": {
+    "Opcode Name": "Keep_Item_ck",
+    "Opcode Number": "5E",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This bytecode checks the specified item parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x5E"
+      },
+      "ItemId": {
+        "Type": "UCHAR",
+        "Description": "ID of the item to check"
+      }
+    }
+  },
+  "5F": {
+    "Opcode Name": "Xa_vol",
+    "Opcode Number": "5F",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This bytecode sets the specified XA volume and pan parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x5F"
+      },
+      "Volume": {
+        "Type": "UCHAR",
+        "Description": "XA volume level"
+      }
+    }
+  },
+  "60": {
+    "Opcode Name": "Kage_set",
+    "Opcode Number": "60",
+    "Opcode Length": "14 Bytes",
+    "Opcode Description": "This bytecode sets the specified shadow parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x60"
+      },
+      "Work": {
+        "Type": "UCHAR",
+        "Description": "Work"
+      },
+      "Id": {
+        "Type": "CHAR",
+        "Description": "Id"
+      },
+      "Data0": {
+        "Type": "UCHAR",
+        "Description": "Data0"
+      },
+      "Data1": {
+        "Type": "UCHAR",
+        "Description": "Data1"
+      },
+      "Data2": {
+        "Type": "UCHAR",
+        "Description": "Data2"
+      },
+      "Data3": {
+        "Type": "USHORT",
+        "Description": "Data3"
+      },
+      "Data4": {
+        "Type": "USHORT",
+        "Description": "Data4"
+      },
+      "Data5": {
+        "Type": "USHORT",
+        "Description": "Data5"
+      },
+      "Data6": {
+        "Type": "USHORT",
+        "Description": "Data6"
+      }
+    }
+  },
+  "61": {
+    "Opcode Name": "Cut_be_set",
+    "Opcode Number": "61",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This bytecode sets the specified cutscene parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x61"
+      },
+      "Id": {
+        "Type": "UCHAR",
+        "Description": "Id"
+      },
+      "Value": {
+        "Type": "UCHAR",
+        "Description": "Value"
+      },
+      "OnOff": {
+        "Type": "UCHAR",
+        "Description": "OnOff"
+      }
+    }
+  },
+  "62": {
+    "Opcode Name": "Sce_Item_lost",
+    "Opcode Number": "62",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This bytecode removes the specified item from the inventory.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x62"
+      },
+      "ItemId": {
+        "Type": "UCHAR",
+        "Description": "ID of the lost item"
+      }
+    }
+  },
+  "63": {
+    "Opcode Name": "Plc_gun_eff",
+    "Opcode Number": "63",
+    "Opcode Length": "01 Bytes",
+    "Opcode Description": "This bytecode sets the specified gun effect parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x63"
+      }
+    }
+  },
+  "64": {
+    "Opcode Name": "Sce_espr_on2",
+    "Opcode Number": "64",
+    "Opcode Length": "16 Bytes",
+    "Opcode Description": "This bytecode turns on the specified espr with the given parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x64"
+      },
+      "dir_y_id2": {
+        "Type": "UCHAR",
+        "Description": "dir_y_id2"
+      },
+      "data1": {
+        "Type": "USHORT",
+        "Description": "data1"
+      },
+      "WorkKind": {
+        "Type": "UCHAR",
+        "Description": "WorkKind"
+      },
+      "WorkNo": {
+        "Type": "UCHAR",
+        "Description": "WorkNo"
+      },
+      "data3": {
+        "Type": "USHORT",
+        "Description": "data3"
+      },
+      "X": {
+        "Type": "SHORT",
+        "Description": "X"
+      },
+      "Y": {
+        "Type": "SHORT",
+        "Description": "Y"
+      },
+      "Z": {
+        "Type": "SHORT",
+        "Description": "Z"
+      },
+      "DirY": {
+        "Type": "USHORT",
+        "Description": "DirY"
+      }
+    }
+  },
+  "65": {
+    "Opcode Name": "Sce_espr_kill2",
+    "Opcode Number": "65",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This bytecode kills the specified espr with the given parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x65"
+      },
+      "EsprId": {
+        "Type": "UCHAR",
+        "Description": "ID of the effect sprite to kill"
+      }
+    }
+  },
+  "66": {
+    "Opcode Name": "Plc_stop",
+    "Opcode Number": "66",
+    "Opcode Length": "01 Bytes",
+    "Opcode Description": "This bytecode stops the specified plc function.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x66"
+      }
+    }
+  },
+  "67": {
+    "Opcode Name": "Aot_set_4p",
+    "Opcode Number": "67",
+    "Opcode Length": "28 Bytes",
+    "Opcode Description": "This bytecode sets the specified 4-point AOT parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x67"
+      },
+      "Aot": {
+        "Type": "UCHAR",
+        "Description": "Aot"
+      },
+      "SCE": {
+        "Type": "UCHAR",
+        "Description": "Id"
+      },
+      "SAT": {
+        "Type": "UCHAR",
+        "Description": "Type"
+      },
+      "nFloor": {
+        "Type": "UCHAR",
+        "Description": "nFloor"
+      },
+      "Super": {
+        "Type": "UCHAR",
+        "Description": "Super"
+      },
+      "X0": {
+        "Type": "SHORT",
+        "Description": "X0"
+      },
+      "Z0": {
+        "Type": "SHORT",
+        "Description": "Z0"
+      },
+      "X1": {
+        "Type": "SHORT",
+        "Description": "X1"
+      },
+      "Z1": {
+        "Type": "SHORT",
+        "Description": "Z1"
+      },
+      "X2": {
+        "Type": "SHORT",
+        "Description": "X2"
+      },
+      "Z2": {
+        "Type": "SHORT",
+        "Description": "Z2"
+      },
+      "X3": {
+        "Type": "SHORT",
+        "Description": "X3"
+      },
+      "Z3": {
+        "Type": "SHORT",
+        "Description": "Z3"
+      },
+      "Data0": {
+        "Type": "USHORT",
+        "Description": "Data0"
+      },
+      "Data1": {
+        "Type": "USHORT",
+        "Description": "Data1"
+      },
+      "Data2": {
+        "Type": "USHORT",
+        "Description": "Data2"
+      }
+    }
+  },
+  "68": {
+    "Opcode Name": "Door_aot_set_4p",
+    "Opcode Number": "68",
+    "Opcode Length": "40 Bytes",
+    "Opcode Description": "This bytecode sets the specified 4-point door AOT parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x68"
+      },
+      "Aot": {
+        "Type": "UCHAR",
+        "Description": "Aot"
+      },
+      "SCE": {
+        "Type": "UCHAR",
+        "Description": "Id"
+      },
+      "SAT": {
+        "Type": "UCHAR",
+        "Description": "Type"
+      },
+      "nFloor": {
+        "Type": "UCHAR",
+        "Description": "nFloor"
+      },
+      "Super": {
+        "Type": "UCHAR",
+        "Description": "Super"
+      },
+      "X0": {
+        "Type": "SHORT",
+        "Description": "X0"
+      },
+      "Z0": {
+        "Type": "SHORT",
+        "Description": "Z0"
+      },
+      "X1": {
+        "Type": "SHORT",
+        "Description": "X1"
+      },
+      "Z1": {
+        "Type": "SHORT",
+        "Description": "Z1"
+      },
+      "X2": {
+        "Type": "SHORT",
+        "Description": "X2"
+      },
+      "Z2": {
+        "Type": "SHORT",
+        "Description": "Z2"
+      },
+      "X3": {
+        "Type": "SHORT",
+        "Description": "X3"
+      },
+      "Z3": {
+        "Type": "SHORT",
+        "Description": "Z3"
+      },
+      "Next_pos_x": {
+        "Type": "SHORT",
+        "Description": "Next position X"
+      },
+      "Next_pos_y": {
+        "Type": "SHORT",
+        "Description": "Next position Y"
+      },
+      "Next_pos_z": {
+        "Type": "SHORT",
+        "Description": "Next position Z"
+      },
+      "Next_cdir_y": {
+        "Type": "SHORT",
+        "Description": "Next direction Y"
+      },
+      "Next_stage": {
+        "Type": "UCHAR",
+        "Description": "Next stage"
+      },
+      "Next_room": {
+        "Type": "UCHAR",
+        "Description": "Next room"
+      },
+      "Next_cut": {
+        "Type": "UCHAR",
+        "Description": "Next cut"
+      },
+      "Next_nfloor": {
+        "Type": "UCHAR",
+        "Description": "Next floor"
+      },
+      "Dtex_type": {
+        "Type": "UCHAR",
+        "Description": "Dtex_type"
+      },
+      "Door_type": {
+        "Type": "UCHAR",
+        "Description": "Door_type"
+      },
+      "Knock_type": {
+        "Type": "UCHAR",
+        "Description": "Knock_type"
+      },
+      "Key_id": {
+        "Type": "UCHAR",
+        "Description": "Key_id"
+      },
+      "Key_type": {
+        "Type": "UCHAR",
+        "Description": "Key_type"
+      },
+      "Free": {
+        "Type": "UCHAR",
+        "Description": "Free"
+      }
+    }
+  },
+  "69": {
+    "Opcode Name": "Item_aot_set_4p",
+    "Opcode Number": "69",
+    "Opcode Length": "30 Bytes",
+    "Opcode Description": "This bytecode sets the specified 4-point item AOT parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x69"
+      },
+      "Aot": {
+        "Type": "UCHAR",
+        "Description": "Aot"
+      },
+      "SCE": {
+        "Type": "UCHAR",
+        "Description": "Id"
+      },
+      "SAT": {
+        "Type": "UCHAR",
+        "Description": "Type"
+      },
+      "nFloor": {
+        "Type": "UCHAR",
+        "Description": "nFloor"
+      },
+      "Super": {
+        "Type": "UCHAR",
+        "Description": "Super"
+      },
+      "X0": {
+        "Type": "SHORT",
+        "Description": "X0"
+      },
+      "Z0": {
+        "Type": "SHORT",
+        "Description": "Z0"
+      },
+      "X1": {
+        "Type": "SHORT",
+        "Description": "X1"
+      },
+      "Z1": {
+        "Type": "SHORT",
+        "Description": "Z1"
+      },
+      "X2": {
+        "Type": "SHORT",
+        "Description": "X2"
+      },
+      "Z2": {
+        "Type": "SHORT",
+        "Description": "Z2"
+      },
+      "X3": {
+        "Type": "SHORT",
+        "Description": "X3"
+      },
+      "Z3": {
+        "Type": "SHORT",
+        "Description": "Z3"
+      },
+      "iItem": {
+        "Type": "USHORT",
+        "Description": "Item ID"
+      },
+      "nItem": {
+        "Type": "USHORT",
+        "Description": "Number of items"
+      },
+      "Flag": {
+        "Type": "USHORT",
+        "Description": "Flag"
+      },
+      "MD1": {
+        "Type": "UCHAR",
+        "Description": "MD1"
+      },
+      "Action": {
+        "Type": "UCHAR",
+        "Description": "Action"
+      }
+    }
+  },
+  "6A": {
+    "Opcode Name": "Light_pos_set",
+    "Opcode Number": "6A",
+    "Opcode Length": "06 Bytes",
+    "Opcode Description": "This bytecode sets the specified light position parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x6A"
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "zAlign"
+      },
+      "Index": {
+        "Type": "UCHAR",
+        "Description": "Index"
+      },
+      "XYZ": {
+        "Type": "UCHAR",
+        "Description": "XYZ"
+      },
+      "Position": {
+        "Type": "SHORT",
+        "Description": "Position"
+      }
+    }
+  },
+  "6B": {
+    "Opcode Name": "Light_kido_set",
+    "Opcode Number": "6B",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This bytecode sets the specified light intensity and color parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x6B"
+      },
+      "Index": {
+        "Type": "UCHAR",
+        "Description": "Index"
+      },
+      "Luminosity": {
+        "Type": "SHORT",
+        "Description": "Luminosity"
+      }
+    }
+  },
+  "6C": {
+    "Opcode Name": "Rbj_reset",
+    "Opcode Number": "6C",
+    "Opcode Length": "01 Bytes",
+    "Opcode Description": "This bytecode resets the specified rbj parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x6C"
+      }
+    }
+  },
+  "6D": {
+    "Opcode Name": "Sce_scr_move",
+    "Opcode Number": "6D",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This bytecode moves the specified screen with the given parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x6D"
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "zAlign"
+      },
+      "Scrl_y": {
+        "Type": "SHORT",
+        "Description": "Scroll Y"
+      }
+    }
+  },
+  "6E": {
+    "Opcode Name": "Parts_set",
+    "Opcode Number": "6E",
+    "Opcode Length": "06 Bytes",
+    "Opcode Description": "This bytecode sets the specified parts parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x6E"
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "zAlign"
+      },
+      "Id": {
+        "Type": "CHAR",
+        "Description": "Id"
+      },
+      "Type": {
+        "Type": "CHAR",
+        "Description": "Type"
+      },
+      "Value": {
+        "Type": "SHORT",
+        "Description": "Value"
+      }
+    }
+  },
+  "6F": {
+    "Opcode Name": "Movie_on",
+    "Opcode Number": "6F",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This bytecode plays the specified movie.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x6F"
+      },
+      "MovieId": {
+        "Type": "UCHAR",
+        "Description": "ID of the movie"
+      }
+    }
+  },
+  "70": {
+    "Opcode Name": "Splc_ret",
+    "Opcode Number": "70",
+    "Opcode Length": "01 Bytes",
+    "Opcode Description": "This bytecode returns from the specified splc function.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x70"
+      }
+    }
+  },
+  "71": {
+    "Opcode Name": "Splc_sce",
+    "Opcode Number": "71",
+    "Opcode Length": "01 Bytes",
+    "Opcode Description": "This bytecode sets the specified splc parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x71"
+      }
+    }
+  },
+  "72": {
+    "Opcode Name": "Super_on",
+    "Opcode Number": "72",
+    "Opcode Length": "16 Bytes",
+    "Opcode Description": "This bytecode turns on the specified super with the given parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x72"
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "zAlign"
+      },
+      "data0": {
+        "Type": "UCHAR",
+        "Description": "data0"
+      },
+      "data1": {
+        "Type": "UCHAR",
+        "Description": "data1"
+      },
+      "data2": {
+        "Type": "SHORT",
+        "Description": "data2"
+      },
+      "data3": {
+        "Type": "SHORT",
+        "Description": "data3"
+      },
+      "data4": {
+        "Type": "SHORT",
+        "Description": "data4"
+      },
+      "data5": {
+        "Type": "SHORT",
+        "Description": "data5"
+      },
+      "data6": {
+        "Type": "SHORT",
+        "Description": "data6"
+      },
+      "data7": {
+        "Type": "SHORT",
+        "Description": "data7"
+      }
+    }
+  },
+  "73": {
+    "Opcode Name": "Mirror_set",
+    "Opcode Number": "73",
+    "Opcode Length": "08 Bytes",
+    "Opcode Description": "This bytecode sets the specified mirror position parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x73"
+      },
+      "Flag": {
+        "Type": "UCHAR",
+        "Description": "Flag"
+      },
+      "Position": {
+        "Type": "USHORT",
+        "Description": "Position"
+      },
+      "Min": {
+        "Type": "USHORT",
+        "Description": "Min"
+      },
+      "Max": {
+        "Type": "USHORT",
+        "Description": "Max"
+      }
+    }
+  },
+  "74": {
+    "Opcode Name": "Sce_fade_adjust",
+    "Opcode Number": "74",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This bytecode adjusts the specified fade parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x57"
+      },
+      "FadeType": {
+        "Type": "UCHAR",
+        "Description": "Type of fade to adjust"
+      },
+      "Param1": {
+        "Type": "USHORT",
+        "Description": "Adjustment parameter"
+      }
+    }
+  },
+  "75": {
+    "Opcode Name": "Sce_espr3d_on2",
+    "Opcode Number": "75",
+    "Opcode Length": "22 Bytes",
+    "Opcode Description": "This bytecode turns on the specified 3D espr with the given parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x75"
+      },
+      "dir_y_id2": {
+        "Type": "UCHAR",
+        "Description": "dir_y_id2"
+      },
+      "bit": {
+        "Type": "USHORT",
+        "Description": "bit"
+      },
+      "data4": {
+        "Type": "USHORT",
+        "Description": "data4"
+      },
+      "data6": {
+        "Type": "USHORT",
+        "Description": "data6"
+      },
+      "data8": {
+        "Type": "USHORT",
+        "Description": "data8"
+      },
+      "dataA": {
+        "Type": "USHORT",
+        "Description": "dataA"
+      },
+      "dataC": {
+        "Type": "USHORT",
+        "Description": "dataC"
+      },
+      "dataE": {
+        "Type": "USHORT",
+        "Description": "dataE"
+      },
+      "data10": {
+        "Type": "USHORT",
+        "Description": "data10"
+      },
+      "data12": {
+        "Type": "USHORT",
+        "Description": "data12"
+      },
+      "data14": {
+        "Type": "USHORT",
+        "Description": "data14"
+      }
+    }
+  },
+  "76": {
+    "Opcode Name": "Sce_Item_get",
+    "Opcode Number": "76",
+    "Opcode Length": "03 Bytes",
+    "Opcode Description": "This bytecode gets the specified item with the given quantity.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x76"
+      },
+      "Id": {
+        "Type": "UCHAR",
+        "Description": "Id"
+      },
+      "Num": {
+        "Type": "UCHAR",
+        "Description": "Number of items"
+      }
+    }
+  },
+  "77": {
+    "Opcode Name": "Sce_line_start",
+    "Opcode Number": "77",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This bytecode starts the specified line with the given parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x77"
+      },
+      "Id": {
+        "Type": "UCHAR",
+        "Description": "Id"
+      },
+      "Value": {
+        "Type": "USHORT",
+        "Description": "Value"
+      }
+    }
+  },
+  "78": {
+    "Opcode Name": "Sce_line_main",
+    "Opcode Number": "78",
+    "Opcode Length": "06 Bytes",
+    "Opcode Description": "This bytecode sets the specified line parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x78"
+      },
+      "Id": {
+        "Type": "UCHAR",
+        "Description": "Id"
+      },
+      "Data0": {
+        "Type": "SHORT",
+        "Description": "Data0"
+      },
+      "Data1": {
+        "Type": "SHORT",
+        "Description": "Data1"
+      }
+    }
+  },
+  "79": {
+    "Opcode Name": "Sce_line_end",
+    "Opcode Number": "79",
+    "Opcode Length": "01 Bytes",
+    "Opcode Description": "This bytecode ends the specified line.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x79"
+      }
+    }
+  },
+  "7A": {
+    "Opcode Name": "Sce_parts_bomb",
+    "Opcode Number": "7A",
+    "Opcode Length": "16 Bytes",
+    "Opcode Description": "This bytecode bombs the specified parts with the given parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x7A"
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "zAlign"
+      },
+      "data2": {
+        "Type": "UCHAR",
+        "Description": "data2"
+      },
+      "data3": {
+        "Type": "UCHAR",
+        "Description": "data3"
+      },
+      "data4": {
+        "Type": "UCHAR",
+        "Description": "data4"
+      },
+      "data5": {
+        "Type": "UCHAR",
+        "Description": "data5"
+      },
+      "data6": {
+        "Type": "SHORT",
+        "Description": "data6"
+      },
+      "data8": {
+        "Type": "SHORT",
+        "Description": "data8"
+      },
+      "dataA": {
+        "Type": "SHORT",
+        "Description": "dataA"
+      },
+      "dataC": {
+        "Type": "SHORT",
+        "Description": "dataC"
+      },
+      "dataE": {
+        "Type": "SHORT",
+        "Description": "dataE"
+      }
+    }
+  },
+  "7B": {
+    "Opcode Name": "Sce_parts_down",
+    "Opcode Number": "7B",
+    "Opcode Length": "16 Bytes",
+    "Opcode Description": "This bytecode moves down the specified parts with the given parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x7B"
+      },
+      "Id": {
+        "Type": "UCHAR",
+        "Description": "Id"
+      },
+      "X": {
+        "Type": "SHORT",
+        "Description": "X"
+      },
+      "Y": {
+        "Type": "SHORT",
+        "Description": "Y"
+      },
+      "Z": {
+        "Type": "SHORT",
+        "Description": "Z"
+      },
+      "cDirZ": {
+        "Type": "SHORT",
+        "Description": "cDirZ"
+      },
+      "DirX": {
+        "Type": "SHORT",
+        "Description": "DirX"
+      },
+      "DirY": {
+        "Type": "SHORT",
+        "Description": "DirY"
+      },
+      "DirZ": {
+        "Type": "SHORT",
+        "Description": "DirZ"
+      }
+    }
+  },
+  "7C": {
+    "Opcode Name": "Light_color_set",
+    "Opcode Number": "7C",
+    "Opcode Length": "06 Bytes",
+    "Opcode Description": "This bytecode sets the specified light color parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x7C"
+      },
+      "Index": {
+        "Type": "UCHAR",
+        "Description": "Index"
+      },
+      "R": {
+        "Type": "UCHAR",
+        "Description": "Red value"
+      },
+      "G": {
+        "Type": "UCHAR",
+        "Description": "Green value"
+      },
+      "B": {
+        "Type": "UCHAR",
+        "Description": "Blue value"
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "zAlign"
+      }
+    }
+  },
+  "7D": {
+    "Opcode Name": "Light_pos_set2",
+    "Opcode Number": "7D",
+    "Opcode Length": "06 Bytes",
+    "Opcode Description": "This bytecode sets the specified light position parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x7D"
+      },
+      "nCut": {
+        "Type": "UCHAR",
+        "Description": "nCut"
+      },
+      "Index": {
+        "Type": "UCHAR",
+        "Description": "Index"
+      },
+      "XYZ": {
+        "Type": "UCHAR",
+        "Description": "XYZ"
+      },
+      "Position": {
+        "Type": "SHORT",
+        "Description": "Position"
+      }
+    }
+  },
+  "7E": {
+    "Opcode Name": "Light_kido_set2",
+    "Opcode Number": "7E",
+    "Opcode Length": "06 Bytes",
+    "Opcode Description": "This bytecode sets the specified light intensity and color parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x7E"
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "zAlign"
+      },
+      "nCut": {
+        "Type": "UCHAR",
+        "Description": "nCut"
+      },
+      "Index": {
+        "Type": "UCHAR",
+        "Description": "Index"
+      },
+      "Luminosity": {
+        "Type": "USHORT",
+        "Description": "Luminosity"
+      }
+    }
+  },
+  "7F": {
+    "Opcode Name": "Light_color_set2",
+    "Opcode Number": "7F",
+    "Opcode Length": "06 Bytes",
+    "Opcode Description": "This bytecode sets the specified light color parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x7F"
+      },
+      "nCut": {
+        "Type": "UCHAR",
+        "Description": "nCut"
+      },
+      "Index": {
+        "Type": "UCHAR",
+        "Description": "Index"
+      },
+      "R": {
+        "Type": "UCHAR",
+        "Description": "Red value"
+      },
+      "G": {
+        "Type": "UCHAR",
+        "Description": "Green value"
+      },
+      "B": {
+        "Type": "UCHAR",
+        "Description": "Blue value"
+      }
+    }
+  },
+  "80": {
+    "Opcode Name": "Se_vol",
+    "Opcode Number": "80",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This bytecode sets the specified sound effect volume and pan parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x80"
+      },
+      "Volume": {
+        "Type": "UCHAR",
+        "Description": "Volume level"
+      }
+    }
+  },
+  "81": {
+    "Opcode Name": "Keep_Item_ck2",
+    "Opcode Number": "81",
+    "Opcode Length": "03 Bytes",
+    "Opcode Description": "This bytecode checks the specified item parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x81"
+      },
+      "ItemId": {
+        "Type": "UCHAR",
+        "Description": "ID of the item to check"
+      },
+      "Quantity": {
+        "Type": "UCHAR",
+        "Description": "Quantity of the item to check"
+      }
+    }
+  },
+  "82": {
+    "Opcode Name": "Sce_espr_task",
+    "Opcode Number": "82",
+    "Opcode Length": "03 Bytes",
+    "Opcode Description": "This bytecode sets the specified espr task parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x82"
+      },
+      "WorkKind": {
+        "Type": "CHAR",
+        "Description": "WorkKind"
+      },
+      "WorkNo": {
+        "Type": "CHAR",
+        "Description": "WorkNo"
+      }
+    }
+  },
+  "83": {
+    "Opcode Name": "Plc_heal",
+    "Opcode Number": "83",
+    "Opcode Length": "01 Bytes",
+    "Opcode Description": "This bytecode heals the specified plc function.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x83"
+      }
+    }
+  },
+  "84": {
+    "Opcode Name": "St_map_hint",
+    "Opcode Number": "84",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This bytecode sets the specified map hint parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x84"
+      },
+      "DrModeTag": {
+        "Type": "UCHAR",
+        "Description": "DrModeTag"
+      }
+    }
+  },
+  "85": {
+    "Opcode Name": "Sce_em_pos_ck",
+    "Opcode Number": "85",
+    "Opcode Length": "06 Bytes",
+    "Opcode Description": "This bytecode checks the specified enemy position parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x85"
+      },
+      "Id": {
+        "Type": "UCHAR",
+        "Description": "Id"
+      },
+      "data1": {
+        "Type": "UCHAR",
+        "Description": "data1"
+      },
+      "Att": {
+        "Type": "UCHAR",
+        "Description": "Att"
+      },
+      "Flg": {
+        "Type": "USHORT",
+        "Description": "Flag"
+      }
+    }
+  },
+  "86": {
+    "Opcode Name": "Poison_ck",
+    "Opcode Number": "86",
+    "Opcode Length": "01 Bytes",
+    "Opcode Description": "This bytecode checks the specified poison parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x86"
+      }
+    }
+  },
+  "87": {
+    "Opcode Name": "Poison_clr",
+    "Opcode Number": "87",
+    "Opcode Length": "01 Bytes",
+    "Opcode Description": "This bytecode clears the specified poison parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x87"
+      }
+    }
+  },
+  "88": {
+    "Opcode Name": "Sce_Item_lost2",
+    "Opcode Number": "88",
+    "Opcode Length": "03 Bytes",
+    "Opcode Description": "This bytecode removes the specified item from the inventory.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x88"
+      },
+      "ItemId": {
+        "Type": "UCHAR",
+        "Description": "ID of the item"
+      },
+      "Quantity": {
+        "Type": "UCHAR",
+        "Description": "Quantity of the item"
+      }
+    }
+  },
+  "89": {
+    "Opcode Name": "Evt_next2",
+    "Opcode Number": "89",
+    "Opcode Length": "01 Bytes",
+    "Opcode Description": "This bytecode moves to the next event in the sequence.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x89"
+      }
+    }
+  },
+  "8A": {
+    "Opcode Name": "Vib_set0",
+    "Opcode Number": "8A",
+    "Opcode Length": "06 Bytes",
+    "Opcode Description": "This bytecode sets the specified vibration parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x8A"
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "zAlign"
+      },
+      "data0": {
+        "Type": "USHORT",
+        "Description": "data0"
+      },
+      "data1": {
+        "Type": "USHORT",
+        "Description": "data1"
+      }
+    }
+  },
+  "8B": {
+    "Opcode Name": "Vib_set1",
+    "Opcode Number": "8B",
+    "Opcode Length": "06 Bytes",
+    "Opcode Description": "This bytecode sets the specified vibration parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x8B"
+      },
+      "Id": {
+        "Type": "UCHAR",
+        "Description": "Vibration ID"
+      },
+      "Value1": {
+        "Type": "USHORT",
+        "Description": "Vibration Value 1"
+      },
+      "Value2": {
+        "Type": "USHORT",
+        "Description": "Vibration Value 2"
+      }
+    }
+  },
+  "8C": {
+    "Opcode Name": "Vib_fade_set",
+    "Opcode Number": "8C",
+    "Opcode Length": "08 Bytes",
+    "Opcode Description": "This bytecode sets the specified vibration fade parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x8C"
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "zAlign"
+      },
+      "data0": {
+        "Type": "UCHAR",
+        "Description": "data0"
+      },
+      "data1": {
+        "Type": "UCHAR",
+        "Description": "data1"
+      },
+      "data2": {
+        "Type": "USHORT",
+        "Description": "data2"
+      },
+      "data3": {
+        "Type": "USHORT",
+        "Description": "data3"
+      }
+    }
+  },
+  "8D": {
+    "Opcode Name": "Item_aot_set2",
+    "Opcode Number": "8D",
+    "Opcode Length": "24 Bytes",
+    "Opcode Description": "This bytecode sets the specified item AOT parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x8D"
+      },
+      "Aot": {
+        "Type": "UCHAR",
+        "Description": "Id"
+      },
+      "SCE": {
+        "Type": "UCHAR",
+        "Description": "Type (0x02)"
+      },
+      "SAT": {
+        "Type": "UCHAR",
+        "Description": "Atari"
+      },
+      "nFloor": {
+        "Type": "UCHAR",
+        "Description": "Height"
+      },
+      "Super": {
+        "Type": "UCHAR",
+        "Description": "Matrix"
+      },
+      "X": {
+        "Type": "SHORT",
+        "Description": "Position X"
+      },
+      "Z": {
+        "Type": "SHORT",
+        "Description": "Position Z"
+      },
+      "W": {
+        "Type": "USHORT",
+        "Description": "Size Width"
+      },
+      "D": {
+        "Type": "USHORT",
+        "Description": "Size Depth"
+      },
+      "iItem": {
+        "Type": "USHORT",
+        "Description": "Item Id"
+      },
+      "nItem": {
+        "Type": "USHORT",
+        "Description": "Item Amount"
+      },
+      "Flag": {
+        "Type": "USHORT",
+        "Description": "Flag"
+      },
+      "MD1": {
+        "Type": "UCHAR",
+        "Description": "MD1 File Id - 0xFF if no MD1"
+      },
+      "Action": {
+        "Type": "UCHAR",
+        "Description": "Predefined action to obtain"
+      },
+      "data16": {
+        "Type": "UCHAR",
+        "Description": "data16"
+      },
+      "data17": {
+        "Type": "UCHAR",
+        "Description": "data17"
+      }
+    }
+  },
+  "8E": {
+    "Opcode Name": "Sce_em_set2",
+    "Opcode Number": "8E",
+    "Opcode Length": "24 Bytes",
+    "Opcode Description": "This bytecode sets the specified enemy parameters.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x8E"
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "Alignment byte, always zero"
+      },
+      "Aot": {
+        "Type": "UCHAR",
+        "Description": "Aot"
+      },
+      "EMD": {
+        "Type": "UCHAR",
+        "Description": "EMD"
+      },
+      "Type": {
+        "Type": "USHORT",
+        "Description": "Type"
+      },
+      "nFloor": {
+        "Type": "UCHAR",
+        "Description": "nFloor"
+      },
+      "SeType": {
+        "Type": "UCHAR",
+        "Description": "SeType"
+      },
+      "ModelType": {
+        "Type": "UCHAR",
+        "Description": "ModelType"
+      },
+      "EmSetFlg": {
+        "Type": "UCHAR",
+        "Description": "EmSetFlg"
+      },
+      "X": {
+        "Type": "SHORT",
+        "Description": "Position X"
+      },
+      "Y": {
+        "Type": "SHORT",
+        "Description": "Position Y"
+      },
+      "Z": {
+        "Type": "SHORT",
+        "Description": "Position Z"
+      },
+      "DirY": {
+        "Type": "SHORT",
+        "Description": "Rotation Y"
+      },
+      "Timer0": {
+        "Type": "USHORT",
+        "Description": "Timer0"
+      },
+      "Timer1": {
+        "Type": "USHORT",
+        "Description": "Timer1"
+      },
+      "data16": {
+        "Type": "USHORT",
+        "Description": "data16"
+      }
+    }
+  }
+}

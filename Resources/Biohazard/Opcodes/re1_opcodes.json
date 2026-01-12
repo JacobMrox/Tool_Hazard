@@ -1,0 +1,3230 @@
+{
+  "00": {
+    "Opcode Name": "Nop",
+    "Opcode Number": "00",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "2-byte Nop.",
+    "Bytes": {
+        "Opcode": {
+            "Type": "UCHAR",
+            "Description": "0x00"
+        },
+        "Nop": {
+            "Type": "UCHAR",
+            "Description": "Always"
+        }
+    }
+  },
+  "01": {
+    "Opcode Name": "If",
+    "Opcode Number": "01",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "Start of If block. Byte 2 = length.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x01"
+      },
+      "Size": {
+        "Type": "UCHAR",
+        "Description": "Length of block"
+      }
+    }
+  },
+  "02": {
+    "Opcode Name": "Else",
+    "Opcode Number": "02",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "Start of Else block. Byte 2 = length.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x02"
+      },
+      "Size": {
+        "Type": "UCHAR",
+        "Description": "Length of block"
+      }
+    }
+  },
+  "03": {
+    "Opcode Name": "End If",
+    "Opcode Number": "03",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "Marks the end of an If/ElseIf/Else block.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x03"
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "Always Zero (Alignment byte)"
+      }
+    }
+  },
+  "04": {
+    "Opcode Name": "Ck / Workset",
+    "Opcode Number": "04",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "Selects Player or Entity before performing an action.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x04"
+      },
+      "Data1": {
+        "Type": "UCHAR",
+        "Description": "Typically FF"
+      },
+      "GoSub": {
+        "Type": "UCHAR",
+        "Description": "Opcode for GoSub (0x18)"
+      },
+      "ScdId": {
+        "Type": "UCHAR",
+        "Description": "Sub Script ID to jump to"
+      }
+    }
+  },
+  "05": {
+    "Opcode Name": "Set",
+    "Opcode Number": "05",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "Sets the specified system flag and bit ID to the given On/Off state.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x05"
+      },
+      "Flag": {
+        "Type": "UCHAR",
+        "Description": "System flag to set"
+      },
+      "Id": {
+        "Type": "UCHAR",
+        "Description": "Bit ID to set"
+      },
+      "OnOff": {
+        "Type": "UCHAR",
+        "Description": "On/Off state to set"
+      }
+    }
+  },
+  "06": {
+    "Opcode Name": "Cmp",
+    "Opcode Number": "06",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "Compare a value.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x06"
+      },
+      "LengthPlus3": {
+        "Type": "UCHAR",
+        "Description": "Length + 3"
+      },
+      "Length": {
+        "Type": "USHORT",
+        "Description": "Length of the comparison data"
+      }
+    }
+  },
+  "07": {
+    "Opcode Name": "Evt_Next",
+    "Opcode Number": "07",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "Byte 2 is length.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x07"
+      },
+      "Length": {
+        "Type": "UCHAR",
+        "Description": "Length parameter"
+      }
+    }
+  },
+  "08": {
+    "Opcode Name": "Character_Chg",
+    "Opcode Number": "08",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "Change character.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x08"
+      },
+      "Data1": {
+        "Type": "UCHAR",
+        "Description": "Typically 09"
+      },
+      "EMD": {
+        "Type": "UCHAR",
+        "Description": "EMD/Enemy to change to on door load."
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "Alignment byte"
+      }
+    }
+  },
+  "09": {
+    "Opcode Name": "Cut_chg",
+    "Opcode Number": "09",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "Change to camera number specified in byte 2.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x09"
+      },
+      "Cut": {
+        "Type": "UCHAR",
+        "Description": "Camera to change to"
+      }
+    }
+  },
+  "0A": {
+    "Opcode Name": "CUT_SET",
+    "Opcode Number": "0A",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x0A"
+      },
+      "Unknown": {
+        "Type": "UCHAR",
+        "Description": "Unknown parameter"
+      }
+    }
+  },
+  "0B": {
+    "Opcode Name": "Message_On",
+    "Opcode Number": "0B",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "Play a message.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x0B"
+      },
+      "MessageID": {
+        "Type": "UCHAR",
+        "Description": "Message ID to display"
+      },
+      "Type": {
+        "Type": "UCHAR",
+        "Description": "80 = All Frozen, 81 = Unfrozen"
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "Always 00"
+      }
+    }
+  },
+  "0C": {
+    "Opcode Name": "Door_AOT_Set",
+    "Opcode Number": "0C",
+    "Opcode Length": "26 Bytes",
+    "Opcode Description": "Creates a door to another room.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x0C"
+      },
+      "DoorID": {
+        "Type": "UCHAR",
+        "Description": "Door identifier"
+      },
+      "XX": {
+        "Type": "USHORT",
+        "Description": "X-coordinate"
+      },
+      "YY": {
+        "Type": "USHORT",
+        "Description": "Y-coordinate"
+      },
+      "HX": {
+        "Type": "USHORT",
+        "Description": "Horizontal size"
+      },
+      "HY": {
+        "Type": "USHORT",
+        "Description": "Vertical size"
+      },
+      "DoorOpen": {
+        "Type": "UCHAR",
+        "Description": "Door open state"
+      },
+      "DoorSound": {
+        "Type": "UCHAR",
+        "Description": "Door sound ID"
+      },
+      "DoorType": {
+        "Type": "UCHAR",
+        "Description": "Type of door"
+      },
+      "DoorKnob": {
+        "Type": "UCHAR",
+        "Description": "Door knob type"
+      },
+      "LockFlag": {
+        "Type": "UCHAR",
+        "Description": "Lock status flag"
+      },
+      "NextRoom": {
+        "Type": "UCHAR",
+        "Description": "ID of the next room"
+      },
+      "NextRoomPlayerXX": {
+        "Type": "USHORT",
+        "Description": "Player X-coordinate in next room"
+      },
+      "NextRoomPlayerZZ": {
+        "Type": "USHORT",
+        "Description": "Player Z-coordinate in next room"
+      },
+      "NextRoomPlayerYY": {
+        "Type": "USHORT",
+        "Description": "Player Y-coordinate in next room"
+      },
+      "NextRoomPlayerRR": {
+        "Type": "USHORT",
+        "Description": "Player rotation in next room"
+      },
+      "Key": {
+        "Type": "UCHAR",
+        "Description": "Key required to unlock"
+      },
+      "EnterType": {
+        "Type": "UCHAR",
+        "Description": "Type of entrance animation"
+      }
+    }
+  },
+  "0D": {
+    "Opcode Name": "AOT_Set",
+    "Opcode Number": "0D",
+    "Opcode Length": "18 Bytes",
+    "Opcode Description": "Create a zone for various uses (Message, Typewriter, Itembox, etc.).",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x0D"
+      },
+      "ID": {
+        "Type": "UCHAR",
+        "Description": "Zone identifier"
+      },
+      "XX": {
+        "Type": "USHORT",
+        "Description": "X-coordinate"
+      },
+      "YY": {
+        "Type": "USHORT",
+        "Description": "Y-coordinate"
+      },
+      "HX": {
+        "Type": "USHORT",
+        "Description": "Horizontal size"
+      },
+      "HY": {
+        "Type": "USHORT",
+        "Description": "Vertical size"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Always 02?"
+      },
+      "Type": {
+        "Type": "UCHAR",
+        "Description": "Type of zone"
+      },
+      "TriggerBy": {
+        "Type": "UCHAR",
+        "Description": "Trigger method"
+      },
+      "Unknown2": {
+        "Type": "UCHAR",
+        "Description": "Unknown parameter"
+      },
+      "Unknown3": {
+        "Type": "UCHAR",
+        "Description": "Unknown parameter"
+      },
+      "Unknown4": {
+        "Type": "UCHAR",
+        "Description": "Unknown parameter"
+      },
+      "Unknown5": {
+        "Type": "UCHAR",
+        "Description": "Unknown parameter"
+      },
+      "Unknown6": {
+        "Type": "UCHAR",
+        "Description": "Unknown parameter"
+      }
+    }
+  },
+  "0E": {
+    "Opcode Name": "Nop",
+    "Opcode Number": "0E",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "2-byte Nop.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x0E"
+      },
+      "Nop": {
+        "Type": "UCHAR",
+        "Description": "Always 00"
+      }
+    }
+  },
+  "0F": {
+    "Opcode Name": "?",
+    "Opcode Number": "0F",
+    "Opcode Length": "08 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x0F"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown2": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown3": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown4": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown5": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown6": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown7": {
+        "Type": "UCHAR",
+        "Description": ""
+      }
+    }
+  },
+  "10": {
+    "Opcode Name": "OBJ10_TEST",
+    "Opcode Number": "10",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x10"
+      },
+      "Unknown": {
+        "Type": "UCHAR",
+        "Description": ""
+      }
+    }
+  },
+  "11": {
+    "Opcode Name": "OBJ11_TEST",
+    "Opcode Number": "11",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x11"
+      },
+      "Unknown": {
+        "Type": "UCHAR",
+        "Description": ""
+      }
+    }
+  },
+  "12": {
+    "Opcode Name": "AOT_Reset_Type",
+    "Opcode Number": "12",
+    "Opcode Length": "10 Bytes",
+    "Opcode Description": "Reset an AOT.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x12"
+      },
+      "ID": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown2": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown3": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown4": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown5": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown6": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown7": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown8": {
+        "Type": "UCHAR",
+        "Description": ""
+      }
+    }
+  },
+  "13": {
+    "Opcode Name": "AOT_Reset",
+    "Opcode Number": "13",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "Reset an AOT.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x13"
+      },
+      "ID": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Type": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown": {
+        "Type": "UCHAR",
+        "Description": ""
+      }
+    }
+  },
+  "14": {
+    "Opcode Name": "Evt_Exec",
+    "Opcode Number": "14",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "Run Sub## in byte 4 in conjunction with current sub.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x14"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Always 00"
+      },
+      "Unknown2": {
+        "Type": "UCHAR",
+        "Description": "Always 09"
+      },
+      "Sub": {
+        "Type": "UCHAR",
+        "Description": "Go to this SCD"
+      }
+    }
+  },
+  "15": {
+    "Opcode Name": "Music_Play",
+    "Opcode Number": "15",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "Play track specified in byte 2.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x15"
+      },
+      "TrackId": {
+        "Type": "UCHAR",
+        "Description": "ID of the music track"
+      }
+    }
+  },
+  "16": {
+    "Opcode Name": "Music_Stop",
+    "Opcode Number": "16",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "Stop the music in the current room.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x16"
+      },
+      "zAlign": {
+        "Type": "UCHAR",
+        "Description": "Always Zero (Alignment byte)"
+      }
+    }
+  },
+  "17": {
+    "Opcode Name": "PlaySound",
+    "Opcode Number": "17",
+    "Opcode Length": "10 Bytes",
+    "Opcode Description": "Play a sound effect.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x17"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "SoundID": {
+        "Type": "USHORT",
+        "Description": "ID of the sound effect"
+      },
+      "Unknown2": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Volume": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown3": {
+        "Type": "USHORT",
+        "Description": ""
+      },
+      "Unknown4": {
+        "Type": "USHORT",
+        "Description": ""
+      },
+      "Unknown5": {
+        "Type": "UCHAR",
+        "Description": ""
+      }
+    }
+  },
+  "18": {
+    "Opcode Name": "Item_AOT_Set",
+    "Opcode Number": "18",
+    "Opcode Length": "26 Bytes",
+    "Opcode Description": "Place item & model with function at location with specific flags.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x18"
+      },
+      "ID": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "XX": {
+        "Type": "USHORT",
+        "Description": ""
+      },
+      "ZZ": {
+        "Type": "USHORT",
+        "Description": ""
+      },
+      "PR": {
+        "Type": "ULONG",
+        "Description": ""
+      },
+      "ItemType": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Quantity": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Model3D": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Always 0xFF"
+      },
+      "XXModel": {
+        "Type": "USHORT",
+        "Description": ""
+      },
+      "YYModel": {
+        "Type": "USHORT",
+        "Description": ""
+      },
+      "ZZModel": {
+        "Type": "USHORT",
+        "Description": ""
+      },
+      "RRModel": {
+        "Type": "USHORT",
+        "Description": ""
+      },
+      "ItemFlag": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "PickupType": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "PickupAnimation": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Shining": {
+        "Type": "UCHAR",
+        "Description": ""
+      }
+    }
+  },
+  "19": {
+    "Opcode Name": "OBJ19_SET",
+    "Opcode Number": "19",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x19"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown2": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown3": {
+        "Type": "UCHAR",
+        "Description": ""
+      }
+    }
+  },
+  "1A": {
+    "Opcode Name": "Item_Ck",
+    "Opcode Number": "1A",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "Check if player has item in inventory.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x1A"
+      },
+      "ItemId": {
+        "Type": "UCHAR",
+        "Description": "ID of the item to check"
+      }
+    }
+  },
+  "1B": {
+    "Opcode Name": "Sce_em_set",
+    "Opcode Number": "1B",
+    "Opcode Length": "22 Bytes",
+    "Opcode Description": "Place entity in state at location with flags.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x1B"
+      },
+      "EMD": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Pose": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "EnemyFlag": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "AnimationFrame": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown2": {
+        "Type": "USHORT",
+        "Description": ""
+      },
+      "Rotate1": {
+        "Type": "USHORT",
+        "Description": ""
+      },
+      "Rotate2": {
+        "Type": "USHORT",
+        "Description": ""
+      },
+      "XX": {
+        "Type": "USHORT",
+        "Description": ""
+      },
+      "YY": {
+        "Type": "USHORT",
+        "Description": ""
+      },
+      "ZZ": {
+        "Type": "USHORT",
+        "Description": ""
+      },
+      "EnemyID": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Animations": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "SoundBank": {
+        "Type": "UCHAR",
+        "Description": ""
+      }
+    }
+  },
+  "1C": {
+    "Opcode Name": "?",
+    "Opcode Number": "1C",
+    "Opcode Length": "06 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x1C"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown2": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown3": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown4": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown5": {
+        "Type": "UCHAR",
+        "Description": ""
+      }
+    }
+  },
+  "1D": {
+    "Opcode Name": "?",
+    "Opcode Number": "1D",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x1D"
+      },
+      "Unknown": {
+        "Type": "UCHAR",
+        "Description": ""
+      }
+    }
+  },
+  "1E": {
+    "Opcode Name": "Play_Voice",
+    "Opcode Number": "1E",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "Play voice file.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x1E"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "VoiceId": {
+        "Type": "UCHAR",
+        "Description": "ID of the voice file"
+      },
+      "Unknown2": {
+        "Type": "UCHAR",
+        "Description": ""
+      }
+    }
+  },
+  "1F": {
+    "Opcode Name": "Object_Set",
+    "Opcode Number": "1F",
+    "Opcode Length": "28 Bytes",
+    "Opcode Description": "Place 3D object at specified location.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x1F"
+      },
+      "ObjectID": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown1": {
+        "Type": "USHORT",
+        "Description": ""
+      },
+      "XX": {
+        "Type": "USHORT",
+        "Description": "X-coordinate"
+      },
+      "ZZ": {
+        "Type": "USHORT",
+        "Description": "Z-coordinate"
+      },
+      "YY": {
+        "Type": "USHORT",
+        "Description": "Y-coordinate"
+      },
+      "RR": {
+        "Type": "USHORT",
+        "Description": "Rotation"
+      },
+      "Unknown2": {
+        "Type": "UCHAR",
+        "Description": ""
+      }
+    }
+  },
+  "20": {
+    "Opcode Name": "Dir_Set",
+    "Opcode Number": "20",
+    "Opcode Length": "14 Bytes",
+    "Opcode Description": "Move selected entity to location with specified rotation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x20"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Always 0x00"
+      },
+      "RotateX": {
+        "Type": "USHORT",
+        "Description": "Rotation around X-axis"
+      },
+      "RotateY": {
+        "Type": "USHORT",
+        "Description": "Rotation around Y-axis"
+      },
+      "RotateZ": {
+        "Type": "USHORT",
+        "Description": "Rotation around Z-axis"
+      },
+      "PosX": {
+        "Type": "USHORT",
+        "Description": "X-coordinate position"
+      },
+      "PosZ": {
+        "Type": "USHORT",
+        "Description": "Z-coordinate position"
+      },
+      "PosY": {
+        "Type": "USHORT",
+        "Description": "Y-coordinate position"
+      }
+    }
+  },
+  "21": {
+    "Opcode Name": "Pos_Set",
+    "Opcode Number": "21",
+    "Opcode Length": "14 Bytes",
+    "Opcode Description": "Immediately move selected entity to another location.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x21"
+      },
+      "EMD_ID": {
+        "Type": "UCHAR",
+        "Description": "Entity ID (Always 0x00 for player)"
+      },
+      "RotateX": {
+        "Type": "USHORT",
+        "Description": "Rotation around X-axis"
+      },
+      "RotateY": {
+        "Type": "USHORT",
+        "Description": "Rotation around Y-axis"
+      },
+      "RotateZ": {
+        "Type": "USHORT",
+        "Description": "Rotation around Z-axis"
+      },
+      "PosX": {
+        "Type": "USHORT",
+        "Description": "X-coordinate position"
+      },
+      "PosZ": {
+        "Type": "USHORT",
+        "Description": "Z-coordinate position"
+      },
+      "PosY": {
+        "Type": "USHORT",
+        "Description": "Y-coordinate position"
+      }
+    }
+  },
+  "22": {
+    "Opcode Name": "?",
+    "Opcode Number": "22",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x22"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Unknown parameter"
+      },
+      "Unknown2": {
+        "Type": "UCHAR",
+        "Description": "Unknown parameter"
+      },
+      "Unknown3": {
+        "Type": "UCHAR",
+        "Description": "Unknown parameter"
+      }
+    }
+  },
+  "23": {
+    "Opcode Name": "Cut_auto",
+    "Opcode Number": "23",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "Allows camera to switch automatically after a Cut_chg.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x23"
+      },
+      "Unknown": {
+        "Type": "UCHAR",
+        "Description": "Alignment or unknown parameter"
+      }
+    }
+  },
+  "24": {
+    "Opcode Name": "Aot_On",
+    "Opcode Number": "24",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "Activate an AOT (Area of Trigger) in the room.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x24"
+      },
+      "AotId": {
+        "Type": "UCHAR",
+        "Description": "AOT identifier to activate"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Possibly type or flags"
+      },
+      "Unknown2": {
+        "Type": "UCHAR",
+        "Description": "Unknown parameter"
+      }
+    }
+  },
+  "25": {
+    "Opcode Name": "Disable_Masks",
+    "Opcode Number": "25",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "Disables certain masks or overlays in the game.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x25"
+      },
+      "MaskId": {
+        "Type": "UCHAR",
+        "Description": "ID of the mask to disable"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Unknown parameter"
+      },
+      "Unknown2": {
+        "Type": "UCHAR",
+        "Description": "Unknown parameter"
+      }
+    }
+  },
+  "26": {
+    "Opcode Name": "N/A?",
+    "Opcode Number": "26",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "Not available or undefined opcode.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x26"
+      },
+      "Unknown": {
+        "Type": "UCHAR",
+        "Description": "Unknown parameter"
+      }
+    }
+  },
+  "27": {
+    "Opcode Name": "?",
+    "Opcode Number": "27",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x27"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Unknown parameter"
+      },
+      "Unknown2": {
+        "Type": "UCHAR",
+        "Description": "Unknown parameter"
+      },
+      "Unknown3": {
+        "Type": "UCHAR",
+        "Description": "Unknown parameter"
+      }
+    }
+  },
+  "28": {
+    "Opcode Name": "Add_Follower",
+    "Opcode Number": "28",
+    "Opcode Length": "Variable",
+    "Opcode Description": "Adds a follower to the player. Length can vary (4, 6, or 8 bytes).",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x28"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Possibly a flag or parameter"
+      },
+      "NPCID": {
+        "Type": "UCHAR",
+        "Description": "ID of the NPC to add as a follower"
+      },
+      "Unknown2": {
+        "Type": "UCHAR",
+        "Description": "Possibly mode or state"
+      }
+    }
+  },
+  "29": {
+    "Opcode Name": "Movie_On",
+    "Opcode Number": "29",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "Play a movie specified by the ID.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x29"
+      },
+      "MovieId": {
+        "Type": "UCHAR",
+        "Description": "ID of the movie to play"
+      }
+    }
+  },
+  "2A": {
+    "Opcode Name": "Effect",
+    "Opcode Number": "2A",
+    "Opcode Length": "12 Bytes",
+    "Opcode Description": "Play a special effect in the game.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x2A"
+      },
+      "EffectId": {
+        "Type": "UCHAR",
+        "Description": "ID of the effect"
+      },
+      "PosX": {
+        "Type": "USHORT",
+        "Description": "X-coordinate position"
+      },
+      "PosY": {
+        "Type": "USHORT",
+        "Description": "Y-coordinate position"
+      },
+      "PosZ": {
+        "Type": "USHORT",
+        "Description": "Z-coordinate position"
+      },
+      "Param1": {
+        "Type": "UCHAR",
+        "Description": "Additional parameter 1"
+      },
+      "Param2": {
+        "Type": "UCHAR",
+        "Description": "Additional parameter 2"
+      },
+      "Param3": {
+        "Type": "UCHAR",
+        "Description": "Additional parameter 3"
+      },
+      "Param4": {
+        "Type": "UCHAR",
+        "Description": "Additional parameter 4"
+      },
+      "Param5": {
+        "Type": "UCHAR",
+        "Description": "Additional parameter 5"
+      },
+      "Param6": {
+        "Type": "UCHAR",
+        "Description": "Additional parameter 6"
+      }
+    }
+  },
+  "2B": {
+    "Opcode Name": "?",
+    "Opcode Number": "2B",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x2B"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Possibly a command or flag"
+      },
+      "Unknown2": {
+        "Type": "USHORT",
+        "Description": "Unknown parameter"
+      }
+    }
+  },
+  "2C": {
+    "Opcode Name": "Remove_Item",
+    "Opcode Number": "2C",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "Remove an item from the player's inventory.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x2C"
+      },
+      "ItemId": {
+        "Type": "UCHAR",
+        "Description": "ID of the item to remove"
+      }
+    }
+  },
+  "2D": {
+    "Opcode Name": "?",
+    "Opcode Number": "2D",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x2D"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Unknown parameter"
+      },
+      "Unknown2": {
+        "Type": "USHORT",
+        "Description": "Unknown parameter"
+      }
+    }
+  },
+  "2E": {
+    "Opcode Name": "N/A?",
+    "Opcode Number": "2E",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "Not available or undefined opcode.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x2E"
+      },
+      "Unknown": {
+        "Type": "UCHAR",
+        "Description": "Unknown parameter"
+      }
+    }
+  },
+  "2F": {
+    "Opcode Name": "?",
+    "Opcode Number": "2F",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x2F"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Possibly a command or flag"
+      },
+      "Unknown2": {
+        "Type": "USHORT",
+        "Description": "Unknown parameter"
+      }
+    }
+  },
+  "30": {
+    "Opcode Name": "?",
+    "Opcode Number": "30",
+    "Opcode Length": "12 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x30"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown2": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown3": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown4": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown5": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown6": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown7": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown8": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown9": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown10": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown11": {
+        "Type": "UCHAR",
+        "Description": ""
+      }
+    }
+  },
+  "31": {
+    "Opcode Name": "?",
+    "Opcode Number": "31",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x31"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown2": {
+        "Type": "USHORT",
+        "Description": ""
+      }
+    }
+  },
+  "32": {
+    "Opcode Name": "?",
+    "Opcode Number": "32",
+    "Opcode Length": "06 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x32"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown2": {
+        "Type": "ULONG",
+        "Description": ""
+      }
+    }
+  },
+  "33": {
+    "Opcode Name": "?",
+    "Opcode Number": "33",
+    "Opcode Length": "08 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x33"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown2": {
+        "Type": "ULONG",
+        "Description": ""
+      },
+      "Unknown3": {
+        "Type": "USHORT",
+        "Description": ""
+      }
+    }
+  },
+  "34": {
+    "Opcode Name": "?",
+    "Opcode Number": "34",
+    "Opcode Length": "08 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x34"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown2": {
+        "Type": "ULONG",
+        "Description": ""
+      },
+      "Unknown3": {
+        "Type": "USHORT",
+        "Description": ""
+      }
+    }
+  },
+  "35": {
+    "Opcode Name": "?",
+    "Opcode Number": "35",
+    "Opcode Length": "08 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x35"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown2": {
+        "Type": "ULONG",
+        "Description": ""
+      },
+      "Unknown3": {
+        "Type": "USHORT",
+        "Description": ""
+      }
+    }
+  },
+  "36": {
+    "Opcode Name": "?",
+    "Opcode Number": "36",
+    "Opcode Length": "08 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x36"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown2": {
+        "Type": "ULONG",
+        "Description": ""
+      },
+      "Unknown3": {
+        "Type": "USHORT",
+        "Description": ""
+      }
+    }
+  },
+  "37": {
+    "Opcode Name": "?",
+    "Opcode Number": "37",
+    "Opcode Length": "06 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x37"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown2": {
+        "Type": "ULONG",
+        "Description": ""
+      }
+    }
+  },
+  "38": {
+    "Opcode Name": "?",
+    "Opcode Number": "38",
+    "Opcode Length": "06 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x38"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown2": {
+        "Type": "ULONG",
+        "Description": ""
+      }
+    }
+  },
+  "39": {
+    "Opcode Name": "?",
+    "Opcode Number": "39",
+    "Opcode Length": "06 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x39"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown2": {
+        "Type": "ULONG",
+        "Description": ""
+      }
+    }
+  },
+  "3A": {
+    "Opcode Name": "?",
+    "Opcode Number": "3A",
+    "Opcode Length": "06 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x3A"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown2": {
+        "Type": "ULONG",
+        "Description": ""
+      }
+    }
+  },
+  "3B": {
+    "Opcode Name": "?",
+    "Opcode Number": "3B",
+    "Opcode Length": "06 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x3B"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown2": {
+        "Type": "ULONG",
+        "Description": ""
+      }
+    }
+  },
+  "3C": {
+    "Opcode Name": "?",
+    "Opcode Number": "3C",
+    "Opcode Length": "10 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x3C"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown2": {
+        "Type": "ULONG",
+        "Description": ""
+      },
+      "Unknown3": {
+        "Type": "ULONG",
+        "Description": ""
+      }
+    }
+  },
+  "3D": {
+    "Opcode Name": "?",
+    "Opcode Number": "3D",
+    "Opcode Length": "10 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x3D"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown2": {
+        "Type": "ULONG",
+        "Description": ""
+      },
+      "Unknown3": {
+        "Type": "ULONG",
+        "Description": ""
+      }
+    }
+  },
+  "3E": {
+    "Opcode Name": "?",
+    "Opcode Number": "3E",
+    "Opcode Length": "06 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x3E"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown2": {
+        "Type": "ULONG",
+        "Description": ""
+      }
+    }
+  },
+  "3F": {
+    "Opcode Name": "?",
+    "Opcode Number": "3F",
+    "Opcode Length": "06 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x3F"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown2": {
+        "Type": "ULONG",
+        "Description": ""
+      }
+    }
+  },
+  "40": {
+    "Opcode Name": "?",
+    "Opcode Number": "40",
+    "Opcode Length": "16 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x40"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown2": {
+        "Type": "USHORT",
+        "Description": ""
+      },
+      "Unknown3": {
+        "Type": "USHORT",
+        "Description": ""
+      },
+      "Unknown4": {
+        "Type": "USHORT",
+        "Description": ""
+      },
+      "Unknown5": {
+        "Type": "USHORT",
+        "Description": ""
+      },
+      "Unknown6": {
+        "Type": "USHORT",
+        "Description": ""
+      },
+      "Unknown7": {
+        "Type": "USHORT",
+        "Description": ""
+      },
+      "Unknown8": {
+        "Type": "USHORT",
+        "Description": ""
+      },
+      "Unknown9": {
+        "Type": "USHORT",
+        "Description": ""
+      },
+      "Unknown10": {
+        "Type": "USHORT",
+        "Description": ""
+      }
+    }
+  },
+  "41": {
+    "Opcode Name": "?",
+    "Opcode Number": "41",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x41"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown2": {
+        "Type": "USHORT",
+        "Description": ""
+      }
+    }
+  },
+  "42": {
+    "Opcode Name": "?",
+    "Opcode Number": "42",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x42"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown2": {
+        "Type": "USHORT",
+        "Description": ""
+      }
+    }
+  },
+  "43": {
+    "Opcode Name": "?",
+    "Opcode Number": "43",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x43"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown2": {
+        "Type": "USHORT",
+        "Description": ""
+      }
+    }
+  },
+  "44": {
+    "Opcode Name": "?",
+    "Opcode Number": "44",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x44"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown2": {
+        "Type": "USHORT",
+        "Description": ""
+      }
+    }
+  },
+  "45": {
+    "Opcode Name": "?",
+    "Opcode Number": "45",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x45"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown2": {
+        "Type": "USHORT",
+        "Description": ""
+      }
+    }
+  },
+  "46": {
+    "Opcode Name": "?",
+    "Opcode Number": "46",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x46"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown2": {
+        "Type": "USHORT",
+        "Description": ""
+      }
+    }
+  },
+  "47": {
+    "Opcode Name": "?",
+    "Opcode Number": "47",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x47"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown2": {
+        "Type": "USHORT",
+        "Description": ""
+      }
+    }
+  },
+  "48": {
+    "Opcode Name": "?",
+    "Opcode Number": "48",
+    "Opcode Length": "06 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x48"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown2": {
+        "Type": "ULONG",
+        "Description": ""
+      }
+    }
+  },
+  "49": {
+    "Opcode Name": "?",
+    "Opcode Number": "49",
+    "Opcode Length": "06 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x49"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": ""
+      },
+      "Unknown2": {
+        "Type": "ULONG",
+        "Description": ""
+      }
+    }
+  },
+  "4A": {
+    "Opcode Name": "?",
+    "Opcode Number": "4A",
+    "Opcode Length": "Variable",
+    "Opcode Description": "Unknown operation with variable length.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x4A"
+      }
+    }
+  },
+  "4B": {
+    "Opcode Name": "?",
+    "Opcode Number": "4B",
+    "Opcode Length": "Variable",
+    "Opcode Description": "Unknown operation with variable length.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x4B"
+      }
+    }
+  },
+  "4C": {
+    "Opcode Name": "?",
+    "Opcode Number": "4C",
+    "Opcode Length": "Variable",
+    "Opcode Description": "Unknown operation with variable length.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x4C"
+      }
+    }
+  },
+  "4D": {
+    "Opcode Name": "?",
+    "Opcode Number": "4D",
+    "Opcode Length": "Variable",
+    "Opcode Description": "Unknown operation with variable length.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x4D"
+      }
+    }
+  },
+  "4E": {
+    "Opcode Name": "?",
+    "Opcode Number": "4E",
+    "Opcode Length": "Variable",
+    "Opcode Description": "Unknown operation with variable length.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x4E"
+      }
+    }
+  },
+  "4F": {
+    "Opcode Name": "?",
+    "Opcode Number": "4F",
+    "Opcode Length": "Variable",
+    "Opcode Description": "Unknown operation with variable length.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x4F"
+      }
+    }
+  },
+  "50": {
+    "Opcode Name": "?",
+    "Opcode Number": "50",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x50"
+      },
+      "Unknown": {
+        "Type": "UCHAR",
+        "Description": "Unknown parameter"
+      }
+    }
+  },
+  "51": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "51",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x51"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      },
+      "Unknown2": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      },
+      "Unknown3": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      }
+    }
+  },
+  "52": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "52",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x52"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      },
+      "Unknown2": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      },
+      "Unknown3": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      }
+    }
+  },
+  "53": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "53",
+    "Opcode Length": "06 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x53"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      },
+      "Unknown2": {
+        "Type": "ULONG",
+        "Description": "Unused"
+      }
+    }
+  },
+  "54": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "54",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x54"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      },
+      "Unknown2": {
+        "Type": "USHORT",
+        "Description": "Unused"
+      }
+    }
+  },
+  "55": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "55",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x55"
+      },
+      "Unknown": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      }
+    }
+  },
+  "56": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "56",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x56"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      },
+      "Unknown2": {
+        "Type": "USHORT",
+        "Description": "Unused"
+      }
+    }
+  },
+  "57": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "57",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x57"
+      },
+      "Unknown": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      }
+    }
+  },
+  "58": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "58",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x58"
+      },
+      "Unknown": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      }
+    }
+  },
+  "59": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "59",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x59"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      },
+      "Unknown2": {
+        "Type": "USHORT",
+        "Description": "Unused"
+      }
+    }
+  },
+  "5A": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "5A",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x5A"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      },
+      "Unknown2": {
+        "Type": "USHORT",
+        "Description": "Unused"
+      }
+    }
+  },
+  "5B": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "5B",
+    "Opcode Length": "06 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x5B"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      },
+      "Unknown2": {
+        "Type": "ULONG",
+        "Description": "Unused"
+      }
+    }
+  },
+  "5C": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "5C",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x5C"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      },
+      "Unknown2": {
+        "Type": "USHORT",
+        "Description": "Unused"
+      }
+    }
+  },
+  "5D": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "5D",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x5D"
+      },
+      "Unknown": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      }
+    }
+  },
+  "5E": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "5E",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x5E"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      },
+      "Unknown2": {
+        "Type": "USHORT",
+        "Description": "Unused"
+      }
+    }
+  },
+  "5F": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "5F",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x5F"
+      },
+      "Unknown": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      }
+    }
+  },
+  "60": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "60",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x60"
+      },
+      "Unknown": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      }
+    }
+  },
+  "61": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "61",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x61"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      },
+      "Unknown2": {
+        "Type": "USHORT",
+        "Description": "Unused"
+      }
+    }
+  },
+  "62": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "62",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x62"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      },
+      "Unknown2": {
+        "Type": "USHORT",
+        "Description": "Unused"
+      }
+    }
+  },
+  "63": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "63",
+    "Opcode Length": "06 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x63"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      },
+      "Unknown2": {
+        "Type": "ULONG",
+        "Description": "Unused"
+      }
+    }
+  },
+  "64": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "64",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x64"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      },
+      "Unknown2": {
+        "Type": "USHORT",
+        "Description": "Unused"
+      }
+    }
+  },
+  "65": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "65",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x65"
+      },
+      "Unknown": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      }
+    }
+  },
+  "66": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "66",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x66"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      },
+      "Unknown2": {
+        "Type": "USHORT",
+        "Description": "Unused"
+      }
+    }
+  },
+  "67": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "67",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x67"
+      },
+      "Unknown": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      }
+    }
+  },
+  "68": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "68",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x68"
+      },
+      "Unknown": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      }
+    }
+  },
+  "69": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "69",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x69"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      },
+      "Unknown2": {
+        "Type": "USHORT",
+        "Description": "Unused"
+      }
+    }
+  },
+  "6A": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "6A",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x6A"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      },
+      "Unknown2": {
+        "Type": "USHORT",
+        "Description": "Unused"
+      }
+    }
+  },
+  "6B": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "6B",
+    "Opcode Length": "06 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x6B"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      },
+      "Unknown2": {
+        "Type": "ULONG",
+        "Description": "Unused"
+      }
+    }
+  },
+  "6C": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "6C",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x6C"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      },
+      "Unknown2": {
+        "Type": "USHORT",
+        "Description": "Unused"
+      }
+    }
+  },
+  "6D": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "6D",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x6D"
+      },
+      "Unknown": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      }
+    }
+  },
+  "6E": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "6E",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x6E"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      },
+      "Unknown2": {
+        "Type": "USHORT",
+        "Description": "Unused"
+      }
+    }
+  },
+  "6F": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "6F",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x6F"
+      },
+      "Unknown": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      }
+    }
+  },
+  "70": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "70",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x70"
+      },
+      "Unknown": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      }
+    }
+  },
+  "71": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "71",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x71"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      },
+      "Unknown2": {
+        "Type": "USHORT",
+        "Description": "Unused"
+      }
+    }
+  },
+  "72": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "72",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x72"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      },
+      "Unknown2": {
+        "Type": "USHORT",
+        "Description": "Unused"
+      }
+    }
+  },
+  "73": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "73",
+    "Opcode Length": "06 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x73"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      },
+      "Unknown2": {
+        "Type": "ULONG",
+        "Description": "Unused"
+      }
+    }
+  },
+  "74": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "74",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x74"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      },
+      "Unknown2": {
+        "Type": "USHORT",
+        "Description": "Unused"
+      }
+    }
+  },
+  "75": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "75",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x75"
+      },
+      "Unknown": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      }
+    }
+  },
+  "76": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "76",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x76"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      },
+      "Unknown2": {
+        "Type": "USHORT",
+        "Description": "Unused"
+      }
+    }
+  },
+  "77": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "77",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x77"
+      },
+      "Unknown": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      }
+    }
+  },
+  "78": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "78",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x78"
+      },
+      "Unknown": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      }
+    }
+  },
+  "79": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "79",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x79"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      },
+      "Unknown2": {
+        "Type": "USHORT",
+        "Description": "Unused"
+      }
+    }
+  },
+  "7A": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "7A",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x7A"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      },
+      "Unknown2": {
+        "Type": "USHORT",
+        "Description": "Unused"
+      }
+    }
+  },
+  "7B": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "7B",
+    "Opcode Length": "06 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x7B"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      },
+      "Unknown2": {
+        "Type": "ULONG",
+        "Description": "Unused"
+      }
+    }
+  },
+  "7C": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "7C",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x7C"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      },
+      "Unknown2": {
+        "Type": "USHORT",
+        "Description": "Unused"
+      }
+    }
+  },
+  "7D": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "7D",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x7D"
+      },
+      "Unknown": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      }
+    }
+  },
+  "7E": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "7E",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x7E"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      },
+      "Unknown2": {
+        "Type": "USHORT",
+        "Description": "Unused"
+      }
+    }
+  },
+  "7F": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "7F",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x7F"
+      },
+      "Unknown": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      }
+    }
+  },
+  "80": {
+    "Opcode Name": "Unused Data",
+    "Opcode Number": "80",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "This opcode is unused or reserved.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x80"
+      },
+      "Unknown": {
+        "Type": "UCHAR",
+        "Description": "Unused"
+      }
+    }
+  },
+  "83": {
+    "Opcode Name": "Plc_Movement",
+    "Opcode Number": "83",
+    "Opcode Length": "08 Bytes",
+    "Opcode Description": "Move the entity in the workset.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x83"
+      },
+      "Movement": {
+        "Type": "UCHAR",
+        "Description": "Movement type or direction"
+      },
+      "XX": {
+        "Type": "USHORT",
+        "Description": "X-coordinate parameter"
+      },
+      "YY": {
+        "Type": "USHORT",
+        "Description": "Y-coordinate parameter"
+      },
+      "WhileFlag": {
+        "Type": "UCHAR",
+        "Description": "Loop condition flag"
+      },
+      "Unknown": {
+        "Type": "UCHAR",
+        "Description": "Unknown parameter"
+      }
+    }
+  },
+  "84": {
+    "Opcode Name": "Plc_Animation",
+    "Opcode Number": "84",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "Load an animation on the workset entity.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x84"
+      },
+      "Animation": {
+        "Type": "UCHAR",
+        "Description": "Animation ID"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Additional parameter"
+      },
+      "Unknown2": {
+        "Type": "UCHAR",
+        "Description": "Additional parameter"
+      }
+    }
+  },
+  "85": {
+    "Opcode Name": "?",
+    "Opcode Number": "85",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x85"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Unknown parameter"
+      },
+      "Unknown2": {
+        "Type": "UCHAR",
+        "Description": "Unknown parameter"
+      },
+      "Unknown3": {
+        "Type": "UCHAR",
+        "Description": "Unknown parameter"
+      }
+    }
+  },
+  "86": {
+    "Opcode Name": "Plc_Ret",
+    "Opcode Number": "86",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "Unlock the animation state of the entity.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x86"
+      },
+      "Unknown": {
+        "Type": "UCHAR",
+        "Description": "Possibly a flag"
+      }
+    }
+  },
+  "87": {
+    "Opcode Name": "?",
+    "Opcode Number": "87",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x87"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Unknown parameter"
+      },
+      "Unknown2": {
+        "Type": "UCHAR",
+        "Description": "Unknown parameter"
+      },
+      "Unknown3": {
+        "Type": "UCHAR",
+        "Description": "Unknown parameter"
+      }
+    }
+  },
+  "88": {
+    "Opcode Name": "Plc_Rotate",
+    "Opcode Number": "88",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "Rotate the entity in the workset.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x88"
+      },
+      "RotationType": {
+        "Type": "UCHAR",
+        "Description": "Type of rotation"
+      },
+      "Angle": {
+        "Type": "USHORT",
+        "Description": "Rotation angle"
+      },
+      "Unknown": {
+        "Type": "UCHAR",
+        "Description": "Additional parameter"
+      }
+    }
+  },
+  "89": {
+    "Opcode Name": "?",
+    "Opcode Number": "89",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0x89"
+      },
+      "Unknown": {
+        "Type": "UCHAR",
+        "Description": "Unknown parameter"
+      }
+    }
+  },
+  "F6": {
+    "Opcode Name": "?",
+    "Opcode Number": "F6",
+    "Opcode Length": "01 Byte",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0xF6"
+      }
+    }
+  },
+  "F7": {
+    "Opcode Name": "?",
+    "Opcode Number": "F7",
+    "Opcode Length": "01 Byte",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0xF7"
+      }
+    }
+  },
+  "F8": {
+    "Opcode Name": "Sleep",
+    "Opcode Number": "F8",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "Pause execution for a specified number of frames.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0xF8"
+      },
+      "Opcode 0xF9": {
+        "Type": "UCHAR",
+        "Description": "0xF9"
+      },
+      "Frames": {
+        "Type": "USHORT",
+        "Description": "Number of frames to pause"
+      }
+    }
+  },
+  "F9": {
+    "Opcode Name": "?",
+    "Opcode Number": "F9",
+    "Opcode Length": "03 Bytes",
+    "Opcode Description": "Unknown operation.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0xF9"
+      },
+      "Unknown1": {
+        "Type": "UCHAR",
+        "Description": "Unknown parameter"
+      },
+      "Unknown2": {
+        "Type": "UCHAR",
+        "Description": "Unknown parameter"
+      }
+    }
+  },
+  "FA": {
+    "Opcode Name": "For",
+    "Opcode Number": "FA",
+    "Opcode Length": "04 Bytes",
+    "Opcode Description": "Initialize a FOR loop to execute a block multiple times.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0xFA"
+      },
+      "LoopVariable": {
+        "Type": "UCHAR",
+        "Description": "Loop variable identifier"
+      },
+      "LoopCount": {
+        "Type": "USHORT",
+        "Description": "Number of iterations"
+      }
+    }
+  },
+  "FB": {
+    "Opcode Name": "Next",
+    "Opcode Number": "FB",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "End of FOR loop block.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0xFB"
+      },
+      "LoopVariable": {
+        "Type": "UCHAR",
+        "Description": "Loop variable identifier"
+      }
+    }
+  },
+  "FC": {
+    "Opcode Name": "Set_Inst",
+    "Opcode Number": "FC",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "Set up a WHILE loop or instruction block.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0xFC"
+      },
+      "Condition": {
+        "Type": "UCHAR",
+        "Description": "Condition or flag"
+      }
+    }
+  },
+  "FD": {
+    "Opcode Name": "Exec_Inst",
+    "Opcode Number": "FD",
+    "Opcode Length": "01 Byte",
+    "Opcode Description": "Execute instruction set.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0xFD"
+      }
+    }
+  },
+  "FE": {
+    "Opcode Name": "Sleep/Process",
+    "Opcode Number": "FE",
+    "Opcode Length": "01 Byte",
+    "Opcode Description": "Pause execution or process pending tasks.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0xFE"
+      }
+    }
+  },
+  "FF": {
+    "Opcode Name": "Disable_Event",
+    "Opcode Number": "FF",
+    "Opcode Length": "02 Bytes",
+    "Opcode Description": "Disable the current event.",
+    "Bytes": {
+      "Opcode": {
+        "Type": "UCHAR",
+        "Description": "0xFF"
+      },
+      "Nop": {
+        "Type": "UCHAR",
+        "Description": "Padding byte (0x00)"
+      }
+    }
+  }
+}

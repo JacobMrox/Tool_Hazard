@@ -1,0 +1,1070 @@
+﻿namespace Tool_Hazard
+{
+    partial class Main
+    {
+        /// <summary>
+        ///  Required designer variable.
+        /// </summary>
+        private System.ComponentModel.IContainer components = null;
+        //private PS1_Sound ps1_snd = PS1_Sound;
+        /// <summary>
+        ///  Clean up any resources being used.
+        /// </summary>
+        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && (components != null))
+            {
+                components.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+
+        #region Windows Form Designer generated code
+
+        /// <summary>
+        ///  Required method for Designer support - do not modify
+        ///  the contents of this method with the code editor.
+        /// </summary>
+        private void InitializeComponent()
+        {
+            components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Main));
+            menuStrip1 = new MenuStrip();
+            fileToolStripMenuItem = new ToolStripMenuItem();
+            exitToolStripMenuItem = new ToolStripMenuItem();
+            toolStripMenuItem1 = new ToolStripMenuItem();
+            bSSToolStripMenuItem = new ToolStripMenuItem();
+            rDTToolStripMenuItem2 = new ToolStripMenuItem();
+            unpackToolStripMenuItem4 = new ToolStripMenuItem();
+            repackToolStripMenuItem5 = new ToolStripMenuItem();
+            toolStripSeparator13 = new ToolStripSeparator();
+            convertToBIO2ToolStripMenuItem1 = new ToolStripMenuItem();
+            convertToBIO3ToolStripMenuItem1 = new ToolStripMenuItem();
+            toolStripSeparator14 = new ToolStripSeparator();
+            sCDScriptDataToolStripMenuItem = new ToolStripMenuItem();
+            extractSCDFromRDTToolStripMenuItem2 = new ToolStripMenuItem();
+            toolStripMenuItem3 = new ToolStripMenuItem();
+            eMDToolStripMenuItem2 = new ToolStripMenuItem();
+            unpackOriginalToolStripMenuItem1 = new ToolStripMenuItem();
+            repackOriginalToolStripMenuItem1 = new ToolStripMenuItem();
+            toolStripSeparator11 = new ToolStripSeparator();
+            unpackEditableToolStripMenuItem1 = new ToolStripMenuItem();
+            repackEditableToolStripMenuItem1 = new ToolStripMenuItem();
+            toolStripSeparator16 = new ToolStripSeparator();
+            viewerToolStripMenuItem2 = new ToolStripMenuItem();
+            pLWToolStripMenuItem2 = new ToolStripMenuItem();
+            vHVBToolStripMenuItem2 = new ToolStripMenuItem();
+            toolStripSeparator7 = new ToolStripSeparator();
+            menuInstallRE1CR = new ToolStripMenuItem();
+            bIO151997ToolStripMenuItem = new ToolStripMenuItem();
+            bSSToolStripMenuItem3 = new ToolStripMenuItem();
+            rDTToolStripMenuItem3 = new ToolStripMenuItem();
+            eMDToolStripMenuItem3 = new ToolStripMenuItem();
+            pLDToolStripMenuItem2 = new ToolStripMenuItem();
+            pLWToolStripMenuItem3 = new ToolStripMenuItem();
+            vHVBToolStripMenuItem1 = new ToolStripMenuItem();
+            bIO2RE21998ToolStripMenuItem = new ToolStripMenuItem();
+            bSSToolStripMenuItem1 = new ToolStripMenuItem();
+            rDTToolStripMenuItem1 = new ToolStripMenuItem();
+            unpackToolStripMenuItem = new ToolStripMenuItem();
+            repackToolStripMenuItem = new ToolStripMenuItem();
+            toolStripSeparator5 = new ToolStripSeparator();
+            convertToBIO1ToolStripMenuItem = new ToolStripMenuItem();
+            convertToBIO3ToolStripMenuItem = new ToolStripMenuItem();
+            toolStripSeparator4 = new ToolStripSeparator();
+            sCDToolStripMenuItem = new ToolStripMenuItem();
+            extractSCDFromRDTToolStripMenuItem1 = new ToolStripMenuItem();
+            sCDOpCodeEditorToolStripMenuItem1 = new ToolStripMenuItem();
+            decompileSCDToSToolStripMenuItem1 = new ToolStripMenuItem();
+            recompileSToSCDToolStripMenuItem1 = new ToolStripMenuItem();
+            mD1ToolStripMenuItem = new ToolStripMenuItem();
+            eMDToolStripMenuItem1 = new ToolStripMenuItem();
+            unpackToolStripMenuItem3 = new ToolStripMenuItem();
+            editableOBJPNGToolStripMenuItem1 = new ToolStripMenuItem();
+            originalMD2TIMToolStripMenuItem1 = new ToolStripMenuItem();
+            repackToolStripMenuItem4 = new ToolStripMenuItem();
+            editableToolStripMenuItem = new ToolStripMenuItem();
+            originalToolStripMenuItem = new ToolStripMenuItem();
+            viewerToolStripMenuItem1 = new ToolStripMenuItem();
+            pLDToolStripMenuItem1 = new ToolStripMenuItem();
+            unpackOriginalToolStripMenuItem2 = new ToolStripMenuItem();
+            repackOriginalToolStripMenuItem2 = new ToolStripMenuItem();
+            toolStripSeparator17 = new ToolStripSeparator();
+            unpackEditableToolStripMenuItem2 = new ToolStripMenuItem();
+            repackEditableToolStripMenuItem2 = new ToolStripMenuItem();
+            plwToolStripMenuItem1 = new ToolStripMenuItem();
+            vHVBToolStripMenuItem = new ToolStripMenuItem();
+            sAPToolStripMenuItem = new ToolStripMenuItem();
+            sAP2WAVToolStripMenuItem = new ToolStripMenuItem();
+            wAV2SAPToolStripMenuItem = new ToolStripMenuItem();
+            toolStripSeparator1 = new ToolStripSeparator();
+            installPatch110ToolStripMenuItem = new ToolStripMenuItem();
+            menuInstallRE2CR = new ToolStripMenuItem();
+            bIORE31999ToolStripMenuItem = new ToolStripMenuItem();
+            rOFSToolStripMenuItem = new ToolStripMenuItem();
+            ROFSunpackToolStripMenuItem = new ToolStripMenuItem();
+            repackToolStripMenuItem2 = new ToolStripMenuItem();
+            aRDToolStripMenuItem = new ToolStripMenuItem();
+            bSSToolStripMenuItem2 = new ToolStripMenuItem();
+            rDTToolStripMenuItem = new ToolStripMenuItem();
+            Bio3RDTunpackToolStripMenuItem = new ToolStripMenuItem();
+            Bio3RDTrepackToolStripMenuItem = new ToolStripMenuItem();
+            toolStripSeparator2 = new ToolStripSeparator();
+            convertToBIO1ToolStripMenuItem1 = new ToolStripMenuItem();
+            convertToBIO2ToolStripMenuItem = new ToolStripMenuItem();
+            toolStripSeparator3 = new ToolStripSeparator();
+            sCDToolStripMenuItem1 = new ToolStripMenuItem();
+            extractSCDFromRDTToolStripMenuItem = new ToolStripMenuItem();
+            sCDOpCodeEditorToolStripMenuItem = new ToolStripMenuItem();
+            decompileSCDToSToolStripMenuItem = new ToolStripMenuItem();
+            recompileSToSCDToolStripMenuItem = new ToolStripMenuItem();
+            mD2ToolStripMenuItem = new ToolStripMenuItem();
+            eMDToolStripMenuItem = new ToolStripMenuItem();
+            unpackToolStripMenuItem2 = new ToolStripMenuItem();
+            originalMD2TIMToolStripMenuItem = new ToolStripMenuItem();
+            editableOBJPNGToolStripMenuItem = new ToolStripMenuItem();
+            repackToolStripMenuItem3 = new ToolStripMenuItem();
+            editableToolStripMenuItem1 = new ToolStripMenuItem();
+            originalToolStripMenuItem1 = new ToolStripMenuItem();
+            viewerToolStripMenuItem = new ToolStripMenuItem();
+            pLDToolStripMenuItem = new ToolStripMenuItem();
+            unpackOriginalToolStripMenuItem = new ToolStripMenuItem();
+            repackOriginalToolStripMenuItem = new ToolStripMenuItem();
+            toolStripSeparator10 = new ToolStripSeparator();
+            unpackEditableToolStripMenuItem = new ToolStripMenuItem();
+            repackEditableToolStripMenuItem = new ToolStripMenuItem();
+            pLWToolStripMenuItem = new ToolStripMenuItem();
+            vBVHToolStripMenuItem = new ToolStripMenuItem();
+            toolStripSeparator6 = new ToolStripSeparator();
+            installPatch110ToolStripMenuItem1 = new ToolStripMenuItem();
+            menuInstallRE3CR = new ToolStripMenuItem();
+            whiteDayToolStripMenuItem = new ToolStripMenuItem();
+            nOPToolStripMenuItem1 = new ToolStripMenuItem();
+            unpackToolStripMenuItem1 = new ToolStripMenuItem();
+            repackToolStripMenuItem1 = new ToolStripMenuItem();
+            wADToolStripMenuItem1 = new ToolStripMenuItem();
+            fontEditorToolStripMenuItem1 = new ToolStripMenuItem();
+            torresMP3PlaylistEditorToolStripMenuItem = new ToolStripMenuItem();
+            saveEditorToolStripMenuItem1 = new ToolStripMenuItem();
+            toolStripSeparator8 = new ToolStripSeparator();
+            installEnglishCompatibilityPatchToolStripMenuItem = new ToolStripMenuItem();
+            toolStripMenuItem2 = new ToolStripMenuItem();
+            residentEvilBiohazardToolStripMenuItem = new ToolStripMenuItem();
+            enableRE123LiveHUDToolStripMenuItem = new ToolStripMenuItem();
+            biorandToolStripMenuItem = new ToolStripMenuItem();
+            helpToolStripMenuItem = new ToolStripMenuItem();
+            versionToolStripMenuItem = new ToolStripMenuItem();
+            documentationToolStripMenuItem = new ToolStripMenuItem();
+            checkForUpdatesToolStripMenuItem = new ToolStripMenuItem();
+            notifyIcon1 = new NotifyIcon(components);
+            statusStrip1 = new StatusStrip();
+            toolStripStatusLabel1 = new ToolStripStatusLabel();
+            toolStripSeparator9 = new ToolStripSeparator();
+            toolStripSeparator12 = new ToolStripSeparator();
+            toolStripSeparator15 = new ToolStripSeparator();
+            menuStrip1.SuspendLayout();
+            statusStrip1.SuspendLayout();
+            SuspendLayout();
+            // 
+            // menuStrip1
+            // 
+            resources.ApplyResources(menuStrip1, "menuStrip1");
+            menuStrip1.BackColor = SystemColors.Control;
+            menuStrip1.GripMargin = new Padding(2);
+            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, toolStripMenuItem1, bIO151997ToolStripMenuItem, bIO2RE21998ToolStripMenuItem, bIORE31999ToolStripMenuItem, whiteDayToolStripMenuItem, toolStripMenuItem2, helpToolStripMenuItem });
+            menuStrip1.LayoutStyle = ToolStripLayoutStyle.Flow;
+            menuStrip1.Name = "menuStrip1";
+            menuStrip1.RenderMode = ToolStripRenderMode.Professional;
+            menuStrip1.ShowItemToolTips = true;
+            // 
+            // fileToolStripMenuItem
+            // 
+            resources.ApplyResources(fileToolStripMenuItem, "fileToolStripMenuItem");
+            fileToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { exitToolStripMenuItem });
+            fileToolStripMenuItem.Name = "fileToolStripMenuItem";
+            // 
+            // exitToolStripMenuItem
+            // 
+            resources.ApplyResources(exitToolStripMenuItem, "exitToolStripMenuItem");
+            exitToolStripMenuItem.Name = "exitToolStripMenuItem";
+            exitToolStripMenuItem.Click += exitToolStripMenuItem_Click;
+            // 
+            // toolStripMenuItem1
+            // 
+            resources.ApplyResources(toolStripMenuItem1, "toolStripMenuItem1");
+            toolStripMenuItem1.AutoToolTip = true;
+            toolStripMenuItem1.DropDownItems.AddRange(new ToolStripItem[] { bSSToolStripMenuItem, rDTToolStripMenuItem2, eMDToolStripMenuItem2, pLWToolStripMenuItem2, vHVBToolStripMenuItem2, toolStripSeparator7, menuInstallRE1CR });
+            toolStripMenuItem1.Name = "toolStripMenuItem1";
+            toolStripMenuItem1.Click += toolStripMenuItem1_Click;
+            // 
+            // bSSToolStripMenuItem
+            // 
+            resources.ApplyResources(bSSToolStripMenuItem, "bSSToolStripMenuItem");
+            bSSToolStripMenuItem.Name = "bSSToolStripMenuItem";
+            // 
+            // rDTToolStripMenuItem2
+            // 
+            resources.ApplyResources(rDTToolStripMenuItem2, "rDTToolStripMenuItem2");
+            rDTToolStripMenuItem2.DropDownItems.AddRange(new ToolStripItem[] { unpackToolStripMenuItem4, repackToolStripMenuItem5, toolStripSeparator13, convertToBIO2ToolStripMenuItem1, convertToBIO3ToolStripMenuItem1, toolStripSeparator14, sCDScriptDataToolStripMenuItem });
+            rDTToolStripMenuItem2.Name = "rDTToolStripMenuItem2";
+            // 
+            // unpackToolStripMenuItem4
+            // 
+            resources.ApplyResources(unpackToolStripMenuItem4, "unpackToolStripMenuItem4");
+            unpackToolStripMenuItem4.Name = "unpackToolStripMenuItem4";
+            unpackToolStripMenuItem4.Click += unpackToolStripMenuItem4_Click;
+            // 
+            // repackToolStripMenuItem5
+            // 
+            resources.ApplyResources(repackToolStripMenuItem5, "repackToolStripMenuItem5");
+            repackToolStripMenuItem5.Name = "repackToolStripMenuItem5";
+            repackToolStripMenuItem5.Click += repackToolStripMenuItem5_Click;
+            // 
+            // toolStripSeparator13
+            // 
+            resources.ApplyResources(toolStripSeparator13, "toolStripSeparator13");
+            toolStripSeparator13.Name = "toolStripSeparator13";
+            // 
+            // convertToBIO2ToolStripMenuItem1
+            // 
+            resources.ApplyResources(convertToBIO2ToolStripMenuItem1, "convertToBIO2ToolStripMenuItem1");
+            convertToBIO2ToolStripMenuItem1.Name = "convertToBIO2ToolStripMenuItem1";
+            // 
+            // convertToBIO3ToolStripMenuItem1
+            // 
+            resources.ApplyResources(convertToBIO3ToolStripMenuItem1, "convertToBIO3ToolStripMenuItem1");
+            convertToBIO3ToolStripMenuItem1.Name = "convertToBIO3ToolStripMenuItem1";
+            // 
+            // toolStripSeparator14
+            // 
+            resources.ApplyResources(toolStripSeparator14, "toolStripSeparator14");
+            toolStripSeparator14.Name = "toolStripSeparator14";
+            // 
+            // sCDScriptDataToolStripMenuItem
+            // 
+            resources.ApplyResources(sCDScriptDataToolStripMenuItem, "sCDScriptDataToolStripMenuItem");
+            sCDScriptDataToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { toolStripMenuItem3, toolStripSeparator15, extractSCDFromRDTToolStripMenuItem2 });
+            sCDScriptDataToolStripMenuItem.Name = "sCDScriptDataToolStripMenuItem";
+            // 
+            // extractSCDFromRDTToolStripMenuItem2
+            // 
+            resources.ApplyResources(extractSCDFromRDTToolStripMenuItem2, "extractSCDFromRDTToolStripMenuItem2");
+            extractSCDFromRDTToolStripMenuItem2.Name = "extractSCDFromRDTToolStripMenuItem2";
+            // 
+            // toolStripMenuItem3
+            // 
+            resources.ApplyResources(toolStripMenuItem3, "toolStripMenuItem3");
+            toolStripMenuItem3.Name = "toolStripMenuItem3";
+            toolStripMenuItem3.Click += toolStripMenuItem3_Click;
+            // 
+            // eMDToolStripMenuItem2
+            // 
+            resources.ApplyResources(eMDToolStripMenuItem2, "eMDToolStripMenuItem2");
+            eMDToolStripMenuItem2.DropDownItems.AddRange(new ToolStripItem[] { unpackOriginalToolStripMenuItem1, repackOriginalToolStripMenuItem1, toolStripSeparator11, unpackEditableToolStripMenuItem1, repackEditableToolStripMenuItem1, toolStripSeparator16, viewerToolStripMenuItem2 });
+            eMDToolStripMenuItem2.Name = "eMDToolStripMenuItem2";
+            // 
+            // unpackOriginalToolStripMenuItem1
+            // 
+            resources.ApplyResources(unpackOriginalToolStripMenuItem1, "unpackOriginalToolStripMenuItem1");
+            unpackOriginalToolStripMenuItem1.Name = "unpackOriginalToolStripMenuItem1";
+            // 
+            // repackOriginalToolStripMenuItem1
+            // 
+            resources.ApplyResources(repackOriginalToolStripMenuItem1, "repackOriginalToolStripMenuItem1");
+            repackOriginalToolStripMenuItem1.Name = "repackOriginalToolStripMenuItem1";
+            // 
+            // toolStripSeparator11
+            // 
+            resources.ApplyResources(toolStripSeparator11, "toolStripSeparator11");
+            toolStripSeparator11.Name = "toolStripSeparator11";
+            // 
+            // unpackEditableToolStripMenuItem1
+            // 
+            resources.ApplyResources(unpackEditableToolStripMenuItem1, "unpackEditableToolStripMenuItem1");
+            unpackEditableToolStripMenuItem1.Name = "unpackEditableToolStripMenuItem1";
+            unpackEditableToolStripMenuItem1.Click += unpackEditableToolStripMenuItem1_Click;
+            // 
+            // repackEditableToolStripMenuItem1
+            // 
+            resources.ApplyResources(repackEditableToolStripMenuItem1, "repackEditableToolStripMenuItem1");
+            repackEditableToolStripMenuItem1.Name = "repackEditableToolStripMenuItem1";
+            repackEditableToolStripMenuItem1.Click += repackEditableToolStripMenuItem1_Click;
+            // 
+            // toolStripSeparator16
+            // 
+            resources.ApplyResources(toolStripSeparator16, "toolStripSeparator16");
+            toolStripSeparator16.Name = "toolStripSeparator16";
+            // 
+            // viewerToolStripMenuItem2
+            // 
+            resources.ApplyResources(viewerToolStripMenuItem2, "viewerToolStripMenuItem2");
+            viewerToolStripMenuItem2.Name = "viewerToolStripMenuItem2";
+            // 
+            // pLWToolStripMenuItem2
+            // 
+            resources.ApplyResources(pLWToolStripMenuItem2, "pLWToolStripMenuItem2");
+            pLWToolStripMenuItem2.Name = "pLWToolStripMenuItem2";
+            // 
+            // vHVBToolStripMenuItem2
+            // 
+            resources.ApplyResources(vHVBToolStripMenuItem2, "vHVBToolStripMenuItem2");
+            vHVBToolStripMenuItem2.Name = "vHVBToolStripMenuItem2";
+            // 
+            // toolStripSeparator7
+            // 
+            resources.ApplyResources(toolStripSeparator7, "toolStripSeparator7");
+            toolStripSeparator7.Name = "toolStripSeparator7";
+            // 
+            // menuInstallRE1CR
+            // 
+            resources.ApplyResources(menuInstallRE1CR, "menuInstallRE1CR");
+            menuInstallRE1CR.Name = "menuInstallRE1CR";
+            menuInstallRE1CR.Click += menuInstallRE1CR_Click_1;
+            // 
+            // bIO151997ToolStripMenuItem
+            // 
+            resources.ApplyResources(bIO151997ToolStripMenuItem, "bIO151997ToolStripMenuItem");
+            bIO151997ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { bSSToolStripMenuItem3, rDTToolStripMenuItem3, eMDToolStripMenuItem3, pLDToolStripMenuItem2, pLWToolStripMenuItem3, vHVBToolStripMenuItem1 });
+            bIO151997ToolStripMenuItem.Name = "bIO151997ToolStripMenuItem";
+            bIO151997ToolStripMenuItem.Click += bIO151997ToolStripMenuItem_Click;
+            // 
+            // bSSToolStripMenuItem3
+            // 
+            resources.ApplyResources(bSSToolStripMenuItem3, "bSSToolStripMenuItem3");
+            bSSToolStripMenuItem3.Name = "bSSToolStripMenuItem3";
+            // 
+            // rDTToolStripMenuItem3
+            // 
+            resources.ApplyResources(rDTToolStripMenuItem3, "rDTToolStripMenuItem3");
+            rDTToolStripMenuItem3.Name = "rDTToolStripMenuItem3";
+            // 
+            // eMDToolStripMenuItem3
+            // 
+            resources.ApplyResources(eMDToolStripMenuItem3, "eMDToolStripMenuItem3");
+            eMDToolStripMenuItem3.Name = "eMDToolStripMenuItem3";
+            // 
+            // pLDToolStripMenuItem2
+            // 
+            resources.ApplyResources(pLDToolStripMenuItem2, "pLDToolStripMenuItem2");
+            pLDToolStripMenuItem2.Name = "pLDToolStripMenuItem2";
+            // 
+            // pLWToolStripMenuItem3
+            // 
+            resources.ApplyResources(pLWToolStripMenuItem3, "pLWToolStripMenuItem3");
+            pLWToolStripMenuItem3.Name = "pLWToolStripMenuItem3";
+            // 
+            // vHVBToolStripMenuItem1
+            // 
+            resources.ApplyResources(vHVBToolStripMenuItem1, "vHVBToolStripMenuItem1");
+            vHVBToolStripMenuItem1.Name = "vHVBToolStripMenuItem1";
+            // 
+            // bIO2RE21998ToolStripMenuItem
+            // 
+            resources.ApplyResources(bIO2RE21998ToolStripMenuItem, "bIO2RE21998ToolStripMenuItem");
+            bIO2RE21998ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { bSSToolStripMenuItem1, rDTToolStripMenuItem1, mD1ToolStripMenuItem, eMDToolStripMenuItem1, pLDToolStripMenuItem1, plwToolStripMenuItem1, vHVBToolStripMenuItem, sAPToolStripMenuItem, toolStripSeparator1, installPatch110ToolStripMenuItem, menuInstallRE2CR });
+            bIO2RE21998ToolStripMenuItem.Name = "bIO2RE21998ToolStripMenuItem";
+            bIO2RE21998ToolStripMenuItem.Click += bIO2RE21998ToolStripMenuItem_Click;
+            // 
+            // bSSToolStripMenuItem1
+            // 
+            resources.ApplyResources(bSSToolStripMenuItem1, "bSSToolStripMenuItem1");
+            bSSToolStripMenuItem1.Name = "bSSToolStripMenuItem1";
+            // 
+            // rDTToolStripMenuItem1
+            // 
+            resources.ApplyResources(rDTToolStripMenuItem1, "rDTToolStripMenuItem1");
+            rDTToolStripMenuItem1.DropDownItems.AddRange(new ToolStripItem[] { unpackToolStripMenuItem, repackToolStripMenuItem, toolStripSeparator5, convertToBIO1ToolStripMenuItem, convertToBIO3ToolStripMenuItem, toolStripSeparator4, sCDToolStripMenuItem });
+            rDTToolStripMenuItem1.Name = "rDTToolStripMenuItem1";
+            // 
+            // unpackToolStripMenuItem
+            // 
+            resources.ApplyResources(unpackToolStripMenuItem, "unpackToolStripMenuItem");
+            unpackToolStripMenuItem.Name = "unpackToolStripMenuItem";
+            unpackToolStripMenuItem.Click += Bio2RDTunpackToolStripMenuItem_Click;
+            // 
+            // repackToolStripMenuItem
+            // 
+            resources.ApplyResources(repackToolStripMenuItem, "repackToolStripMenuItem");
+            repackToolStripMenuItem.Name = "repackToolStripMenuItem";
+            repackToolStripMenuItem.Click += Bio2RDTrepackToolStripMenuItem_Click_1;
+            // 
+            // toolStripSeparator5
+            // 
+            resources.ApplyResources(toolStripSeparator5, "toolStripSeparator5");
+            toolStripSeparator5.Name = "toolStripSeparator5";
+            // 
+            // convertToBIO1ToolStripMenuItem
+            // 
+            resources.ApplyResources(convertToBIO1ToolStripMenuItem, "convertToBIO1ToolStripMenuItem");
+            convertToBIO1ToolStripMenuItem.Name = "convertToBIO1ToolStripMenuItem";
+            // 
+            // convertToBIO3ToolStripMenuItem
+            // 
+            resources.ApplyResources(convertToBIO3ToolStripMenuItem, "convertToBIO3ToolStripMenuItem");
+            convertToBIO3ToolStripMenuItem.Name = "convertToBIO3ToolStripMenuItem";
+            convertToBIO3ToolStripMenuItem.Click += convertToBIO3ToolStripMenuItem_Click;
+            // 
+            // toolStripSeparator4
+            // 
+            resources.ApplyResources(toolStripSeparator4, "toolStripSeparator4");
+            toolStripSeparator4.Name = "toolStripSeparator4";
+            // 
+            // sCDToolStripMenuItem
+            // 
+            resources.ApplyResources(sCDToolStripMenuItem, "sCDToolStripMenuItem");
+            sCDToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { sCDOpCodeEditorToolStripMenuItem1, toolStripSeparator12, extractSCDFromRDTToolStripMenuItem1, decompileSCDToSToolStripMenuItem1, recompileSToSCDToolStripMenuItem1 });
+            sCDToolStripMenuItem.Name = "sCDToolStripMenuItem";
+            // 
+            // extractSCDFromRDTToolStripMenuItem1
+            // 
+            resources.ApplyResources(extractSCDFromRDTToolStripMenuItem1, "extractSCDFromRDTToolStripMenuItem1");
+            extractSCDFromRDTToolStripMenuItem1.Name = "extractSCDFromRDTToolStripMenuItem1";
+            extractSCDFromRDTToolStripMenuItem1.Click += extractSCDFromRDTToolStripMenuItem1_Click;
+            // 
+            // sCDOpCodeEditorToolStripMenuItem1
+            // 
+            resources.ApplyResources(sCDOpCodeEditorToolStripMenuItem1, "sCDOpCodeEditorToolStripMenuItem1");
+            sCDOpCodeEditorToolStripMenuItem1.Name = "sCDOpCodeEditorToolStripMenuItem1";
+            sCDOpCodeEditorToolStripMenuItem1.Click += sCDOpCodeEditorToolStripMenuItem1_Click;
+            // 
+            // decompileSCDToSToolStripMenuItem1
+            // 
+            resources.ApplyResources(decompileSCDToSToolStripMenuItem1, "decompileSCDToSToolStripMenuItem1");
+            decompileSCDToSToolStripMenuItem1.Name = "decompileSCDToSToolStripMenuItem1";
+            decompileSCDToSToolStripMenuItem1.Click += decompileSCDToSToolStripMenuItem1_Click;
+            // 
+            // recompileSToSCDToolStripMenuItem1
+            // 
+            resources.ApplyResources(recompileSToSCDToolStripMenuItem1, "recompileSToSCDToolStripMenuItem1");
+            recompileSToSCDToolStripMenuItem1.Name = "recompileSToSCDToolStripMenuItem1";
+            // 
+            // mD1ToolStripMenuItem
+            // 
+            resources.ApplyResources(mD1ToolStripMenuItem, "mD1ToolStripMenuItem");
+            mD1ToolStripMenuItem.Name = "mD1ToolStripMenuItem";
+            // 
+            // eMDToolStripMenuItem1
+            // 
+            resources.ApplyResources(eMDToolStripMenuItem1, "eMDToolStripMenuItem1");
+            eMDToolStripMenuItem1.DropDownItems.AddRange(new ToolStripItem[] { unpackToolStripMenuItem3, repackToolStripMenuItem4, viewerToolStripMenuItem1 });
+            eMDToolStripMenuItem1.Name = "eMDToolStripMenuItem1";
+            // 
+            // unpackToolStripMenuItem3
+            // 
+            resources.ApplyResources(unpackToolStripMenuItem3, "unpackToolStripMenuItem3");
+            unpackToolStripMenuItem3.DropDownItems.AddRange(new ToolStripItem[] { editableOBJPNGToolStripMenuItem1, originalMD2TIMToolStripMenuItem1 });
+            unpackToolStripMenuItem3.Name = "unpackToolStripMenuItem3";
+            // 
+            // editableOBJPNGToolStripMenuItem1
+            // 
+            resources.ApplyResources(editableOBJPNGToolStripMenuItem1, "editableOBJPNGToolStripMenuItem1");
+            editableOBJPNGToolStripMenuItem1.Name = "editableOBJPNGToolStripMenuItem1";
+            editableOBJPNGToolStripMenuItem1.Click += editableOBJPNGToolStripMenuItem1_Click;
+            // 
+            // originalMD2TIMToolStripMenuItem1
+            // 
+            resources.ApplyResources(originalMD2TIMToolStripMenuItem1, "originalMD2TIMToolStripMenuItem1");
+            originalMD2TIMToolStripMenuItem1.Name = "originalMD2TIMToolStripMenuItem1";
+            originalMD2TIMToolStripMenuItem1.Click += originalMD2TIMToolStripMenuItem1_Click;
+            // 
+            // repackToolStripMenuItem4
+            // 
+            resources.ApplyResources(repackToolStripMenuItem4, "repackToolStripMenuItem4");
+            repackToolStripMenuItem4.DropDownItems.AddRange(new ToolStripItem[] { editableToolStripMenuItem, originalToolStripMenuItem });
+            repackToolStripMenuItem4.Name = "repackToolStripMenuItem4";
+            // 
+            // editableToolStripMenuItem
+            // 
+            resources.ApplyResources(editableToolStripMenuItem, "editableToolStripMenuItem");
+            editableToolStripMenuItem.Name = "editableToolStripMenuItem";
+            editableToolStripMenuItem.Click += editableToolStripMenuItem_Click;
+            // 
+            // originalToolStripMenuItem
+            // 
+            resources.ApplyResources(originalToolStripMenuItem, "originalToolStripMenuItem");
+            originalToolStripMenuItem.Name = "originalToolStripMenuItem";
+            originalToolStripMenuItem.Click += originalToolStripMenuItem_Click;
+            // 
+            // viewerToolStripMenuItem1
+            // 
+            resources.ApplyResources(viewerToolStripMenuItem1, "viewerToolStripMenuItem1");
+            viewerToolStripMenuItem1.Name = "viewerToolStripMenuItem1";
+            // 
+            // pLDToolStripMenuItem1
+            // 
+            resources.ApplyResources(pLDToolStripMenuItem1, "pLDToolStripMenuItem1");
+            pLDToolStripMenuItem1.DropDownItems.AddRange(new ToolStripItem[] { unpackOriginalToolStripMenuItem2, repackOriginalToolStripMenuItem2, toolStripSeparator17, unpackEditableToolStripMenuItem2, repackEditableToolStripMenuItem2 });
+            pLDToolStripMenuItem1.Name = "pLDToolStripMenuItem1";
+            // 
+            // unpackOriginalToolStripMenuItem2
+            // 
+            resources.ApplyResources(unpackOriginalToolStripMenuItem2, "unpackOriginalToolStripMenuItem2");
+            unpackOriginalToolStripMenuItem2.Name = "unpackOriginalToolStripMenuItem2";
+            // 
+            // repackOriginalToolStripMenuItem2
+            // 
+            resources.ApplyResources(repackOriginalToolStripMenuItem2, "repackOriginalToolStripMenuItem2");
+            repackOriginalToolStripMenuItem2.Name = "repackOriginalToolStripMenuItem2";
+            // 
+            // toolStripSeparator17
+            // 
+            resources.ApplyResources(toolStripSeparator17, "toolStripSeparator17");
+            toolStripSeparator17.Name = "toolStripSeparator17";
+            // 
+            // unpackEditableToolStripMenuItem2
+            // 
+            resources.ApplyResources(unpackEditableToolStripMenuItem2, "unpackEditableToolStripMenuItem2");
+            unpackEditableToolStripMenuItem2.Name = "unpackEditableToolStripMenuItem2";
+            // 
+            // repackEditableToolStripMenuItem2
+            // 
+            resources.ApplyResources(repackEditableToolStripMenuItem2, "repackEditableToolStripMenuItem2");
+            repackEditableToolStripMenuItem2.Name = "repackEditableToolStripMenuItem2";
+            // 
+            // plwToolStripMenuItem1
+            // 
+            resources.ApplyResources(plwToolStripMenuItem1, "plwToolStripMenuItem1");
+            plwToolStripMenuItem1.Name = "plwToolStripMenuItem1";
+            // 
+            // vHVBToolStripMenuItem
+            // 
+            resources.ApplyResources(vHVBToolStripMenuItem, "vHVBToolStripMenuItem");
+            vHVBToolStripMenuItem.Name = "vHVBToolStripMenuItem";
+            vHVBToolStripMenuItem.Click += vHVBToolStripMenuItem_Click;
+            // 
+            // sAPToolStripMenuItem
+            // 
+            resources.ApplyResources(sAPToolStripMenuItem, "sAPToolStripMenuItem");
+            sAPToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { sAP2WAVToolStripMenuItem, wAV2SAPToolStripMenuItem });
+            sAPToolStripMenuItem.Name = "sAPToolStripMenuItem";
+            // 
+            // sAP2WAVToolStripMenuItem
+            // 
+            resources.ApplyResources(sAP2WAVToolStripMenuItem, "sAP2WAVToolStripMenuItem");
+            sAP2WAVToolStripMenuItem.Name = "sAP2WAVToolStripMenuItem";
+            // 
+            // wAV2SAPToolStripMenuItem
+            // 
+            resources.ApplyResources(wAV2SAPToolStripMenuItem, "wAV2SAPToolStripMenuItem");
+            wAV2SAPToolStripMenuItem.Name = "wAV2SAPToolStripMenuItem";
+            // 
+            // toolStripSeparator1
+            // 
+            resources.ApplyResources(toolStripSeparator1, "toolStripSeparator1");
+            toolStripSeparator1.Name = "toolStripSeparator1";
+            // 
+            // installPatch110ToolStripMenuItem
+            // 
+            resources.ApplyResources(installPatch110ToolStripMenuItem, "installPatch110ToolStripMenuItem");
+            installPatch110ToolStripMenuItem.Name = "installPatch110ToolStripMenuItem";
+            // 
+            // menuInstallRE2CR
+            // 
+            resources.ApplyResources(menuInstallRE2CR, "menuInstallRE2CR");
+            menuInstallRE2CR.Name = "menuInstallRE2CR";
+            menuInstallRE2CR.Click += menuInstallRE2CR_Click;
+            // 
+            // bIORE31999ToolStripMenuItem
+            // 
+            resources.ApplyResources(bIORE31999ToolStripMenuItem, "bIORE31999ToolStripMenuItem");
+            bIORE31999ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { rOFSToolStripMenuItem, aRDToolStripMenuItem, bSSToolStripMenuItem2, rDTToolStripMenuItem, mD2ToolStripMenuItem, eMDToolStripMenuItem, pLDToolStripMenuItem, pLWToolStripMenuItem, vBVHToolStripMenuItem, toolStripSeparator6, installPatch110ToolStripMenuItem1, menuInstallRE3CR });
+            bIORE31999ToolStripMenuItem.Name = "bIORE31999ToolStripMenuItem";
+            bIORE31999ToolStripMenuItem.Click += bIORE31999ToolStripMenuItem_Click;
+            // 
+            // rOFSToolStripMenuItem
+            // 
+            resources.ApplyResources(rOFSToolStripMenuItem, "rOFSToolStripMenuItem");
+            rOFSToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { ROFSunpackToolStripMenuItem, repackToolStripMenuItem2 });
+            rOFSToolStripMenuItem.Name = "rOFSToolStripMenuItem";
+            // 
+            // ROFSunpackToolStripMenuItem
+            // 
+            resources.ApplyResources(ROFSunpackToolStripMenuItem, "ROFSunpackToolStripMenuItem");
+            ROFSunpackToolStripMenuItem.Name = "ROFSunpackToolStripMenuItem";
+            ROFSunpackToolStripMenuItem.Click += ROFSunpackToolStripMenuItem_Click;
+            // 
+            // repackToolStripMenuItem2
+            // 
+            resources.ApplyResources(repackToolStripMenuItem2, "repackToolStripMenuItem2");
+            repackToolStripMenuItem2.Name = "repackToolStripMenuItem2";
+            // 
+            // aRDToolStripMenuItem
+            // 
+            resources.ApplyResources(aRDToolStripMenuItem, "aRDToolStripMenuItem");
+            aRDToolStripMenuItem.Name = "aRDToolStripMenuItem";
+            // 
+            // bSSToolStripMenuItem2
+            // 
+            resources.ApplyResources(bSSToolStripMenuItem2, "bSSToolStripMenuItem2");
+            bSSToolStripMenuItem2.Name = "bSSToolStripMenuItem2";
+            // 
+            // rDTToolStripMenuItem
+            // 
+            resources.ApplyResources(rDTToolStripMenuItem, "rDTToolStripMenuItem");
+            rDTToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { Bio3RDTunpackToolStripMenuItem, Bio3RDTrepackToolStripMenuItem, toolStripSeparator2, convertToBIO1ToolStripMenuItem1, convertToBIO2ToolStripMenuItem, toolStripSeparator3, sCDToolStripMenuItem1 });
+            rDTToolStripMenuItem.Name = "rDTToolStripMenuItem";
+            // 
+            // Bio3RDTunpackToolStripMenuItem
+            // 
+            resources.ApplyResources(Bio3RDTunpackToolStripMenuItem, "Bio3RDTunpackToolStripMenuItem");
+            Bio3RDTunpackToolStripMenuItem.Name = "Bio3RDTunpackToolStripMenuItem";
+            Bio3RDTunpackToolStripMenuItem.Click += Bio3RDTunpackToolStripMenuItem_Click;
+            // 
+            // Bio3RDTrepackToolStripMenuItem
+            // 
+            resources.ApplyResources(Bio3RDTrepackToolStripMenuItem, "Bio3RDTrepackToolStripMenuItem");
+            Bio3RDTrepackToolStripMenuItem.Name = "Bio3RDTrepackToolStripMenuItem";
+            Bio3RDTrepackToolStripMenuItem.Click += Bio3RDTrepackToolStripMenuItem_Click;
+            // 
+            // toolStripSeparator2
+            // 
+            resources.ApplyResources(toolStripSeparator2, "toolStripSeparator2");
+            toolStripSeparator2.Name = "toolStripSeparator2";
+            // 
+            // convertToBIO1ToolStripMenuItem1
+            // 
+            resources.ApplyResources(convertToBIO1ToolStripMenuItem1, "convertToBIO1ToolStripMenuItem1");
+            convertToBIO1ToolStripMenuItem1.Name = "convertToBIO1ToolStripMenuItem1";
+            // 
+            // convertToBIO2ToolStripMenuItem
+            // 
+            resources.ApplyResources(convertToBIO2ToolStripMenuItem, "convertToBIO2ToolStripMenuItem");
+            convertToBIO2ToolStripMenuItem.Name = "convertToBIO2ToolStripMenuItem";
+            // 
+            // toolStripSeparator3
+            // 
+            resources.ApplyResources(toolStripSeparator3, "toolStripSeparator3");
+            toolStripSeparator3.Name = "toolStripSeparator3";
+            // 
+            // sCDToolStripMenuItem1
+            // 
+            resources.ApplyResources(sCDToolStripMenuItem1, "sCDToolStripMenuItem1");
+            sCDToolStripMenuItem1.DropDownItems.AddRange(new ToolStripItem[] { sCDOpCodeEditorToolStripMenuItem, toolStripSeparator9, extractSCDFromRDTToolStripMenuItem, decompileSCDToSToolStripMenuItem, recompileSToSCDToolStripMenuItem });
+            sCDToolStripMenuItem1.Name = "sCDToolStripMenuItem1";
+            // 
+            // extractSCDFromRDTToolStripMenuItem
+            // 
+            resources.ApplyResources(extractSCDFromRDTToolStripMenuItem, "extractSCDFromRDTToolStripMenuItem");
+            extractSCDFromRDTToolStripMenuItem.Name = "extractSCDFromRDTToolStripMenuItem";
+            extractSCDFromRDTToolStripMenuItem.Click += extractSCDFromRDTToolStripMenuItem_Click;
+            // 
+            // sCDOpCodeEditorToolStripMenuItem
+            // 
+            resources.ApplyResources(sCDOpCodeEditorToolStripMenuItem, "sCDOpCodeEditorToolStripMenuItem");
+            sCDOpCodeEditorToolStripMenuItem.Name = "sCDOpCodeEditorToolStripMenuItem";
+            sCDOpCodeEditorToolStripMenuItem.Click += sCDOpCodeEditorToolStripMenuItem_Click;
+            // 
+            // decompileSCDToSToolStripMenuItem
+            // 
+            resources.ApplyResources(decompileSCDToSToolStripMenuItem, "decompileSCDToSToolStripMenuItem");
+            decompileSCDToSToolStripMenuItem.Name = "decompileSCDToSToolStripMenuItem";
+            decompileSCDToSToolStripMenuItem.Click += decompileSCDToSToolStripMenuItem_Click;
+            // 
+            // recompileSToSCDToolStripMenuItem
+            // 
+            resources.ApplyResources(recompileSToSCDToolStripMenuItem, "recompileSToSCDToolStripMenuItem");
+            recompileSToSCDToolStripMenuItem.Name = "recompileSToSCDToolStripMenuItem";
+            // 
+            // mD2ToolStripMenuItem
+            // 
+            resources.ApplyResources(mD2ToolStripMenuItem, "mD2ToolStripMenuItem");
+            mD2ToolStripMenuItem.Name = "mD2ToolStripMenuItem";
+            // 
+            // eMDToolStripMenuItem
+            // 
+            resources.ApplyResources(eMDToolStripMenuItem, "eMDToolStripMenuItem");
+            eMDToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { unpackToolStripMenuItem2, repackToolStripMenuItem3, viewerToolStripMenuItem });
+            eMDToolStripMenuItem.Name = "eMDToolStripMenuItem";
+            // 
+            // unpackToolStripMenuItem2
+            // 
+            resources.ApplyResources(unpackToolStripMenuItem2, "unpackToolStripMenuItem2");
+            unpackToolStripMenuItem2.DropDownItems.AddRange(new ToolStripItem[] { originalMD2TIMToolStripMenuItem, editableOBJPNGToolStripMenuItem });
+            unpackToolStripMenuItem2.Name = "unpackToolStripMenuItem2";
+            // 
+            // originalMD2TIMToolStripMenuItem
+            // 
+            resources.ApplyResources(originalMD2TIMToolStripMenuItem, "originalMD2TIMToolStripMenuItem");
+            originalMD2TIMToolStripMenuItem.Name = "originalMD2TIMToolStripMenuItem";
+            originalMD2TIMToolStripMenuItem.Click += originalMD2TIMToolStripMenuItem_Click;
+            // 
+            // editableOBJPNGToolStripMenuItem
+            // 
+            resources.ApplyResources(editableOBJPNGToolStripMenuItem, "editableOBJPNGToolStripMenuItem");
+            editableOBJPNGToolStripMenuItem.Name = "editableOBJPNGToolStripMenuItem";
+            editableOBJPNGToolStripMenuItem.Click += editableOBJPNGToolStripMenuItem_Click;
+            // 
+            // repackToolStripMenuItem3
+            // 
+            resources.ApplyResources(repackToolStripMenuItem3, "repackToolStripMenuItem3");
+            repackToolStripMenuItem3.DropDownItems.AddRange(new ToolStripItem[] { editableToolStripMenuItem1, originalToolStripMenuItem1 });
+            repackToolStripMenuItem3.Name = "repackToolStripMenuItem3";
+            // 
+            // editableToolStripMenuItem1
+            // 
+            resources.ApplyResources(editableToolStripMenuItem1, "editableToolStripMenuItem1");
+            editableToolStripMenuItem1.Name = "editableToolStripMenuItem1";
+            editableToolStripMenuItem1.Click += editableToolStripMenuItem1_Click;
+            // 
+            // originalToolStripMenuItem1
+            // 
+            resources.ApplyResources(originalToolStripMenuItem1, "originalToolStripMenuItem1");
+            originalToolStripMenuItem1.Name = "originalToolStripMenuItem1";
+            originalToolStripMenuItem1.Click += originalToolStripMenuItem1_Click;
+            // 
+            // viewerToolStripMenuItem
+            // 
+            resources.ApplyResources(viewerToolStripMenuItem, "viewerToolStripMenuItem");
+            viewerToolStripMenuItem.Name = "viewerToolStripMenuItem";
+            // 
+            // pLDToolStripMenuItem
+            // 
+            resources.ApplyResources(pLDToolStripMenuItem, "pLDToolStripMenuItem");
+            pLDToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { unpackOriginalToolStripMenuItem, repackOriginalToolStripMenuItem, toolStripSeparator10, unpackEditableToolStripMenuItem, repackEditableToolStripMenuItem });
+            pLDToolStripMenuItem.Name = "pLDToolStripMenuItem";
+            // 
+            // unpackOriginalToolStripMenuItem
+            // 
+            resources.ApplyResources(unpackOriginalToolStripMenuItem, "unpackOriginalToolStripMenuItem");
+            unpackOriginalToolStripMenuItem.Name = "unpackOriginalToolStripMenuItem";
+            unpackOriginalToolStripMenuItem.Click += unpackOriginalToolStripMenuItem_Click;
+            // 
+            // repackOriginalToolStripMenuItem
+            // 
+            resources.ApplyResources(repackOriginalToolStripMenuItem, "repackOriginalToolStripMenuItem");
+            repackOriginalToolStripMenuItem.Name = "repackOriginalToolStripMenuItem";
+            repackOriginalToolStripMenuItem.Click += repackOriginalToolStripMenuItem_Click;
+            // 
+            // toolStripSeparator10
+            // 
+            resources.ApplyResources(toolStripSeparator10, "toolStripSeparator10");
+            toolStripSeparator10.Name = "toolStripSeparator10";
+            // 
+            // unpackEditableToolStripMenuItem
+            // 
+            resources.ApplyResources(unpackEditableToolStripMenuItem, "unpackEditableToolStripMenuItem");
+            unpackEditableToolStripMenuItem.Name = "unpackEditableToolStripMenuItem";
+            unpackEditableToolStripMenuItem.Click += unpackEditableToolStripMenuItem_Click;
+            // 
+            // repackEditableToolStripMenuItem
+            // 
+            resources.ApplyResources(repackEditableToolStripMenuItem, "repackEditableToolStripMenuItem");
+            repackEditableToolStripMenuItem.Name = "repackEditableToolStripMenuItem";
+            repackEditableToolStripMenuItem.Click += repackEditableToolStripMenuItem_Click;
+            // 
+            // pLWToolStripMenuItem
+            // 
+            resources.ApplyResources(pLWToolStripMenuItem, "pLWToolStripMenuItem");
+            pLWToolStripMenuItem.Name = "pLWToolStripMenuItem";
+            // 
+            // vBVHToolStripMenuItem
+            // 
+            resources.ApplyResources(vBVHToolStripMenuItem, "vBVHToolStripMenuItem");
+            vBVHToolStripMenuItem.Name = "vBVHToolStripMenuItem";
+            vBVHToolStripMenuItem.Click += vBVHToolStripMenuItem_Click;
+            // 
+            // toolStripSeparator6
+            // 
+            resources.ApplyResources(toolStripSeparator6, "toolStripSeparator6");
+            toolStripSeparator6.Name = "toolStripSeparator6";
+            // 
+            // installPatch110ToolStripMenuItem1
+            // 
+            resources.ApplyResources(installPatch110ToolStripMenuItem1, "installPatch110ToolStripMenuItem1");
+            installPatch110ToolStripMenuItem1.Name = "installPatch110ToolStripMenuItem1";
+            // 
+            // menuInstallRE3CR
+            // 
+            resources.ApplyResources(menuInstallRE3CR, "menuInstallRE3CR");
+            menuInstallRE3CR.Name = "menuInstallRE3CR";
+            menuInstallRE3CR.Click += menuInstallRE3CR_Click;
+            // 
+            // whiteDayToolStripMenuItem
+            // 
+            resources.ApplyResources(whiteDayToolStripMenuItem, "whiteDayToolStripMenuItem");
+            whiteDayToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { nOPToolStripMenuItem1, wADToolStripMenuItem1, fontEditorToolStripMenuItem1, torresMP3PlaylistEditorToolStripMenuItem, saveEditorToolStripMenuItem1, toolStripSeparator8, installEnglishCompatibilityPatchToolStripMenuItem });
+            whiteDayToolStripMenuItem.Name = "whiteDayToolStripMenuItem";
+            // 
+            // nOPToolStripMenuItem1
+            // 
+            resources.ApplyResources(nOPToolStripMenuItem1, "nOPToolStripMenuItem1");
+            nOPToolStripMenuItem1.DropDownItems.AddRange(new ToolStripItem[] { unpackToolStripMenuItem1, repackToolStripMenuItem1 });
+            nOPToolStripMenuItem1.Name = "nOPToolStripMenuItem1";
+            // 
+            // unpackToolStripMenuItem1
+            // 
+            resources.ApplyResources(unpackToolStripMenuItem1, "unpackToolStripMenuItem1");
+            unpackToolStripMenuItem1.Name = "unpackToolStripMenuItem1";
+            unpackToolStripMenuItem1.Click += unpackToolStripMenuItem1_Click;
+            // 
+            // repackToolStripMenuItem1
+            // 
+            resources.ApplyResources(repackToolStripMenuItem1, "repackToolStripMenuItem1");
+            repackToolStripMenuItem1.Name = "repackToolStripMenuItem1";
+            repackToolStripMenuItem1.Click += repackToolStripMenuItem1_Click;
+            // 
+            // wADToolStripMenuItem1
+            // 
+            resources.ApplyResources(wADToolStripMenuItem1, "wADToolStripMenuItem1");
+            wADToolStripMenuItem1.Name = "wADToolStripMenuItem1";
+            // 
+            // fontEditorToolStripMenuItem1
+            // 
+            resources.ApplyResources(fontEditorToolStripMenuItem1, "fontEditorToolStripMenuItem1");
+            fontEditorToolStripMenuItem1.Name = "fontEditorToolStripMenuItem1";
+            fontEditorToolStripMenuItem1.Click += fontEditorToolStripMenuItem1_Click;
+            // 
+            // torresMP3PlaylistEditorToolStripMenuItem
+            // 
+            resources.ApplyResources(torresMP3PlaylistEditorToolStripMenuItem, "torresMP3PlaylistEditorToolStripMenuItem");
+            torresMP3PlaylistEditorToolStripMenuItem.Name = "torresMP3PlaylistEditorToolStripMenuItem";
+            // 
+            // saveEditorToolStripMenuItem1
+            // 
+            resources.ApplyResources(saveEditorToolStripMenuItem1, "saveEditorToolStripMenuItem1");
+            saveEditorToolStripMenuItem1.Name = "saveEditorToolStripMenuItem1";
+            // 
+            // toolStripSeparator8
+            // 
+            resources.ApplyResources(toolStripSeparator8, "toolStripSeparator8");
+            toolStripSeparator8.Name = "toolStripSeparator8";
+            // 
+            // installEnglishCompatibilityPatchToolStripMenuItem
+            // 
+            resources.ApplyResources(installEnglishCompatibilityPatchToolStripMenuItem, "installEnglishCompatibilityPatchToolStripMenuItem");
+            installEnglishCompatibilityPatchToolStripMenuItem.Name = "installEnglishCompatibilityPatchToolStripMenuItem";
+            // 
+            // toolStripMenuItem2
+            // 
+            resources.ApplyResources(toolStripMenuItem2, "toolStripMenuItem2");
+            toolStripMenuItem2.DropDownItems.AddRange(new ToolStripItem[] { residentEvilBiohazardToolStripMenuItem });
+            toolStripMenuItem2.Name = "toolStripMenuItem2";
+            // 
+            // residentEvilBiohazardToolStripMenuItem
+            // 
+            resources.ApplyResources(residentEvilBiohazardToolStripMenuItem, "residentEvilBiohazardToolStripMenuItem");
+            residentEvilBiohazardToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { enableRE123LiveHUDToolStripMenuItem, biorandToolStripMenuItem });
+            residentEvilBiohazardToolStripMenuItem.Name = "residentEvilBiohazardToolStripMenuItem";
+            // 
+            // enableRE123LiveHUDToolStripMenuItem
+            // 
+            resources.ApplyResources(enableRE123LiveHUDToolStripMenuItem, "enableRE123LiveHUDToolStripMenuItem");
+            enableRE123LiveHUDToolStripMenuItem.Name = "enableRE123LiveHUDToolStripMenuItem";
+            // 
+            // biorandToolStripMenuItem
+            // 
+            resources.ApplyResources(biorandToolStripMenuItem, "biorandToolStripMenuItem");
+            biorandToolStripMenuItem.Name = "biorandToolStripMenuItem";
+            // 
+            // helpToolStripMenuItem
+            // 
+            resources.ApplyResources(helpToolStripMenuItem, "helpToolStripMenuItem");
+            helpToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { versionToolStripMenuItem, documentationToolStripMenuItem, checkForUpdatesToolStripMenuItem });
+            helpToolStripMenuItem.Name = "helpToolStripMenuItem";
+            // 
+            // versionToolStripMenuItem
+            // 
+            resources.ApplyResources(versionToolStripMenuItem, "versionToolStripMenuItem");
+            versionToolStripMenuItem.Name = "versionToolStripMenuItem";
+            // 
+            // documentationToolStripMenuItem
+            // 
+            resources.ApplyResources(documentationToolStripMenuItem, "documentationToolStripMenuItem");
+            documentationToolStripMenuItem.Name = "documentationToolStripMenuItem";
+            // 
+            // checkForUpdatesToolStripMenuItem
+            // 
+            resources.ApplyResources(checkForUpdatesToolStripMenuItem, "checkForUpdatesToolStripMenuItem");
+            checkForUpdatesToolStripMenuItem.Name = "checkForUpdatesToolStripMenuItem";
+            // 
+            // notifyIcon1
+            // 
+            resources.ApplyResources(notifyIcon1, "notifyIcon1");
+            // 
+            // statusStrip1
+            // 
+            resources.ApplyResources(statusStrip1, "statusStrip1");
+            statusStrip1.Items.AddRange(new ToolStripItem[] { toolStripStatusLabel1 });
+            statusStrip1.Name = "statusStrip1";
+            statusStrip1.SizingGrip = false;
+            // 
+            // toolStripStatusLabel1
+            // 
+            resources.ApplyResources(toolStripStatusLabel1, "toolStripStatusLabel1");
+            toolStripStatusLabel1.BackColor = SystemColors.ButtonFace;
+            toolStripStatusLabel1.Name = "toolStripStatusLabel1";
+            // 
+            // toolStripSeparator9
+            // 
+            resources.ApplyResources(toolStripSeparator9, "toolStripSeparator9");
+            toolStripSeparator9.Name = "toolStripSeparator9";
+            // 
+            // toolStripSeparator12
+            // 
+            resources.ApplyResources(toolStripSeparator12, "toolStripSeparator12");
+            toolStripSeparator12.Name = "toolStripSeparator12";
+            // 
+            // toolStripSeparator15
+            // 
+            resources.ApplyResources(toolStripSeparator15, "toolStripSeparator15");
+            toolStripSeparator15.Name = "toolStripSeparator15";
+            // 
+            // Main
+            // 
+            resources.ApplyResources(this, "$this");
+            AutoScaleMode = AutoScaleMode.Font;
+            BackColor = SystemColors.ActiveCaptionText;
+            BackgroundImage = Properties.Resources.umbrella_corp_wallpaper_v4_by_grungestyle_d2cu3ur_fullview;
+            Controls.Add(statusStrip1);
+            Controls.Add(menuStrip1);
+            FormBorderStyle = FormBorderStyle.Fixed3D;
+            MainMenuStrip = menuStrip1;
+            MaximizeBox = false;
+            Name = "Main";
+            TransparencyKey = Color.Transparent;
+            menuStrip1.ResumeLayout(false);
+            menuStrip1.PerformLayout();
+            statusStrip1.ResumeLayout(false);
+            statusStrip1.PerformLayout();
+            ResumeLayout(false);
+            PerformLayout();
+        }
+
+        #endregion
+
+        private MenuStrip menuStrip1;
+        private ToolStripMenuItem helpToolStripMenuItem;
+        private ToolStripMenuItem fileToolStripMenuItem;
+        private ToolStripMenuItem exitToolStripMenuItem;
+        private ToolStripMenuItem whiteDayToolStripMenuItem;
+        private ToolStripMenuItem nOPToolStripMenuItem1;
+        private ToolStripMenuItem unpackToolStripMenuItem1;
+        private ToolStripMenuItem repackToolStripMenuItem1;
+        private ToolStripMenuItem wADToolStripMenuItem1;
+        private ToolStripMenuItem fontEditorToolStripMenuItem1;
+        private ToolStripMenuItem torresMP3PlaylistEditorToolStripMenuItem;
+        private ToolStripMenuItem saveEditorToolStripMenuItem1;
+        private ToolStripMenuItem bIORE31999ToolStripMenuItem;
+        private ToolStripMenuItem rDTToolStripMenuItem;
+        private ToolStripMenuItem Bio3RDTunpackToolStripMenuItem;
+        private ToolStripMenuItem Bio3RDTrepackToolStripMenuItem;
+        private ToolStripMenuItem pLDToolStripMenuItem;
+        private ToolStripMenuItem eMDToolStripMenuItem;
+        private ToolStripMenuItem bIO2RE21998ToolStripMenuItem;
+        private ToolStripMenuItem rDTToolStripMenuItem1;
+        private ToolStripMenuItem convertToBIO3ToolStripMenuItem;
+        private ToolStripMenuItem convertToBIO2ToolStripMenuItem;
+        private ToolStripMenuItem unpackToolStripMenuItem;
+        private ToolStripMenuItem repackToolStripMenuItem;
+        private ToolStripMenuItem pLDToolStripMenuItem1;
+        private ToolStripMenuItem eMDToolStripMenuItem1;
+        private ToolStripMenuItem sAPToolStripMenuItem;
+        private ToolStripMenuItem vBVHToolStripMenuItem;
+        private NotifyIcon notifyIcon1;
+        private ToolStripMenuItem menuInstallRE3CR;
+        private ToolStripMenuItem installEnglishCompatibilityPatchToolStripMenuItem;
+        private ToolStripMenuItem menuInstallRE2CR;
+        private ToolStripMenuItem sAP2WAVToolStripMenuItem;
+        private ToolStripMenuItem wAV2SAPToolStripMenuItem;
+        private ToolStripMenuItem aRDToolStripMenuItem;
+        private ToolStripMenuItem toolStripMenuItem1;
+        private ToolStripMenuItem rDTToolStripMenuItem2;
+        private ToolStripMenuItem eMDToolStripMenuItem2;
+        private ToolStripMenuItem menuInstallRE1CR;
+        private ToolStripMenuItem toolStripMenuItem2;
+        private StatusStrip statusStrip1;
+        private ToolStripMenuItem vHVBToolStripMenuItem;
+        private ToolStripSeparator toolStripSeparator5;
+        private ToolStripSeparator toolStripSeparator4;
+        private ToolStripMenuItem sCDToolStripMenuItem;
+        private ToolStripSeparator toolStripSeparator2;
+        private ToolStripSeparator toolStripSeparator3;
+        private ToolStripMenuItem sCDToolStripMenuItem1;
+        private ToolStripMenuItem versionToolStripMenuItem;
+        private ToolStripMenuItem documentationToolStripMenuItem;
+        private ToolStripMenuItem checkForUpdatesToolStripMenuItem;
+        private ToolStripMenuItem residentEvilBiohazardToolStripMenuItem;
+        private ToolStripMenuItem enableRE123LiveHUDToolStripMenuItem;
+        private ToolStripMenuItem rOFSToolStripMenuItem;
+        private ToolStripMenuItem ROFSunpackToolStripMenuItem;
+        private ToolStripMenuItem repackToolStripMenuItem2;
+        private ToolStripMenuItem bIO151997ToolStripMenuItem;
+        private ToolStripMenuItem unpackToolStripMenuItem2;
+        private ToolStripMenuItem editableOBJPNGToolStripMenuItem;
+        private ToolStripMenuItem originalMD2TIMToolStripMenuItem;
+        private ToolStripMenuItem repackToolStripMenuItem3;
+        private ToolStripMenuItem unpackToolStripMenuItem3;
+        private ToolStripMenuItem editableOBJPNGToolStripMenuItem1;
+        private ToolStripMenuItem originalMD2TIMToolStripMenuItem1;
+        private ToolStripMenuItem repackToolStripMenuItem4;
+        private ToolStripMenuItem editableToolStripMenuItem;
+        private ToolStripMenuItem originalToolStripMenuItem;
+        private ToolStripMenuItem editableToolStripMenuItem1;
+        private ToolStripMenuItem originalToolStripMenuItem1;
+        private ToolStripMenuItem unpackEditableToolStripMenuItem;
+        private ToolStripMenuItem unpackOriginalToolStripMenuItem;
+        private ToolStripMenuItem repackEditableToolStripMenuItem;
+        private ToolStripMenuItem repackOriginalToolStripMenuItem;
+        private ToolStripMenuItem bSSToolStripMenuItem;
+        private ToolStripMenuItem pLWToolStripMenuItem2;
+        private ToolStripMenuItem plwToolStripMenuItem1;
+        private ToolStripMenuItem pLWToolStripMenuItem;
+        private ToolStripMenuItem bSSToolStripMenuItem1;
+        private ToolStripMenuItem bSSToolStripMenuItem2;
+        private ToolStripMenuItem vHVBToolStripMenuItem2;
+        private ToolStripSeparator toolStripSeparator7;
+        private ToolStripMenuItem bSSToolStripMenuItem3;
+        private ToolStripMenuItem rDTToolStripMenuItem3;
+        private ToolStripMenuItem eMDToolStripMenuItem3;
+        private ToolStripMenuItem pLDToolStripMenuItem2;
+        private ToolStripMenuItem pLWToolStripMenuItem3;
+        private ToolStripMenuItem vHVBToolStripMenuItem1;
+        private ToolStripSeparator toolStripSeparator1;
+        private ToolStripSeparator toolStripSeparator6;
+        private ToolStripSeparator toolStripSeparator8;
+        private ToolStripMenuItem biorandToolStripMenuItem;
+        private ToolStripMenuItem unpackEditableToolStripMenuItem1;
+        private ToolStripMenuItem repackEditableToolStripMenuItem1;
+        private ToolStripMenuItem decompileSCDToSToolStripMenuItem;
+        private ToolStripMenuItem recompileSToSCDToolStripMenuItem;
+        private ToolStripMenuItem unpackOriginalToolStripMenuItem1;
+        private ToolStripMenuItem repackOriginalToolStripMenuItem1;
+        private ToolStripSeparator toolStripSeparator11;
+        private ToolStripMenuItem extractSCDFromRDTToolStripMenuItem;
+        private ToolStripSeparator toolStripSeparator10;
+        private ToolStripMenuItem convertToBIO1ToolStripMenuItem;
+        private ToolStripMenuItem convertToBIO1ToolStripMenuItem1;
+        private ToolStripMenuItem extractSCDFromRDTToolStripMenuItem1;
+        private ToolStripMenuItem decompileSCDToSToolStripMenuItem1;
+        private ToolStripMenuItem recompileSToSCDToolStripMenuItem1;
+        private ToolStripMenuItem unpackToolStripMenuItem4;
+        private ToolStripMenuItem repackToolStripMenuItem5;
+        private ToolStripSeparator toolStripSeparator13;
+        private ToolStripMenuItem convertToBIO2ToolStripMenuItem1;
+        private ToolStripMenuItem convertToBIO3ToolStripMenuItem1;
+        private ToolStripSeparator toolStripSeparator14;
+        private ToolStripMenuItem sCDScriptDataToolStripMenuItem;
+        private ToolStripStatusLabel toolStripStatusLabel1;
+        private ToolStripSeparator toolStripSeparator16;
+        private ToolStripMenuItem viewerToolStripMenuItem2;
+        private ToolStripMenuItem viewerToolStripMenuItem1;
+        private ToolStripMenuItem unpackOriginalToolStripMenuItem2;
+        private ToolStripMenuItem repackOriginalToolStripMenuItem2;
+        private ToolStripSeparator toolStripSeparator17;
+        private ToolStripMenuItem unpackEditableToolStripMenuItem2;
+        private ToolStripMenuItem repackEditableToolStripMenuItem2;
+        private ToolStripMenuItem viewerToolStripMenuItem;
+        private ToolStripMenuItem mD1ToolStripMenuItem;
+        private ToolStripMenuItem mD2ToolStripMenuItem;
+        private ToolStripMenuItem installPatch110ToolStripMenuItem;
+        private ToolStripMenuItem installPatch110ToolStripMenuItem1;
+        private ToolStripMenuItem sCDOpCodeEditorToolStripMenuItem;
+        private ToolStripMenuItem sCDOpCodeEditorToolStripMenuItem1;
+        private ToolStripMenuItem extractSCDFromRDTToolStripMenuItem2;
+        private ToolStripMenuItem toolStripMenuItem3;
+        private ToolStripSeparator toolStripSeparator15;
+        private ToolStripSeparator toolStripSeparator12;
+        private ToolStripSeparator toolStripSeparator9;
+    }
+}

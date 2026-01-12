@@ -1,0 +1,59 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RootNamespace>Tool_Hazard</RootNamespace>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationIcon>icon.ico</ApplicationIcon>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Resources\Biohazard\Opcodes\re15_opcodes.json" />
+    <None Remove="Resources\Biohazard\Opcodes\re1_opcodes.json" />
+    <None Remove="Resources\Biohazard\Opcodes\re2_opcodes.json" />
+    <None Remove="Resources\Biohazard\Opcodes\re3_opcodes.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="icon.ico" />
+    <Content Include="Resources\Biohazard\Opcodes\re15_opcodes.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Biohazard\Opcodes\re1_opcodes.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Biohazard\Opcodes\re2_opcodes.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Biohazard\Opcodes\re3_opcodes.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AFSLib" Version="1.1.2" />
+    <PackageReference Include="csharp-prs" Version="2.1.3" />
+    <PackageReference Include="NVorbis" Version="0.10.5" />
+    <PackageReference Include="SevenZipExtractor" Version="1.0.19" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Properties\Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>
