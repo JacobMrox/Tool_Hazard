@@ -398,29 +398,14 @@
   <data name="mD1ToolStripMenuItem.Text" xml:space="preserve">
     <value>MD1</value>
   </data>
-  <data name="unpackToolStripMenuItem3.Size" type="System.Drawing.Size, System.Drawing">
-    <value>167, 22</value>
-  </data>
   <data name="unpackToolStripMenuItem3.Text" xml:space="preserve">
     <value>Unpack (Original)</value>
-  </data>
-  <data name="repackToolStripMenuItem4.Size" type="System.Drawing.Size, System.Drawing">
-    <value>167, 22</value>
   </data>
   <data name="repackToolStripMenuItem4.Text" xml:space="preserve">
     <value>Repack (Original)</value>
   </data>
-  <data name="toolStripSeparator19.Size" type="System.Drawing.Size, System.Drawing">
-    <value>164, 6</value>
-  </data>
-  <data name="unpackEditableToolStripMenuItem4.Size" type="System.Drawing.Size, System.Drawing">
-    <value>167, 22</value>
-  </data>
   <data name="unpackEditableToolStripMenuItem4.Text" xml:space="preserve">
     <value>Unpack (Editable)</value>
-  </data>
-  <data name="repackEditableToolStripMenuItem4.Size" type="System.Drawing.Size, System.Drawing">
-    <value>167, 22</value>
   </data>
   <data name="repackEditableToolStripMenuItem4.Text" xml:space="preserve">
     <value>Repack (Editable)</value>
@@ -431,29 +416,14 @@
   <data name="eMDToolStripMenuItem1.Text" xml:space="preserve">
     <value>EMD</value>
   </data>
-  <data name="unpackOriginalToolStripMenuItem2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>167, 22</value>
-  </data>
   <data name="unpackOriginalToolStripMenuItem2.Text" xml:space="preserve">
     <value>Unpack (Original)</value>
-  </data>
-  <data name="repackOriginalToolStripMenuItem2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>167, 22</value>
   </data>
   <data name="repackOriginalToolStripMenuItem2.Text" xml:space="preserve">
     <value>Repack (Original)</value>
   </data>
-  <data name="toolStripSeparator17.Size" type="System.Drawing.Size, System.Drawing">
-    <value>164, 6</value>
-  </data>
-  <data name="unpackEditableToolStripMenuItem2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>167, 22</value>
-  </data>
   <data name="unpackEditableToolStripMenuItem2.Text" xml:space="preserve">
     <value>Unpack (Editable)</value>
-  </data>
-  <data name="repackEditableToolStripMenuItem2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>167, 22</value>
   </data>
   <data name="repackEditableToolStripMenuItem2.Text" xml:space="preserve">
     <value>Repack (Editable)</value>
@@ -641,14 +611,29 @@
   <data name="mD2ToolStripMenuItem.Text" xml:space="preserve">
     <value>MD2</value>
   </data>
+  <data name="unpackOriginalToolStripMenuItem3.Size" type="System.Drawing.Size, System.Drawing">
+    <value>167, 22</value>
+  </data>
   <data name="unpackOriginalToolStripMenuItem3.Text" xml:space="preserve">
     <value>Unpack (Original)</value>
+  </data>
+  <data name="repackOriginalToolStripMenuItem3.Size" type="System.Drawing.Size, System.Drawing">
+    <value>167, 22</value>
   </data>
   <data name="repackOriginalToolStripMenuItem3.Text" xml:space="preserve">
     <value>Repack (Original)</value>
   </data>
+  <data name="toolStripSeparator18.Size" type="System.Drawing.Size, System.Drawing">
+    <value>164, 6</value>
+  </data>
+  <data name="unpackEditableToolStripMenuItem3.Size" type="System.Drawing.Size, System.Drawing">
+    <value>167, 22</value>
+  </data>
   <data name="unpackEditableToolStripMenuItem3.Text" xml:space="preserve">
     <value>Unpack (Editable)</value>
+  </data>
+  <data name="repackEditableToolStripMenuItem3.Size" type="System.Drawing.Size, System.Drawing">
+    <value>167, 22</value>
   </data>
   <data name="repackEditableToolStripMenuItem3.Text" xml:space="preserve">
     <value>Repack (Editable)</value>

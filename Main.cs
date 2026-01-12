@@ -1340,5 +1340,101 @@ namespace Tool_Hazard
                 }
             }
         }
+
+        private void unpackToolStripMenuItem3_Click(object sender, EventArgs e)
+        {
+            //RE2 EMD [MD1 + TIM] Unpack 
+            using (OpenFileDialog openFileDialog = new OpenFileDialog())
+            {
+                openFileDialog.Filter = "Resident Evil Enemy Data (*.emd)|*.EMD|All files (*.*)|*.*";
+                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    string selectedFile = openFileDialog.FileName;
+
+                    //try catch errors
+                    try
+                    {
+                        //Call EMD tool and pass our paths and version to unpack as Original format
+                        EmdTool.Unpack(selectedFile, CurrentBioVersion, EmdTool.Format.Original);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool Error",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
+
+        private void repackToolStripMenuItem4_Click(object sender, EventArgs e)
+        {
+            //RE2 EMD [MD1 + TIM] Repack
+            using (FolderBrowserDialog folderDialog = new FolderBrowserDialog())
+            {
+                folderDialog.Description = "Select the folder containing the unpacked EMD files (MD1 + TIM)";
+                if (folderDialog.ShowDialog() == DialogResult.OK)
+                {
+                    string sourceDir = folderDialog.SelectedPath;
+                    //try catch errors
+                    try
+                    {
+                        EmdTool.RepackFromFolder(sourceDir, CurrentBioVersion, EmdTool.Format.Original, "emd");
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool Error",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
+
+        private void unpackEditableToolStripMenuItem4_Click(object sender, EventArgs e)
+        {
+            //RE2 EMD [OBJ + PNG] Unpack
+            using (OpenFileDialog openFileDialog = new OpenFileDialog())
+            {
+                openFileDialog.Filter = "Resident Evil Enemy Data (*.emd)|*.EMD|All files (*.*)|*.*";
+                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    string selectedFile = openFileDialog.FileName;
+
+                    //try catch errors
+                    try
+                    {
+                        //Call EMD tool and pass our paths and version to unpack as Original format
+                        EmdTool.Unpack(selectedFile, CurrentBioVersion, EmdTool.Format.Editable);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool Error",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
+
+        private void repackEditableToolStripMenuItem4_Click(object sender, EventArgs e)
+        {
+            //RE2 EMD [OBJ + PNG] Repack
+            using (FolderBrowserDialog folderDialog = new FolderBrowserDialog())
+            {
+                folderDialog.Description = "Select the folder containing the unpacked EMD files (OBJ + PNG)";
+                if (folderDialog.ShowDialog() == DialogResult.OK)
+                {
+                    string sourceDir = folderDialog.SelectedPath;
+                    //try catch errors
+                    try
+                    {
+                        EmdTool.RepackFromFolder(sourceDir, CurrentBioVersion, EmdTool.Format.Editable, "emd");
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool Error",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
     }
 }

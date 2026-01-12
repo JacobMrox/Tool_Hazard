@@ -448,11 +448,13 @@
             // 
             resources.ApplyResources(unpackToolStripMenuItem3, "unpackToolStripMenuItem3");
             unpackToolStripMenuItem3.Name = "unpackToolStripMenuItem3";
+            unpackToolStripMenuItem3.Click += unpackToolStripMenuItem3_Click;
             // 
             // repackToolStripMenuItem4
             // 
             resources.ApplyResources(repackToolStripMenuItem4, "repackToolStripMenuItem4");
             repackToolStripMenuItem4.Name = "repackToolStripMenuItem4";
+            repackToolStripMenuItem4.Click += repackToolStripMenuItem4_Click;
             // 
             // toolStripSeparator19
             // 
@@ -463,11 +465,13 @@
             // 
             resources.ApplyResources(unpackEditableToolStripMenuItem4, "unpackEditableToolStripMenuItem4");
             unpackEditableToolStripMenuItem4.Name = "unpackEditableToolStripMenuItem4";
+            unpackEditableToolStripMenuItem4.Click += unpackEditableToolStripMenuItem4_Click;
             // 
             // repackEditableToolStripMenuItem4
             // 
             resources.ApplyResources(repackEditableToolStripMenuItem4, "repackEditableToolStripMenuItem4");
             repackEditableToolStripMenuItem4.Name = "repackEditableToolStripMenuItem4";
+            repackEditableToolStripMenuItem4.Click += repackEditableToolStripMenuItem4_Click;
             // 
             // pLDToolStripMenuItem1
             // 
