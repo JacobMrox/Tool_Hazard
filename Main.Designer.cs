@@ -43,16 +43,15 @@
             convertToBIO3ToolStripMenuItem1 = new ToolStripMenuItem();
             toolStripSeparator14 = new ToolStripSeparator();
             sCDScriptDataToolStripMenuItem = new ToolStripMenuItem();
-            extractSCDFromRDTToolStripMenuItem2 = new ToolStripMenuItem();
             toolStripMenuItem3 = new ToolStripMenuItem();
+            toolStripSeparator15 = new ToolStripSeparator();
+            extractSCDFromRDTToolStripMenuItem2 = new ToolStripMenuItem();
             eMDToolStripMenuItem2 = new ToolStripMenuItem();
             unpackOriginalToolStripMenuItem1 = new ToolStripMenuItem();
             repackOriginalToolStripMenuItem1 = new ToolStripMenuItem();
             toolStripSeparator11 = new ToolStripSeparator();
             unpackEditableToolStripMenuItem1 = new ToolStripMenuItem();
             repackEditableToolStripMenuItem1 = new ToolStripMenuItem();
-            toolStripSeparator16 = new ToolStripSeparator();
-            viewerToolStripMenuItem2 = new ToolStripMenuItem();
             pLWToolStripMenuItem2 = new ToolStripMenuItem();
             vHVBToolStripMenuItem2 = new ToolStripMenuItem();
             toolStripSeparator7 = new ToolStripSeparator();
@@ -74,19 +73,18 @@
             convertToBIO3ToolStripMenuItem = new ToolStripMenuItem();
             toolStripSeparator4 = new ToolStripSeparator();
             sCDToolStripMenuItem = new ToolStripMenuItem();
-            extractSCDFromRDTToolStripMenuItem1 = new ToolStripMenuItem();
             sCDOpCodeEditorToolStripMenuItem1 = new ToolStripMenuItem();
+            toolStripSeparator12 = new ToolStripSeparator();
+            extractSCDFromRDTToolStripMenuItem1 = new ToolStripMenuItem();
             decompileSCDToSToolStripMenuItem1 = new ToolStripMenuItem();
             recompileSToSCDToolStripMenuItem1 = new ToolStripMenuItem();
             mD1ToolStripMenuItem = new ToolStripMenuItem();
             eMDToolStripMenuItem1 = new ToolStripMenuItem();
             unpackToolStripMenuItem3 = new ToolStripMenuItem();
-            editableOBJPNGToolStripMenuItem1 = new ToolStripMenuItem();
-            originalMD2TIMToolStripMenuItem1 = new ToolStripMenuItem();
             repackToolStripMenuItem4 = new ToolStripMenuItem();
-            editableToolStripMenuItem = new ToolStripMenuItem();
-            originalToolStripMenuItem = new ToolStripMenuItem();
-            viewerToolStripMenuItem1 = new ToolStripMenuItem();
+            toolStripSeparator19 = new ToolStripSeparator();
+            unpackEditableToolStripMenuItem4 = new ToolStripMenuItem();
+            repackEditableToolStripMenuItem4 = new ToolStripMenuItem();
             pLDToolStripMenuItem1 = new ToolStripMenuItem();
             unpackOriginalToolStripMenuItem2 = new ToolStripMenuItem();
             repackOriginalToolStripMenuItem2 = new ToolStripMenuItem();
@@ -115,19 +113,18 @@
             convertToBIO2ToolStripMenuItem = new ToolStripMenuItem();
             toolStripSeparator3 = new ToolStripSeparator();
             sCDToolStripMenuItem1 = new ToolStripMenuItem();
-            extractSCDFromRDTToolStripMenuItem = new ToolStripMenuItem();
             sCDOpCodeEditorToolStripMenuItem = new ToolStripMenuItem();
+            toolStripSeparator9 = new ToolStripSeparator();
+            extractSCDFromRDTToolStripMenuItem = new ToolStripMenuItem();
             decompileSCDToSToolStripMenuItem = new ToolStripMenuItem();
             recompileSToSCDToolStripMenuItem = new ToolStripMenuItem();
             mD2ToolStripMenuItem = new ToolStripMenuItem();
             eMDToolStripMenuItem = new ToolStripMenuItem();
-            unpackToolStripMenuItem2 = new ToolStripMenuItem();
-            originalMD2TIMToolStripMenuItem = new ToolStripMenuItem();
-            editableOBJPNGToolStripMenuItem = new ToolStripMenuItem();
-            repackToolStripMenuItem3 = new ToolStripMenuItem();
-            editableToolStripMenuItem1 = new ToolStripMenuItem();
-            originalToolStripMenuItem1 = new ToolStripMenuItem();
-            viewerToolStripMenuItem = new ToolStripMenuItem();
+            unpackOriginalToolStripMenuItem3 = new ToolStripMenuItem();
+            repackOriginalToolStripMenuItem3 = new ToolStripMenuItem();
+            toolStripSeparator18 = new ToolStripSeparator();
+            unpackEditableToolStripMenuItem3 = new ToolStripMenuItem();
+            repackEditableToolStripMenuItem3 = new ToolStripMenuItem();
             pLDToolStripMenuItem = new ToolStripMenuItem();
             unpackOriginalToolStripMenuItem = new ToolStripMenuItem();
             repackOriginalToolStripMenuItem = new ToolStripMenuItem();
@@ -160,9 +157,6 @@
             notifyIcon1 = new NotifyIcon(components);
             statusStrip1 = new StatusStrip();
             toolStripStatusLabel1 = new ToolStripStatusLabel();
-            toolStripSeparator9 = new ToolStripSeparator();
-            toolStripSeparator12 = new ToolStripSeparator();
-            toolStripSeparator15 = new ToolStripSeparator();
             menuStrip1.SuspendLayout();
             statusStrip1.SuspendLayout();
             SuspendLayout();
@@ -247,21 +241,26 @@
             sCDScriptDataToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { toolStripMenuItem3, toolStripSeparator15, extractSCDFromRDTToolStripMenuItem2 });
             sCDScriptDataToolStripMenuItem.Name = "sCDScriptDataToolStripMenuItem";
             // 
-            // extractSCDFromRDTToolStripMenuItem2
-            // 
-            resources.ApplyResources(extractSCDFromRDTToolStripMenuItem2, "extractSCDFromRDTToolStripMenuItem2");
-            extractSCDFromRDTToolStripMenuItem2.Name = "extractSCDFromRDTToolStripMenuItem2";
-            // 
             // toolStripMenuItem3
             // 
             resources.ApplyResources(toolStripMenuItem3, "toolStripMenuItem3");
             toolStripMenuItem3.Name = "toolStripMenuItem3";
             toolStripMenuItem3.Click += toolStripMenuItem3_Click;
             // 
+            // toolStripSeparator15
+            // 
+            resources.ApplyResources(toolStripSeparator15, "toolStripSeparator15");
+            toolStripSeparator15.Name = "toolStripSeparator15";
+            // 
+            // extractSCDFromRDTToolStripMenuItem2
+            // 
+            resources.ApplyResources(extractSCDFromRDTToolStripMenuItem2, "extractSCDFromRDTToolStripMenuItem2");
+            extractSCDFromRDTToolStripMenuItem2.Name = "extractSCDFromRDTToolStripMenuItem2";
+            // 
             // eMDToolStripMenuItem2
             // 
             resources.ApplyResources(eMDToolStripMenuItem2, "eMDToolStripMenuItem2");
-            eMDToolStripMenuItem2.DropDownItems.AddRange(new ToolStripItem[] { unpackOriginalToolStripMenuItem1, repackOriginalToolStripMenuItem1, toolStripSeparator11, unpackEditableToolStripMenuItem1, repackEditableToolStripMenuItem1, toolStripSeparator16, viewerToolStripMenuItem2 });
+            eMDToolStripMenuItem2.DropDownItems.AddRange(new ToolStripItem[] { unpackOriginalToolStripMenuItem1, repackOriginalToolStripMenuItem1, toolStripSeparator11, unpackEditableToolStripMenuItem1, repackEditableToolStripMenuItem1 });
             eMDToolStripMenuItem2.Name = "eMDToolStripMenuItem2";
             // 
             // unpackOriginalToolStripMenuItem1
@@ -290,16 +289,6 @@
             resources.ApplyResources(repackEditableToolStripMenuItem1, "repackEditableToolStripMenuItem1");
             repackEditableToolStripMenuItem1.Name = "repackEditableToolStripMenuItem1";
             repackEditableToolStripMenuItem1.Click += repackEditableToolStripMenuItem1_Click;
-            // 
-            // toolStripSeparator16
-            // 
-            resources.ApplyResources(toolStripSeparator16, "toolStripSeparator16");
-            toolStripSeparator16.Name = "toolStripSeparator16";
-            // 
-            // viewerToolStripMenuItem2
-            // 
-            resources.ApplyResources(viewerToolStripMenuItem2, "viewerToolStripMenuItem2");
-            viewerToolStripMenuItem2.Name = "viewerToolStripMenuItem2";
             // 
             // pLWToolStripMenuItem2
             // 
@@ -416,17 +405,22 @@
             sCDToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { sCDOpCodeEditorToolStripMenuItem1, toolStripSeparator12, extractSCDFromRDTToolStripMenuItem1, decompileSCDToSToolStripMenuItem1, recompileSToSCDToolStripMenuItem1 });
             sCDToolStripMenuItem.Name = "sCDToolStripMenuItem";
             // 
-            // extractSCDFromRDTToolStripMenuItem1
-            // 
-            resources.ApplyResources(extractSCDFromRDTToolStripMenuItem1, "extractSCDFromRDTToolStripMenuItem1");
-            extractSCDFromRDTToolStripMenuItem1.Name = "extractSCDFromRDTToolStripMenuItem1";
-            extractSCDFromRDTToolStripMenuItem1.Click += extractSCDFromRDTToolStripMenuItem1_Click;
-            // 
             // sCDOpCodeEditorToolStripMenuItem1
             // 
             resources.ApplyResources(sCDOpCodeEditorToolStripMenuItem1, "sCDOpCodeEditorToolStripMenuItem1");
             sCDOpCodeEditorToolStripMenuItem1.Name = "sCDOpCodeEditorToolStripMenuItem1";
             sCDOpCodeEditorToolStripMenuItem1.Click += sCDOpCodeEditorToolStripMenuItem1_Click;
+            // 
+            // toolStripSeparator12
+            // 
+            resources.ApplyResources(toolStripSeparator12, "toolStripSeparator12");
+            toolStripSeparator12.Name = "toolStripSeparator12";
+            // 
+            // extractSCDFromRDTToolStripMenuItem1
+            // 
+            resources.ApplyResources(extractSCDFromRDTToolStripMenuItem1, "extractSCDFromRDTToolStripMenuItem1");
+            extractSCDFromRDTToolStripMenuItem1.Name = "extractSCDFromRDTToolStripMenuItem1";
+            extractSCDFromRDTToolStripMenuItem1.Click += extractSCDFromRDTToolStripMenuItem1_Click;
             // 
             // decompileSCDToSToolStripMenuItem1
             // 
@@ -447,49 +441,33 @@
             // eMDToolStripMenuItem1
             // 
             resources.ApplyResources(eMDToolStripMenuItem1, "eMDToolStripMenuItem1");
-            eMDToolStripMenuItem1.DropDownItems.AddRange(new ToolStripItem[] { unpackToolStripMenuItem3, repackToolStripMenuItem4, viewerToolStripMenuItem1 });
+            eMDToolStripMenuItem1.DropDownItems.AddRange(new ToolStripItem[] { unpackToolStripMenuItem3, repackToolStripMenuItem4, toolStripSeparator19, unpackEditableToolStripMenuItem4, repackEditableToolStripMenuItem4 });
             eMDToolStripMenuItem1.Name = "eMDToolStripMenuItem1";
             // 
             // unpackToolStripMenuItem3
             // 
             resources.ApplyResources(unpackToolStripMenuItem3, "unpackToolStripMenuItem3");
-            unpackToolStripMenuItem3.DropDownItems.AddRange(new ToolStripItem[] { editableOBJPNGToolStripMenuItem1, originalMD2TIMToolStripMenuItem1 });
             unpackToolStripMenuItem3.Name = "unpackToolStripMenuItem3";
-            // 
-            // editableOBJPNGToolStripMenuItem1
-            // 
-            resources.ApplyResources(editableOBJPNGToolStripMenuItem1, "editableOBJPNGToolStripMenuItem1");
-            editableOBJPNGToolStripMenuItem1.Name = "editableOBJPNGToolStripMenuItem1";
-            editableOBJPNGToolStripMenuItem1.Click += editableOBJPNGToolStripMenuItem1_Click;
-            // 
-            // originalMD2TIMToolStripMenuItem1
-            // 
-            resources.ApplyResources(originalMD2TIMToolStripMenuItem1, "originalMD2TIMToolStripMenuItem1");
-            originalMD2TIMToolStripMenuItem1.Name = "originalMD2TIMToolStripMenuItem1";
-            originalMD2TIMToolStripMenuItem1.Click += originalMD2TIMToolStripMenuItem1_Click;
             // 
             // repackToolStripMenuItem4
             // 
             resources.ApplyResources(repackToolStripMenuItem4, "repackToolStripMenuItem4");
-            repackToolStripMenuItem4.DropDownItems.AddRange(new ToolStripItem[] { editableToolStripMenuItem, originalToolStripMenuItem });
             repackToolStripMenuItem4.Name = "repackToolStripMenuItem4";
             // 
-            // editableToolStripMenuItem
+            // toolStripSeparator19
             // 
-            resources.ApplyResources(editableToolStripMenuItem, "editableToolStripMenuItem");
-            editableToolStripMenuItem.Name = "editableToolStripMenuItem";
-            editableToolStripMenuItem.Click += editableToolStripMenuItem_Click;
+            resources.ApplyResources(toolStripSeparator19, "toolStripSeparator19");
+            toolStripSeparator19.Name = "toolStripSeparator19";
             // 
-            // originalToolStripMenuItem
+            // unpackEditableToolStripMenuItem4
             // 
-            resources.ApplyResources(originalToolStripMenuItem, "originalToolStripMenuItem");
-            originalToolStripMenuItem.Name = "originalToolStripMenuItem";
-            originalToolStripMenuItem.Click += originalToolStripMenuItem_Click;
+            resources.ApplyResources(unpackEditableToolStripMenuItem4, "unpackEditableToolStripMenuItem4");
+            unpackEditableToolStripMenuItem4.Name = "unpackEditableToolStripMenuItem4";
             // 
-            // viewerToolStripMenuItem1
+            // repackEditableToolStripMenuItem4
             // 
-            resources.ApplyResources(viewerToolStripMenuItem1, "viewerToolStripMenuItem1");
-            viewerToolStripMenuItem1.Name = "viewerToolStripMenuItem1";
+            resources.ApplyResources(repackEditableToolStripMenuItem4, "repackEditableToolStripMenuItem4");
+            repackEditableToolStripMenuItem4.Name = "repackEditableToolStripMenuItem4";
             // 
             // pLDToolStripMenuItem1
             // 
@@ -643,17 +621,22 @@
             sCDToolStripMenuItem1.DropDownItems.AddRange(new ToolStripItem[] { sCDOpCodeEditorToolStripMenuItem, toolStripSeparator9, extractSCDFromRDTToolStripMenuItem, decompileSCDToSToolStripMenuItem, recompileSToSCDToolStripMenuItem });
             sCDToolStripMenuItem1.Name = "sCDToolStripMenuItem1";
             // 
-            // extractSCDFromRDTToolStripMenuItem
-            // 
-            resources.ApplyResources(extractSCDFromRDTToolStripMenuItem, "extractSCDFromRDTToolStripMenuItem");
-            extractSCDFromRDTToolStripMenuItem.Name = "extractSCDFromRDTToolStripMenuItem";
-            extractSCDFromRDTToolStripMenuItem.Click += extractSCDFromRDTToolStripMenuItem_Click;
-            // 
             // sCDOpCodeEditorToolStripMenuItem
             // 
             resources.ApplyResources(sCDOpCodeEditorToolStripMenuItem, "sCDOpCodeEditorToolStripMenuItem");
             sCDOpCodeEditorToolStripMenuItem.Name = "sCDOpCodeEditorToolStripMenuItem";
             sCDOpCodeEditorToolStripMenuItem.Click += sCDOpCodeEditorToolStripMenuItem_Click;
+            // 
+            // toolStripSeparator9
+            // 
+            resources.ApplyResources(toolStripSeparator9, "toolStripSeparator9");
+            toolStripSeparator9.Name = "toolStripSeparator9";
+            // 
+            // extractSCDFromRDTToolStripMenuItem
+            // 
+            resources.ApplyResources(extractSCDFromRDTToolStripMenuItem, "extractSCDFromRDTToolStripMenuItem");
+            extractSCDFromRDTToolStripMenuItem.Name = "extractSCDFromRDTToolStripMenuItem";
+            extractSCDFromRDTToolStripMenuItem.Click += extractSCDFromRDTToolStripMenuItem_Click;
             // 
             // decompileSCDToSToolStripMenuItem
             // 
@@ -674,49 +657,37 @@
             // eMDToolStripMenuItem
             // 
             resources.ApplyResources(eMDToolStripMenuItem, "eMDToolStripMenuItem");
-            eMDToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { unpackToolStripMenuItem2, repackToolStripMenuItem3, viewerToolStripMenuItem });
+            eMDToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { unpackOriginalToolStripMenuItem3, repackOriginalToolStripMenuItem3, toolStripSeparator18, unpackEditableToolStripMenuItem3, repackEditableToolStripMenuItem3 });
             eMDToolStripMenuItem.Name = "eMDToolStripMenuItem";
             // 
-            // unpackToolStripMenuItem2
+            // unpackOriginalToolStripMenuItem3
             // 
-            resources.ApplyResources(unpackToolStripMenuItem2, "unpackToolStripMenuItem2");
-            unpackToolStripMenuItem2.DropDownItems.AddRange(new ToolStripItem[] { originalMD2TIMToolStripMenuItem, editableOBJPNGToolStripMenuItem });
-            unpackToolStripMenuItem2.Name = "unpackToolStripMenuItem2";
+            resources.ApplyResources(unpackOriginalToolStripMenuItem3, "unpackOriginalToolStripMenuItem3");
+            unpackOriginalToolStripMenuItem3.Name = "unpackOriginalToolStripMenuItem3";
+            unpackOriginalToolStripMenuItem3.Click += unpackOriginalToolStripMenuItem3_Click;
             // 
-            // originalMD2TIMToolStripMenuItem
+            // repackOriginalToolStripMenuItem3
             // 
-            resources.ApplyResources(originalMD2TIMToolStripMenuItem, "originalMD2TIMToolStripMenuItem");
-            originalMD2TIMToolStripMenuItem.Name = "originalMD2TIMToolStripMenuItem";
-            originalMD2TIMToolStripMenuItem.Click += originalMD2TIMToolStripMenuItem_Click;
+            resources.ApplyResources(repackOriginalToolStripMenuItem3, "repackOriginalToolStripMenuItem3");
+            repackOriginalToolStripMenuItem3.Name = "repackOriginalToolStripMenuItem3";
+            repackOriginalToolStripMenuItem3.Click += repackOriginalToolStripMenuItem3_Click;
             // 
-            // editableOBJPNGToolStripMenuItem
+            // toolStripSeparator18
             // 
-            resources.ApplyResources(editableOBJPNGToolStripMenuItem, "editableOBJPNGToolStripMenuItem");
-            editableOBJPNGToolStripMenuItem.Name = "editableOBJPNGToolStripMenuItem";
-            editableOBJPNGToolStripMenuItem.Click += editableOBJPNGToolStripMenuItem_Click;
+            resources.ApplyResources(toolStripSeparator18, "toolStripSeparator18");
+            toolStripSeparator18.Name = "toolStripSeparator18";
             // 
-            // repackToolStripMenuItem3
+            // unpackEditableToolStripMenuItem3
             // 
-            resources.ApplyResources(repackToolStripMenuItem3, "repackToolStripMenuItem3");
-            repackToolStripMenuItem3.DropDownItems.AddRange(new ToolStripItem[] { editableToolStripMenuItem1, originalToolStripMenuItem1 });
-            repackToolStripMenuItem3.Name = "repackToolStripMenuItem3";
+            resources.ApplyResources(unpackEditableToolStripMenuItem3, "unpackEditableToolStripMenuItem3");
+            unpackEditableToolStripMenuItem3.Name = "unpackEditableToolStripMenuItem3";
+            unpackEditableToolStripMenuItem3.Click += unpackEditableToolStripMenuItem3_Click;
             // 
-            // editableToolStripMenuItem1
+            // repackEditableToolStripMenuItem3
             // 
-            resources.ApplyResources(editableToolStripMenuItem1, "editableToolStripMenuItem1");
-            editableToolStripMenuItem1.Name = "editableToolStripMenuItem1";
-            editableToolStripMenuItem1.Click += editableToolStripMenuItem1_Click;
-            // 
-            // originalToolStripMenuItem1
-            // 
-            resources.ApplyResources(originalToolStripMenuItem1, "originalToolStripMenuItem1");
-            originalToolStripMenuItem1.Name = "originalToolStripMenuItem1";
-            originalToolStripMenuItem1.Click += originalToolStripMenuItem1_Click;
-            // 
-            // viewerToolStripMenuItem
-            // 
-            resources.ApplyResources(viewerToolStripMenuItem, "viewerToolStripMenuItem");
-            viewerToolStripMenuItem.Name = "viewerToolStripMenuItem";
+            resources.ApplyResources(repackEditableToolStripMenuItem3, "repackEditableToolStripMenuItem3");
+            repackEditableToolStripMenuItem3.Name = "repackEditableToolStripMenuItem3";
+            repackEditableToolStripMenuItem3.Click += repackEditableToolStripMenuItem3_Click;
             // 
             // pLDToolStripMenuItem
             // 
@@ -895,21 +866,6 @@
             toolStripStatusLabel1.BackColor = SystemColors.ButtonFace;
             toolStripStatusLabel1.Name = "toolStripStatusLabel1";
             // 
-            // toolStripSeparator9
-            // 
-            resources.ApplyResources(toolStripSeparator9, "toolStripSeparator9");
-            toolStripSeparator9.Name = "toolStripSeparator9";
-            // 
-            // toolStripSeparator12
-            // 
-            resources.ApplyResources(toolStripSeparator12, "toolStripSeparator12");
-            toolStripSeparator12.Name = "toolStripSeparator12";
-            // 
-            // toolStripSeparator15
-            // 
-            resources.ApplyResources(toolStripSeparator15, "toolStripSeparator15");
-            toolStripSeparator15.Name = "toolStripSeparator15";
-            // 
             // Main
             // 
             resources.ApplyResources(this, "$this");
@@ -990,18 +946,8 @@
         private ToolStripMenuItem ROFSunpackToolStripMenuItem;
         private ToolStripMenuItem repackToolStripMenuItem2;
         private ToolStripMenuItem bIO151997ToolStripMenuItem;
-        private ToolStripMenuItem unpackToolStripMenuItem2;
-        private ToolStripMenuItem editableOBJPNGToolStripMenuItem;
-        private ToolStripMenuItem originalMD2TIMToolStripMenuItem;
-        private ToolStripMenuItem repackToolStripMenuItem3;
         private ToolStripMenuItem unpackToolStripMenuItem3;
-        private ToolStripMenuItem editableOBJPNGToolStripMenuItem1;
-        private ToolStripMenuItem originalMD2TIMToolStripMenuItem1;
         private ToolStripMenuItem repackToolStripMenuItem4;
-        private ToolStripMenuItem editableToolStripMenuItem;
-        private ToolStripMenuItem originalToolStripMenuItem;
-        private ToolStripMenuItem editableToolStripMenuItem1;
-        private ToolStripMenuItem originalToolStripMenuItem1;
         private ToolStripMenuItem unpackEditableToolStripMenuItem;
         private ToolStripMenuItem unpackOriginalToolStripMenuItem;
         private ToolStripMenuItem repackEditableToolStripMenuItem;
@@ -1046,15 +992,11 @@
         private ToolStripSeparator toolStripSeparator14;
         private ToolStripMenuItem sCDScriptDataToolStripMenuItem;
         private ToolStripStatusLabel toolStripStatusLabel1;
-        private ToolStripSeparator toolStripSeparator16;
-        private ToolStripMenuItem viewerToolStripMenuItem2;
-        private ToolStripMenuItem viewerToolStripMenuItem1;
         private ToolStripMenuItem unpackOriginalToolStripMenuItem2;
         private ToolStripMenuItem repackOriginalToolStripMenuItem2;
         private ToolStripSeparator toolStripSeparator17;
         private ToolStripMenuItem unpackEditableToolStripMenuItem2;
         private ToolStripMenuItem repackEditableToolStripMenuItem2;
-        private ToolStripMenuItem viewerToolStripMenuItem;
         private ToolStripMenuItem mD1ToolStripMenuItem;
         private ToolStripMenuItem mD2ToolStripMenuItem;
         private ToolStripMenuItem installPatch110ToolStripMenuItem;
@@ -1066,5 +1008,13 @@
         private ToolStripSeparator toolStripSeparator15;
         private ToolStripSeparator toolStripSeparator12;
         private ToolStripSeparator toolStripSeparator9;
+        private ToolStripMenuItem unpackOriginalToolStripMenuItem3;
+        private ToolStripMenuItem repackOriginalToolStripMenuItem3;
+        private ToolStripSeparator toolStripSeparator18;
+        private ToolStripSeparator toolStripSeparator19;
+        private ToolStripMenuItem unpackEditableToolStripMenuItem4;
+        private ToolStripMenuItem repackEditableToolStripMenuItem4;
+        private ToolStripMenuItem unpackEditableToolStripMenuItem3;
+        private ToolStripMenuItem repackEditableToolStripMenuItem3;
     }
 }

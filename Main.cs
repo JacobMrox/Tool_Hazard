@@ -9,8 +9,10 @@ using System.ComponentModel;
 using System.IO;
 using System.Text;
 using System.Windows.Forms;
+using Tool_Hazard.Biohazard.emd;
 using Tool_Hazard.Biohazard.RDT;
 using Tool_Hazard.Forms;
+using static System.Net.Mime.MediaTypeNames;
 //using Spectre.Console.Cli;
 //using Tool_Hazard.FontEditor;
 
@@ -290,7 +292,7 @@ namespace Tool_Hazard
 
                     if (errorLog.Length > 0)
                     {
-                        string logPath = Path.Combine(Application.StartupPath, "UnpackErrors.log");
+                        string logPath = Path.Combine(System.Windows.Forms.Application.StartupPath, "UnpackErrors.log");
                         File.WriteAllText(logPath, errorLog.ToString());
                         MessageBox.Show($"Unpacking finished with some errors.\nSee log: {logPath}", "Finished", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     }
@@ -1019,26 +1021,6 @@ namespace Tool_Hazard
             //RE2 Original EMD Repack
         }
 
-        private void unpackEditableToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            //RE3 PLD Editable Unpack
-        }
-
-        private void unpackOriginalToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            //RE3 PLD Original Unpack
-        }
-
-        private void repackEditableToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            //RE3 PLD Editable Repack
-        }
-
-        private void repackOriginalToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            //RE3 PLD Original Repack
-        }
-
         private void unpackEditableToolStripMenuItem1_Click(object sender, EventArgs e)
         {
             //RE1 EMD Unpack Editable
@@ -1169,6 +1151,194 @@ namespace Tool_Hazard
         {
             CurrentBioVersion = BioVersion.Biohazard1_5;
             UpdateStatus("Version set to Biohazard 1.5");
+        }
+
+        // --- Resident Evil EMD/PLD Unpack/Repack Menu Hooks ---
+
+        private void unpackOriginalToolStripMenuItem3_Click(object sender, EventArgs e)
+        {
+            //RE3 EMD [MD2 + TIM ONLY] Unpack
+            using (OpenFileDialog openFileDialog = new OpenFileDialog())
+            {
+                openFileDialog.Filter = "Resident Evil Enemy Data (*.emd)|*.EMD|All files (*.*)|*.*";
+                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    string selectedFile = openFileDialog.FileName;
+
+                    //try catch errors
+                    try
+                    {
+                        //Call EMD tool and pass our paths and version to unpack as Original format
+                        EmdTool.Unpack(selectedFile, CurrentBioVersion, EmdTool.Format.Original);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool Error",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
+
+        private void repackOriginalToolStripMenuItem3_Click(object sender, EventArgs e)
+        {
+            //RE3 EMD [MD2 + TIM ONLY] Repack
+            using (FolderBrowserDialog folderDialog = new FolderBrowserDialog())
+            {
+                folderDialog.Description = "Select the folder containing the unpacked EMD files (MD2 + TIM)";
+                if (folderDialog.ShowDialog() == DialogResult.OK)
+                {
+                    string sourceDir = folderDialog.SelectedPath;
+                    //try catch errors
+                    try
+                    {
+                        EmdTool.RepackFromFolder(sourceDir, CurrentBioVersion, EmdTool.Format.Original, "emd");
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool Error",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
+
+        private void unpackEditableToolStripMenuItem3_Click(object sender, EventArgs e)
+        {
+            //RE3 EMD [OBJ, MTL + PNG ONLY] Unpack
+            using (OpenFileDialog openFileDialog = new OpenFileDialog())
+            {
+                openFileDialog.Filter = "Resident Evil Enemy Data (*.emd)|*.EMD|All files (*.*)|*.*";
+                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    string selectedFile = openFileDialog.FileName;
+                    //try catch errors
+                    try
+                    {
+                        EmdTool.Unpack(selectedFile, CurrentBioVersion, EmdTool.Format.Editable);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool Error",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
+
+        private void repackEditableToolStripMenuItem3_Click(object sender, EventArgs e)
+        {
+            //RE3 EMD [OBJ, MTL + PNG ONLY] Repack
+            using (FolderBrowserDialog folderDialog = new FolderBrowserDialog())
+            {
+                folderDialog.Description = "Select the folder containing the unpacked EMD files (MD2 + TIM)";
+                if (folderDialog.ShowDialog() == DialogResult.OK)
+                {
+                    string sourceDir = folderDialog.SelectedPath;
+                    //try catch errors
+                    try
+                    {
+                        EmdTool.RepackFromFolder(sourceDir, CurrentBioVersion, EmdTool.Format.Editable, "emd");
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool Error",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
+
+        private void unpackOriginalToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //RE3 PLD Original [MD2 + TIM ONLY] Unpack
+            using (OpenFileDialog openFileDialog = new OpenFileDialog())
+            {
+                openFileDialog.Filter = "Resident Evil Player Data (*.pld)|*.PLD|All files (*.*)|*.*";
+                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    string selectedFile = openFileDialog.FileName;
+
+                    //try catch errors
+                    try
+                    {
+                        //Call EMD tool and pass our paths and version to unpack as original format
+                        EmdTool.Unpack(selectedFile, CurrentBioVersion, EmdTool.Format.Original);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool Error",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
+        private void repackOriginalToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //RE3 PLD Original [MD2 + TIM ONLY] Repack
+            using (FolderBrowserDialog folderDialog = new FolderBrowserDialog())
+            {
+                folderDialog.Description = "Select the folder containing the unpacked PLD files (MD2 + TIM)";
+                if (folderDialog.ShowDialog() == DialogResult.OK)
+                {
+                    string sourceDir = folderDialog.SelectedPath;
+                    //try catch errors
+                    try
+                    {
+                        EmdTool.RepackFromFolder(sourceDir, CurrentBioVersion, EmdTool.Format.Original, "pld");
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool Error",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
+        private void unpackEditableToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //RE3 PLD Editable [OBJ + PNG ONLY] Unpack
+            using (OpenFileDialog openFileDialog = new OpenFileDialog())
+            {
+                openFileDialog.Filter = "Resident Evil Player Data (*.pld)|*.PLD|All files (*.*)|*.*";
+                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    string selectedFile = openFileDialog.FileName;
+
+                    //try catch errors
+                    try
+                    {
+                        EmdTool.Unpack(selectedFile, CurrentBioVersion, EmdTool.Format.Editable);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool Error",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
+        private void repackEditableToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //RE3 PLD Editable Repack
+            using (FolderBrowserDialog folderDialog = new FolderBrowserDialog())
+            {
+                folderDialog.Description = "Select the folder containing the unpacked PLD files (OBJ + PNG)";
+                if (folderDialog.ShowDialog() == DialogResult.OK)
+                {
+                    string sourceDir = folderDialog.SelectedPath;
+                    //try catch errors
+                    try
+                    {
+                        EmdTool.RepackFromFolder(sourceDir, CurrentBioVersion, EmdTool.Format.Editable, "pld");
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool Error",
+                            MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
         }
     }
 }

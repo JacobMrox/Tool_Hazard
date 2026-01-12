@@ -121,6 +121,9 @@
   <data name="menuStrip1.Font" type="System.Drawing.Font, System.Drawing">
     <value>Segoe UI, 9pt</value>
   </data>
+  <data name="exitToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>92, 22</value>
+  </data>
   <data name="exitToolStripMenuItem.Text" xml:space="preserve">
     <value>Exit</value>
   </data>
@@ -137,14 +140,26 @@
   <data name="bSSToolStripMenuItem.Text" xml:space="preserve">
     <value>BSS</value>
   </data>
+  <data name="unpackToolStripMenuItem4.Size" type="System.Drawing.Size, System.Drawing">
+    <value>164, 22</value>
+  </data>
   <data name="unpackToolStripMenuItem4.Text" xml:space="preserve">
     <value>Unpack</value>
+  </data>
+  <data name="repackToolStripMenuItem5.Size" type="System.Drawing.Size, System.Drawing">
+    <value>164, 22</value>
   </data>
   <data name="repackToolStripMenuItem5.Text" xml:space="preserve">
     <value>Repack</value>
   </data>
+  <data name="toolStripSeparator13.Size" type="System.Drawing.Size, System.Drawing">
+    <value>161, 6</value>
+  </data>
   <data name="convertToBIO2ToolStripMenuItem1.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
+  </data>
+  <data name="convertToBIO2ToolStripMenuItem1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>164, 22</value>
   </data>
   <data name="convertToBIO2ToolStripMenuItem1.Text" xml:space="preserve">
     <value>Convert to BIO2</value>
@@ -152,8 +167,14 @@
   <data name="convertToBIO3ToolStripMenuItem1.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
+  <data name="convertToBIO3ToolStripMenuItem1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>164, 22</value>
+  </data>
   <data name="convertToBIO3ToolStripMenuItem1.Text" xml:space="preserve">
     <value>Convert to BIO3</value>
+  </data>
+  <data name="toolStripSeparator14.Size" type="System.Drawing.Size, System.Drawing">
+    <value>161, 6</value>
   </data>
   <data name="toolStripMenuItem3.Size" type="System.Drawing.Size, System.Drawing">
     <value>187, 22</value>
@@ -166,6 +187,9 @@
   </data>
   <data name="extractSCDFromRDTToolStripMenuItem2.Text" xml:space="preserve">
     <value>Extract SCD from RDT</value>
+  </data>
+  <data name="sCDScriptDataToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>164, 22</value>
   </data>
   <data name="sCDScriptDataToolStripMenuItem.Text" xml:space="preserve">
     <value>SCD (Script Data)</value>
@@ -206,12 +230,6 @@
   <data name="repackEditableToolStripMenuItem1.Text" xml:space="preserve">
     <value>Repack (Editable)</value>
   </data>
-  <data name="viewerToolStripMenuItem2.Enabled" type="System.Boolean, mscorlib">
-    <value>False</value>
-  </data>
-  <data name="viewerToolStripMenuItem2.Text" xml:space="preserve">
-    <value>Viewer</value>
-  </data>
   <data name="eMDToolStripMenuItem2.Size" type="System.Drawing.Size, System.Drawing">
     <value>250, 22</value>
   </data>
@@ -248,11 +266,17 @@
   <data name="bSSToolStripMenuItem3.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
+  <data name="bSSToolStripMenuItem3.Size" type="System.Drawing.Size, System.Drawing">
+    <value>109, 22</value>
+  </data>
   <data name="bSSToolStripMenuItem3.Text" xml:space="preserve">
     <value>BSS</value>
   </data>
   <data name="rDTToolStripMenuItem3.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
+  </data>
+  <data name="rDTToolStripMenuItem3.Size" type="System.Drawing.Size, System.Drawing">
+    <value>109, 22</value>
   </data>
   <data name="rDTToolStripMenuItem3.Text" xml:space="preserve">
     <value>RDT</value>
@@ -260,11 +284,17 @@
   <data name="eMDToolStripMenuItem3.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
+  <data name="eMDToolStripMenuItem3.Size" type="System.Drawing.Size, System.Drawing">
+    <value>109, 22</value>
+  </data>
   <data name="eMDToolStripMenuItem3.Text" xml:space="preserve">
     <value>EMD</value>
   </data>
   <data name="pLDToolStripMenuItem2.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
+  </data>
+  <data name="pLDToolStripMenuItem2.Size" type="System.Drawing.Size, System.Drawing">
+    <value>109, 22</value>
   </data>
   <data name="pLDToolStripMenuItem2.Text" xml:space="preserve">
     <value>PLD</value>
@@ -272,11 +302,17 @@
   <data name="pLWToolStripMenuItem3.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
+  <data name="pLWToolStripMenuItem3.Size" type="System.Drawing.Size, System.Drawing">
+    <value>109, 22</value>
+  </data>
   <data name="pLWToolStripMenuItem3.Text" xml:space="preserve">
     <value>PLW</value>
   </data>
   <data name="vHVBToolStripMenuItem1.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
+  </data>
+  <data name="vHVBToolStripMenuItem1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>109, 22</value>
   </data>
   <data name="vHVBToolStripMenuItem1.Text" xml:space="preserve">
     <value>VH/VB</value>
@@ -291,16 +327,16 @@
     <value>BSS</value>
   </data>
   <data name="unpackToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>180, 22</value>
+    <value>164, 22</value>
   </data>
   <data name="repackToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>180, 22</value>
+    <value>164, 22</value>
+  </data>
+  <data name="toolStripSeparator5.Size" type="System.Drawing.Size, System.Drawing">
+    <value>161, 6</value>
   </data>
   <data name="convertToBIO1ToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
-  </data>
-  <data name="convertToBIO1ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>180, 22</value>
   </data>
   <data name="convertToBIO1ToolStripMenuItem.Text" xml:space="preserve">
     <value>Convert to BIO1</value>
@@ -309,10 +345,13 @@
     <value>False</value>
   </data>
   <data name="convertToBIO3ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>180, 22</value>
+    <value>164, 22</value>
   </data>
   <data name="convertToBIO3ToolStripMenuItem.Text" xml:space="preserve">
     <value>Convert to BIO3</value>
+  </data>
+  <data name="toolStripSeparator4.Size" type="System.Drawing.Size, System.Drawing">
+    <value>161, 6</value>
   </data>
   <data name="sCDOpCodeEditorToolStripMenuItem1.Text" xml:space="preserve">
     <value>SCD OpCode Editor</value>
@@ -341,6 +380,9 @@
   <data name="recompileSToSCDToolStripMenuItem1.Text" xml:space="preserve">
     <value>Recompile .S to .SCD</value>
   </data>
+  <data name="sCDToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>164, 22</value>
+  </data>
   <data name="sCDToolStripMenuItem.Text" xml:space="preserve">
     <value>SCD (Script Data)</value>
   </data>
@@ -356,44 +398,32 @@
   <data name="mD1ToolStripMenuItem.Text" xml:space="preserve">
     <value>MD1</value>
   </data>
-  <data name="editableOBJPNGToolStripMenuItem1.Text" xml:space="preserve">
-    <value>Editable (OBJ + PNG)</value>
-  </data>
-  <data name="originalMD2TIMToolStripMenuItem1.Text" xml:space="preserve">
-    <value>Original (MD2 + TIM)</value>
-  </data>
   <data name="unpackToolStripMenuItem3.Size" type="System.Drawing.Size, System.Drawing">
-    <value>114, 22</value>
+    <value>167, 22</value>
   </data>
   <data name="unpackToolStripMenuItem3.Text" xml:space="preserve">
-    <value>Unpack</value>
-  </data>
-  <data name="editableToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>116, 22</value>
-  </data>
-  <data name="editableToolStripMenuItem.Text" xml:space="preserve">
-    <value>Editable</value>
-  </data>
-  <data name="originalToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>116, 22</value>
-  </data>
-  <data name="originalToolStripMenuItem.Text" xml:space="preserve">
-    <value>Original</value>
+    <value>Unpack (Original)</value>
   </data>
   <data name="repackToolStripMenuItem4.Size" type="System.Drawing.Size, System.Drawing">
-    <value>114, 22</value>
+    <value>167, 22</value>
   </data>
   <data name="repackToolStripMenuItem4.Text" xml:space="preserve">
-    <value>Repack</value>
+    <value>Repack (Original)</value>
   </data>
-  <data name="viewerToolStripMenuItem1.Enabled" type="System.Boolean, mscorlib">
-    <value>False</value>
+  <data name="toolStripSeparator19.Size" type="System.Drawing.Size, System.Drawing">
+    <value>164, 6</value>
   </data>
-  <data name="viewerToolStripMenuItem1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>114, 22</value>
+  <data name="unpackEditableToolStripMenuItem4.Size" type="System.Drawing.Size, System.Drawing">
+    <value>167, 22</value>
   </data>
-  <data name="viewerToolStripMenuItem1.Text" xml:space="preserve">
-    <value>Viewer</value>
+  <data name="unpackEditableToolStripMenuItem4.Text" xml:space="preserve">
+    <value>Unpack (Editable)</value>
+  </data>
+  <data name="repackEditableToolStripMenuItem4.Size" type="System.Drawing.Size, System.Drawing">
+    <value>167, 22</value>
+  </data>
+  <data name="repackEditableToolStripMenuItem4.Text" xml:space="preserve">
+    <value>Repack (Editable)</value>
   </data>
   <data name="eMDToolStripMenuItem1.Size" type="System.Drawing.Size, System.Drawing">
     <value>250, 22</value>
@@ -401,17 +431,11 @@
   <data name="eMDToolStripMenuItem1.Text" xml:space="preserve">
     <value>EMD</value>
   </data>
-  <data name="unpackOriginalToolStripMenuItem2.Enabled" type="System.Boolean, mscorlib">
-    <value>False</value>
-  </data>
   <data name="unpackOriginalToolStripMenuItem2.Size" type="System.Drawing.Size, System.Drawing">
     <value>167, 22</value>
   </data>
   <data name="unpackOriginalToolStripMenuItem2.Text" xml:space="preserve">
     <value>Unpack (Original)</value>
-  </data>
-  <data name="repackOriginalToolStripMenuItem2.Enabled" type="System.Boolean, mscorlib">
-    <value>False</value>
   </data>
   <data name="repackOriginalToolStripMenuItem2.Size" type="System.Drawing.Size, System.Drawing">
     <value>167, 22</value>
@@ -422,26 +446,17 @@
   <data name="toolStripSeparator17.Size" type="System.Drawing.Size, System.Drawing">
     <value>164, 6</value>
   </data>
-  <data name="unpackEditableToolStripMenuItem2.Enabled" type="System.Boolean, mscorlib">
-    <value>False</value>
-  </data>
   <data name="unpackEditableToolStripMenuItem2.Size" type="System.Drawing.Size, System.Drawing">
     <value>167, 22</value>
   </data>
   <data name="unpackEditableToolStripMenuItem2.Text" xml:space="preserve">
     <value>Unpack (Editable)</value>
   </data>
-  <data name="repackEditableToolStripMenuItem2.Enabled" type="System.Boolean, mscorlib">
-    <value>False</value>
-  </data>
   <data name="repackEditableToolStripMenuItem2.Size" type="System.Drawing.Size, System.Drawing">
     <value>167, 22</value>
   </data>
   <data name="repackEditableToolStripMenuItem2.Text" xml:space="preserve">
     <value>Repack (Editable)</value>
-  </data>
-  <data name="pLDToolStripMenuItem1.Enabled" type="System.Boolean, mscorlib">
-    <value>False</value>
   </data>
   <data name="pLDToolStripMenuItem1.Size" type="System.Drawing.Size, System.Drawing">
     <value>250, 22</value>
@@ -542,17 +557,26 @@
   <data name="bSSToolStripMenuItem2.Text" xml:space="preserve">
     <value>BSS</value>
   </data>
+  <data name="Bio3RDTunpackToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>164, 22</value>
+  </data>
   <data name="Bio3RDTunpackToolStripMenuItem.Text" xml:space="preserve">
     <value>Unpack</value>
+  </data>
+  <data name="Bio3RDTrepackToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>164, 22</value>
   </data>
   <data name="Bio3RDTrepackToolStripMenuItem.Text" xml:space="preserve">
     <value>Repack</value>
   </data>
   <data name="toolStripSeparator2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>177, 6</value>
+    <value>161, 6</value>
   </data>
   <data name="convertToBIO1ToolStripMenuItem1.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
+  </data>
+  <data name="convertToBIO1ToolStripMenuItem1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>164, 22</value>
   </data>
   <data name="convertToBIO1ToolStripMenuItem1.Text" xml:space="preserve">
     <value>Convert to BIO1</value>
@@ -560,11 +584,14 @@
   <data name="convertToBIO2ToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
+  <data name="convertToBIO2ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>164, 22</value>
+  </data>
   <data name="convertToBIO2ToolStripMenuItem.Text" xml:space="preserve">
     <value>Convert to BIO2</value>
   </data>
   <data name="toolStripSeparator3.Size" type="System.Drawing.Size, System.Drawing">
-    <value>177, 6</value>
+    <value>161, 6</value>
   </data>
   <data name="sCDOpCodeEditorToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>187, 22</value>
@@ -597,7 +624,7 @@
     <value>Recompile S. to SCD</value>
   </data>
   <data name="sCDToolStripMenuItem1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>180, 22</value>
+    <value>164, 22</value>
   </data>
   <data name="sCDToolStripMenuItem1.Text" xml:space="preserve">
     <value>SCD (Script Data)</value>
@@ -614,44 +641,17 @@
   <data name="mD2ToolStripMenuItem.Text" xml:space="preserve">
     <value>MD2</value>
   </data>
-  <data name="originalMD2TIMToolStripMenuItem.Text" xml:space="preserve">
-    <value>Original (MD2 + TIM)</value>
+  <data name="unpackOriginalToolStripMenuItem3.Text" xml:space="preserve">
+    <value>Unpack (Original)</value>
   </data>
-  <data name="editableOBJPNGToolStripMenuItem.Text" xml:space="preserve">
-    <value>Editable (OBJ + PNG)</value>
+  <data name="repackOriginalToolStripMenuItem3.Text" xml:space="preserve">
+    <value>Repack (Original)</value>
   </data>
-  <data name="unpackToolStripMenuItem2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>114, 22</value>
+  <data name="unpackEditableToolStripMenuItem3.Text" xml:space="preserve">
+    <value>Unpack (Editable)</value>
   </data>
-  <data name="unpackToolStripMenuItem2.Text" xml:space="preserve">
-    <value>Unpack</value>
-  </data>
-  <data name="editableToolStripMenuItem1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>116, 22</value>
-  </data>
-  <data name="editableToolStripMenuItem1.Text" xml:space="preserve">
-    <value>Editable</value>
-  </data>
-  <data name="originalToolStripMenuItem1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>116, 22</value>
-  </data>
-  <data name="originalToolStripMenuItem1.Text" xml:space="preserve">
-    <value>Original</value>
-  </data>
-  <data name="repackToolStripMenuItem3.Size" type="System.Drawing.Size, System.Drawing">
-    <value>114, 22</value>
-  </data>
-  <data name="repackToolStripMenuItem3.Text" xml:space="preserve">
-    <value>Repack</value>
-  </data>
-  <data name="viewerToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
-    <value>False</value>
-  </data>
-  <data name="viewerToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>114, 22</value>
-  </data>
-  <data name="viewerToolStripMenuItem.Text" xml:space="preserve">
-    <value>Viewer</value>
+  <data name="repackEditableToolStripMenuItem3.Text" xml:space="preserve">
+    <value>Repack (Editable)</value>
   </data>
   <data name="eMDToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>250, 22</value>
@@ -809,17 +809,26 @@
   <data name="versionToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
+  <data name="versionToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>171, 22</value>
+  </data>
   <data name="versionToolStripMenuItem.Text" xml:space="preserve">
     <value>About</value>
   </data>
   <data name="documentationToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
+  <data name="documentationToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>171, 22</value>
+  </data>
   <data name="documentationToolStripMenuItem.Text" xml:space="preserve">
     <value>Documentation</value>
   </data>
   <data name="checkForUpdatesToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
+  </data>
+  <data name="checkForUpdatesToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>171, 22</value>
   </data>
   <data name="checkForUpdatesToolStripMenuItem.Text" xml:space="preserve">
     <value>Check for Updates</value>
