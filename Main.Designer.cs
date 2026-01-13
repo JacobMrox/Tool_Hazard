@@ -141,6 +141,7 @@
             unpackToolStripMenuItem1 = new ToolStripMenuItem();
             repackToolStripMenuItem1 = new ToolStripMenuItem();
             wADToolStripMenuItem1 = new ToolStripMenuItem();
+            pETToolStripMenuItem = new ToolStripMenuItem();
             fontEditorToolStripMenuItem1 = new ToolStripMenuItem();
             torresMP3PlaylistEditorToolStripMenuItem = new ToolStripMenuItem();
             saveEditorToolStripMenuItem1 = new ToolStripMenuItem();
@@ -154,6 +155,12 @@
             lZ770x100x11ToolStripMenuItem = new ToolStripMenuItem();
             decompressToolStripMenuItem = new ToolStripMenuItem();
             containerScannerToolStripMenuItem = new ToolStripMenuItem();
+            sonyToolStripMenuItem = new ToolStripMenuItem();
+            pS1ToolStripMenuItem = new ToolStripMenuItem();
+            tIMToolStripMenuItem = new ToolStripMenuItem();
+            pNG2TIMToolStripMenuItem = new ToolStripMenuItem();
+            pS2ToolStripMenuItem = new ToolStripMenuItem();
+            aFSToolStripMenuItem = new ToolStripMenuItem();
             helpToolStripMenuItem = new ToolStripMenuItem();
             versionToolStripMenuItem = new ToolStripMenuItem();
             documentationToolStripMenuItem = new ToolStripMenuItem();
@@ -161,7 +168,6 @@
             notifyIcon1 = new NotifyIcon(components);
             statusStrip1 = new StatusStrip();
             toolStripStatusLabel1 = new ToolStripStatusLabel();
-            pETToolStripMenuItem = new ToolStripMenuItem();
             menuStrip1.SuspendLayout();
             statusStrip1.SuspendLayout();
             SuspendLayout();
@@ -795,6 +801,11 @@
             resources.ApplyResources(wADToolStripMenuItem1, "wADToolStripMenuItem1");
             wADToolStripMenuItem1.Name = "wADToolStripMenuItem1";
             // 
+            // pETToolStripMenuItem
+            // 
+            resources.ApplyResources(pETToolStripMenuItem, "pETToolStripMenuItem");
+            pETToolStripMenuItem.Name = "pETToolStripMenuItem";
+            // 
             // fontEditorToolStripMenuItem1
             // 
             resources.ApplyResources(fontEditorToolStripMenuItem1, "fontEditorToolStripMenuItem1");
@@ -824,7 +835,7 @@
             // toolStripMenuItem2
             // 
             resources.ApplyResources(toolStripMenuItem2, "toolStripMenuItem2");
-            toolStripMenuItem2.DropDownItems.AddRange(new ToolStripItem[] { residentEvilBiohazardToolStripMenuItem, nintendoToolStripMenuItem });
+            toolStripMenuItem2.DropDownItems.AddRange(new ToolStripItem[] { residentEvilBiohazardToolStripMenuItem, nintendoToolStripMenuItem, sonyToolStripMenuItem });
             toolStripMenuItem2.Name = "toolStripMenuItem2";
             // 
             // residentEvilBiohazardToolStripMenuItem
@@ -867,6 +878,41 @@
             containerScannerToolStripMenuItem.Name = "containerScannerToolStripMenuItem";
             containerScannerToolStripMenuItem.Click += containerScannerToolStripMenuItem_Click;
             // 
+            // sonyToolStripMenuItem
+            // 
+            resources.ApplyResources(sonyToolStripMenuItem, "sonyToolStripMenuItem");
+            sonyToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { pS1ToolStripMenuItem, pS2ToolStripMenuItem });
+            sonyToolStripMenuItem.Name = "sonyToolStripMenuItem";
+            // 
+            // pS1ToolStripMenuItem
+            // 
+            resources.ApplyResources(pS1ToolStripMenuItem, "pS1ToolStripMenuItem");
+            pS1ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { tIMToolStripMenuItem, pNG2TIMToolStripMenuItem });
+            pS1ToolStripMenuItem.Name = "pS1ToolStripMenuItem";
+            // 
+            // tIMToolStripMenuItem
+            // 
+            resources.ApplyResources(tIMToolStripMenuItem, "tIMToolStripMenuItem");
+            tIMToolStripMenuItem.Name = "tIMToolStripMenuItem";
+            tIMToolStripMenuItem.Click += tIMToolStripMenuItem_Click;
+            // 
+            // pNG2TIMToolStripMenuItem
+            // 
+            resources.ApplyResources(pNG2TIMToolStripMenuItem, "pNG2TIMToolStripMenuItem");
+            pNG2TIMToolStripMenuItem.Name = "pNG2TIMToolStripMenuItem";
+            pNG2TIMToolStripMenuItem.Click += pNG2TIMToolStripMenuItem_Click;
+            // 
+            // pS2ToolStripMenuItem
+            // 
+            resources.ApplyResources(pS2ToolStripMenuItem, "pS2ToolStripMenuItem");
+            pS2ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { aFSToolStripMenuItem });
+            pS2ToolStripMenuItem.Name = "pS2ToolStripMenuItem";
+            // 
+            // aFSToolStripMenuItem
+            // 
+            resources.ApplyResources(aFSToolStripMenuItem, "aFSToolStripMenuItem");
+            aFSToolStripMenuItem.Name = "aFSToolStripMenuItem";
+            // 
             // helpToolStripMenuItem
             // 
             resources.ApplyResources(helpToolStripMenuItem, "helpToolStripMenuItem");
@@ -904,11 +950,6 @@
             resources.ApplyResources(toolStripStatusLabel1, "toolStripStatusLabel1");
             toolStripStatusLabel1.BackColor = SystemColors.ButtonFace;
             toolStripStatusLabel1.Name = "toolStripStatusLabel1";
-            // 
-            // pETToolStripMenuItem
-            // 
-            resources.ApplyResources(pETToolStripMenuItem, "pETToolStripMenuItem");
-            pETToolStripMenuItem.Name = "pETToolStripMenuItem";
             // 
             // Main
             // 
@@ -1065,5 +1106,11 @@
         private ToolStripMenuItem decompressToolStripMenuItem;
         private ToolStripMenuItem containerScannerToolStripMenuItem;
         private ToolStripMenuItem pETToolStripMenuItem;
+        private ToolStripMenuItem sonyToolStripMenuItem;
+        private ToolStripMenuItem pS1ToolStripMenuItem;
+        private ToolStripMenuItem tIMToolStripMenuItem;
+        private ToolStripMenuItem pNG2TIMToolStripMenuItem;
+        private ToolStripMenuItem pS2ToolStripMenuItem;
+        private ToolStripMenuItem aFSToolStripMenuItem;
     }
 }

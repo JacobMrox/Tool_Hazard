@@ -6,12 +6,14 @@ using IntelOrca.Biohazard.Script.Compilation;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Text;
 using System.Windows.Forms;
 using Tool_Hazard.Biohazard.emd;
 using Tool_Hazard.Biohazard.RDT;
 using Tool_Hazard.Forms;
+using Tool_Hazard.Sony_PS1;
 using ToolHazard.Nintendo;
 using static System.Net.Mime.MediaTypeNames;
 //using Spectre.Console.Cli;
@@ -1750,6 +1752,64 @@ namespace Tool_Hazard
                     "Extraction failed",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
+            }
+        }
+
+        // PlayStation TIM Tool - Export TIM to PNG 
+        private void tIMToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            using var ofd = new OpenFileDialog
+            {
+                Title = "Open TIM",
+                Filter = "PlayStation TIM (*.tim)|*.tim|All files (*.*)|*.*"
+            };
+            if (ofd.ShowDialog(this) != DialogResult.OK) return;
+
+            using var sfd = new SaveFileDialog
+            {
+                Title = "Save PNG",
+                Filter = "PNG Image (*.png)|*.png",
+                FileName = Path.ChangeExtension(Path.GetFileName(ofd.FileName), ".png")
+            };
+            if (sfd.ShowDialog(this) != DialogResult.OK) return;
+
+            try
+            {
+                TimPng.ExportTimToPng(ofd.FileName, sfd.FileName);
+                MessageBox.Show(this, "Exported PNG successfully.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, ex.ToString(), "TIM → PNG failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        //PNG to Sony PS1 TIM Tool - Import PNG to TIM
+        private void pNG2TIMToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            using var ofd = new OpenFileDialog
+            {
+                Title = "Open PNG",
+                Filter = "PNG Image (*.png)|*.png|All files (*.*)|*.*"
+            };
+            if (ofd.ShowDialog(this) != DialogResult.OK) return;
+
+            using var sfd = new SaveFileDialog
+            {
+                Title = "Save TIM",
+                Filter = "PlayStation TIM (*.tim)|*.tim",
+                FileName = Path.ChangeExtension(Path.GetFileName(ofd.FileName), ".tim")
+            };
+            if (sfd.ShowDialog(this) != DialogResult.OK) return;
+
+            try
+            {
+                TimPng.ImportPngToTimFile(ofd.FileName, sfd.FileName);
+                MessageBox.Show(this, "Imported TIM successfully (8bpp).");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, ex.ToString(), "PNG → TIM failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
     }
