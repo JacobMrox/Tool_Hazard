@@ -267,11 +267,13 @@
             // 
             resources.ApplyResources(unpackOriginalToolStripMenuItem1, "unpackOriginalToolStripMenuItem1");
             unpackOriginalToolStripMenuItem1.Name = "unpackOriginalToolStripMenuItem1";
+            unpackOriginalToolStripMenuItem1.Click += unpackOriginalToolStripMenuItem1_Click;
             // 
             // repackOriginalToolStripMenuItem1
             // 
             resources.ApplyResources(repackOriginalToolStripMenuItem1, "repackOriginalToolStripMenuItem1");
             repackOriginalToolStripMenuItem1.Name = "repackOriginalToolStripMenuItem1";
+            repackOriginalToolStripMenuItem1.Click += repackOriginalToolStripMenuItem1_Click;
             // 
             // toolStripSeparator11
             // 
@@ -483,11 +485,13 @@
             // 
             resources.ApplyResources(unpackOriginalToolStripMenuItem2, "unpackOriginalToolStripMenuItem2");
             unpackOriginalToolStripMenuItem2.Name = "unpackOriginalToolStripMenuItem2";
+            unpackOriginalToolStripMenuItem2.Click += unpackOriginalToolStripMenuItem2_Click;
             // 
             // repackOriginalToolStripMenuItem2
             // 
             resources.ApplyResources(repackOriginalToolStripMenuItem2, "repackOriginalToolStripMenuItem2");
             repackOriginalToolStripMenuItem2.Name = "repackOriginalToolStripMenuItem2";
+            repackOriginalToolStripMenuItem2.Click += repackOriginalToolStripMenuItem2_Click;
             // 
             // toolStripSeparator17
             // 
@@ -498,11 +502,13 @@
             // 
             resources.ApplyResources(unpackEditableToolStripMenuItem2, "unpackEditableToolStripMenuItem2");
             unpackEditableToolStripMenuItem2.Name = "unpackEditableToolStripMenuItem2";
+            unpackEditableToolStripMenuItem2.Click += unpackEditableToolStripMenuItem2_Click;
             // 
             // repackEditableToolStripMenuItem2
             // 
             resources.ApplyResources(repackEditableToolStripMenuItem2, "repackEditableToolStripMenuItem2");
             repackEditableToolStripMenuItem2.Name = "repackEditableToolStripMenuItem2";
+            repackEditableToolStripMenuItem2.Click += repackEditableToolStripMenuItem2_Click;
             // 
             // plwToolStripMenuItem1
             // 
