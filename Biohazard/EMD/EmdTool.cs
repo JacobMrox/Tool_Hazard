@@ -133,10 +133,23 @@ namespace Tool_Hazard.Biohazard.emd
             var outputBase = inputDir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             var outEmdPath = outputBase + ".emd";
             var outPldPath = outputBase + ".pld";
-            var outTimPath = outputBase + ".tim"; // only used for EMD case like CLI
+            var outTimPath = outputBase + ".tim"; // for EMD external TIM behavior
 
-            // Find inputs (same scanning logic as CLI)
             var files = Directory.GetFiles(inputDir);
+
+            // Find base container (REQUIRED to preserve chunks you don't export/import)
+            string? baseContainerPath =
+                targetKind == "emd"
+                    ? files.FirstOrDefault(x => x.EndsWith(".emd", StringComparison.OrdinalIgnoreCase))
+                    : files.FirstOrDefault(x => x.EndsWith(".pld", StringComparison.OrdinalIgnoreCase));
+
+            if (baseContainerPath == null)
+                throw new InvalidOperationException(
+                    $"Base {targetKind.ToUpperInvariant()} not found in folder. " +
+                    $"Repack requires the original .{targetKind} to preserve animations/extra chunks."
+                );
+
+            // Find inputs
             string? md1Path = files.FirstOrDefault(x => x.EndsWith(".md1", StringComparison.OrdinalIgnoreCase));
             string? md2Path = files.FirstOrDefault(x => x.EndsWith(".md2", StringComparison.OrdinalIgnoreCase));
             string? objPath = files.FirstOrDefault(x => x.EndsWith(".obj", StringComparison.OrdinalIgnoreCase));
@@ -150,35 +163,28 @@ namespace Tool_Hazard.Biohazard.emd
             if (!importing)
                 throw new InvalidOperationException("No suitable input files found in folder for the selected mode.");
 
-            // Create target container
+            // Load base container (THIS is the critical fix)
             ModelFile modelFile;
+            if (targetKind == "emd")
+                modelFile = new EmdFile(version, baseContainerPath);
+            else
+                modelFile = new PldFile(version, baseContainerPath);
+
+            // Import/patch model data
             TimFile? timFile = null;
 
-            if (targetKind == "emd")
-            {
-                modelFile = new EmdFile(version, new MemoryStream()); // load empty via stream
-            }
-            else
-            {
-                // PLD is RE2/RE3 only in this tool
-                modelFile = new PldFile(version, new MemoryStream());
-            }
-
-            // Import model data
             if (format == Format.Original)
             {
                 if (version == BioVersion.Biohazard2)
                 {
                     if (md1Path == null)
                         throw new InvalidOperationException("RE2 original repack requires a .md1 file in the folder.");
-
                     modelFile.Md1 = new Md1(File.ReadAllBytes(md1Path));
                 }
                 else
                 {
                     if (md2Path == null)
                         throw new InvalidOperationException("Original repack requires a .md2 file in the folder.");
-
                     modelFile.Md2 = new Md2(File.ReadAllBytes(md2Path));
                 }
 
@@ -189,6 +195,8 @@ namespace Tool_Hazard.Biohazard.emd
             {
                 if (objPath != null)
                 {
+                    // IMPORTANT: ObjImporter.Import mutates modelFile's mesh through its internal state.
+                    // The CLI tool uses this same mechanism.
                     var objImporter = new ObjImporter();
                     objImporter.Import(modelFile.Version, objPath, 3);
                 }
@@ -197,7 +205,7 @@ namespace Tool_Hazard.Biohazard.emd
                     timFile = ImportTimFile(pngPath);
             }
 
-            // Apply TIM if present (matches CLI behavior)
+            // Apply TIM if present
             if (timFile != null)
             {
                 if (modelFile is PldFile pld)
@@ -206,17 +214,20 @@ namespace Tool_Hazard.Biohazard.emd
                 }
                 else
                 {
-                    // EMD keeps tim as external file like CLI
+                    // EMD usually expects external TIM alongside the EMD
                     timFile.Save(outTimPath);
                 }
             }
 
-            // Save final container
+            // Save patched container
             if (modelFile is PldFile pldFile)
                 pldFile.Save(outPldPath);
             else if (modelFile is EmdFile emdFile)
                 emdFile.Save(outEmdPath);
+            else
+                throw new InvalidOperationException("Unexpected model file type.");
         }
+
 
         // ====== Copied straight from CLI logic ======
 

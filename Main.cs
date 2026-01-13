@@ -1163,7 +1163,7 @@ namespace Tool_Hazard
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool Error",
+                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool",
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
@@ -1186,7 +1186,7 @@ namespace Tool_Hazard
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool Error",
+                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool",
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
@@ -1209,7 +1209,7 @@ namespace Tool_Hazard
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool Error",
+                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool",
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
@@ -1232,7 +1232,7 @@ namespace Tool_Hazard
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool Error",
+                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool",
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
@@ -1257,7 +1257,7 @@ namespace Tool_Hazard
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool Error",
+                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool",
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
@@ -1279,7 +1279,7 @@ namespace Tool_Hazard
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool Error",
+                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool",
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
@@ -1302,7 +1302,7 @@ namespace Tool_Hazard
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool Error",
+                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool",
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
@@ -1324,7 +1324,7 @@ namespace Tool_Hazard
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool Error",
+                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool",
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
@@ -1349,7 +1349,7 @@ namespace Tool_Hazard
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool Error",
+                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool",
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
@@ -1372,7 +1372,7 @@ namespace Tool_Hazard
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool Error",
+                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool",
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
@@ -1397,7 +1397,7 @@ namespace Tool_Hazard
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool Error",
+                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool",
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
@@ -1420,7 +1420,7 @@ namespace Tool_Hazard
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool Error",
+                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool",
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
@@ -1444,7 +1444,7 @@ namespace Tool_Hazard
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool Error",
+                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool",
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
@@ -1467,7 +1467,7 @@ namespace Tool_Hazard
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool Error",
+                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool",
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
@@ -1490,7 +1490,7 @@ namespace Tool_Hazard
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool Error",
+                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool",
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
@@ -1513,7 +1513,7 @@ namespace Tool_Hazard
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool Error",
+                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool",
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
@@ -1538,7 +1538,7 @@ namespace Tool_Hazard
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool Error",
+                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool",
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
@@ -1561,7 +1561,7 @@ namespace Tool_Hazard
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool Error",
+                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool",
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
@@ -1585,7 +1585,7 @@ namespace Tool_Hazard
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool Error",
+                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool",
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
@@ -1608,7 +1608,7 @@ namespace Tool_Hazard
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool Error",
+                        MessageBox.Show($"Error:\n{ex.Message}", "EMD Tool",
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
