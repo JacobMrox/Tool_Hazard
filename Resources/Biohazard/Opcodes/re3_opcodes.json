@@ -2368,73 +2368,94 @@
     }
   },
   "67": {
-    "Opcode Name": "Item_aot_set",
-    "Opcode Number": "67",
-    "Opcode Length": "22 Bytes",
-    "Opcode Description": "This bytecode sets the AOT for an item in the scene.",
-    "Bytes": {
-      "Opcode": {
-        "Type": "UCHAR",
-        "Description": "0x67"
-      },
-      "Aot": {
-        "Type": "UCHAR",
-        "Description": "Aot"
-      },
-      "SCE": {
-        "Type": "UCHAR",
-        "Description": "SCE"
-      },
-      "SAT": {
-        "Type": "UCHAR",
-        "Description": "SAT"
-      },
-      "nFloor": {
-        "Type": "UCHAR",
-        "Description": "nFloor"
-      },
-      "Super": {
-        "Type": "UCHAR",
-        "Description": "Super"
-      },
-      "X": {
-        "Type": "SHORT",
-        "Description": "Position X"
-      },
-      "Z": {
-        "Type": "SHORT",
-        "Description": "Position Z"
-      },
-      "W": {
-        "Type": "USHORT",
-        "Description": "Width"
-      },
-      "D": {
-        "Type": "USHORT",
-        "Description": "Depth"
-      },
-      "iItem": {
-        "Type": "USHORT",
-        "Description": "Item ID"
-      },
-      "nItem": {
-        "Type": "USHORT",
-        "Description": "Number of items"
-      },
-      "Flag": {
-        "Type": "USHORT",
-        "Description": "Flag"
-      },
-      "MD1": {
-        "Type": "UCHAR",
-        "Description": "MD1"
-      },
-      "Action": {
-        "Type": "UCHAR",
-        "Description": "Action"
-      }
+  "Opcode Name": "Item_aot_set",
+  "Opcode Number": "67",
+  "Opcode Length": "22 Bytes",
+  "Opcode Description": "This bytecode sets the AOT for an item in the scene.",
+  "Bytes": {
+    "Opcode": {
+      "Type": "UCHAR",
+      "Description": "0x67"
+    },
+
+    "ID": {
+      "Type": "UCHAR",
+      "Description": "Item instance ID (distinct per item in room)"
+    },
+
+    "Aot": {
+      "Type": "UCHAR",
+      "Description": "AOT"
+    },
+    "SCE": {
+      "Type": "UCHAR",
+      "Description": "SCE"
+    },
+    "SAT": {
+      "Type": "UCHAR",
+      "Description": "SAT"
+    },
+    "nFloor": {
+      "Type": "UCHAR",
+      "Description": "nFloor / room-floor selector"
+    },
+
+    "X": {
+      "Type": "SHORT",
+      "Description": "Position X"
+    },
+    "Y": {
+      "Type": "SHORT",
+      "Description": "Position Y"
+    },
+    "Z": {
+      "Type": "SHORT",
+      "Description": "Position Z"
+    },
+    "Rotation": {
+      "Type": "USHORT",
+      "Description": "Rotation / facing direction"
+    },
+
+    "ItemId": {
+      "Type": "UCHAR",
+      "Description": "Item ID; which item to spawn."
+    },
+
+    "Unknown0": {
+      "Type": "UCHAR",
+      "Description": "Always 0x00"
+    },
+
+    "Num": {
+      "Type": "UCHAR",
+      "Description": "Quantity of this item."
+    },
+
+    "Unknown1": {
+      "Type": "UCHAR",
+      "Description": "Unknown"
+    },
+    "Unknown2": {
+      "Type": "UCHAR",
+      "Description": "Unknown"
+    },
+    "Unknown3": {
+      "Type": "UCHAR",
+      "Description": "Unknown"
+    },
+
+    "ObjNo": {
+      "Type": "UCHAR",
+      "Description": "Model ID; the obj/md1 to use for this item."
+    },
+    "Action": {
+      "Type": "UCHAR",
+      "Description": "Animation (00 = nothing, 01 = crouch)"
     }
-  },
+  }
+}
+,
   "68": {
     "Opcode Name": "Item_aot_set_4p",
     "Opcode Number": "68",
@@ -3107,50 +3128,39 @@
       }
     }
   },
-  "7D": {
-    "Opcode Name": "Em_set",
-    "Opcode Number": "7D",
-    "Opcode Length": "24 Bytes",
-    "Opcode Description": "This bytecode sets an enemy (Em) with specific parameters in the scene.",
-    "Bytes": {
-      "Opcode": {
-        "Type": "UCHAR",
-        "Description": "0x7D"
-      },
-      "EnemyId": {
-        "Type": "ULONG",
-        "Description": "ID of the enemy to set"
-      },
-      "PositionX": {
-        "Type": "ULONG",
-        "Description": "X position of the enemy"
-      },
-      "PositionY": {
-        "Type": "ULONG",
-        "Description": "Y position of the enemy"
-      },
-      "PositionZ": {
-        "Type": "ULONG",
-        "Description": "Z position of the enemy"
-      },
-      "Unknown1": {
-        "Type": "USHORT",
-        "Description": "Unknown data, typically 0"
-      },
-      "Unknown2": {
-        "Type": "USHORT",
-        "Description": "Unknown data, typically 0"
-      },
-      "Unknown3": {
-        "Type": "USHORT",
-        "Description": "Unknown data, typically 0"
-      },
-      "Unknown4": {
-        "Type": "UCHAR",
-        "Description": "Unknown data, typically 0"
-      }
-    }
-  },
+"7D": {
+  "Opcode Name": "Em_set",
+  "Opcode Number": "7D",
+  "Opcode Length": "24 Bytes",
+  "Opcode Description": "Spawn/set an enemy (EMD) with pose/flags/sound/texture, position and rotation.",
+  "Bytes": {
+    "Opcode": { "Type": "UCHAR", "Description": "0x7D" },
+
+    "Nop": { "Type": "UCHAR", "Description": "Always 0x00" },
+
+    "Em_no": { "Type": "UCHAR", "Description": "Enemy number / room slot (use 0xFF for partner)" },
+    "EMD_Id": { "Type": "UCHAR", "Description": "Enemy ID/type (last two characters of EMD filename)" },
+
+    "Pose": { "Type": "UCHAR", "Description": "Pose / initial state" },
+
+    "AnimFlag": { "Type": "UCHAR", "Description": "Animation/behavior flag (e.g. 0x08 normal zombie, 0x44 partner, 0x80 frozen)" },
+
+    "UnknownA": { "Type": "UCHAR", "Description": "Unknown" },
+    "UnknownB": { "Type": "UCHAR", "Description": "Unknown" },
+    "UnknownC": { "Type": "UCHAR", "Description": "Unknown" },
+
+    "Sound_flg": { "Type": "UCHAR", "Description": "Sound set" },
+    "Texture": { "Type": "UCHAR", "Description": "Texture" },
+    "Em_set_flg": { "Type": "UCHAR", "Description": "Enemy flag (varies per enemy type)" },
+
+    "Pos_x": { "Type": "SHORT", "Description": "X coordinate (left/right)" },
+    "Pos_y": { "Type": "SHORT", "Description": "Y coordinate (low/high)" },
+    "Pos_z": { "Type": "SHORT", "Description": "Z coordinate" },
+    "Cdir_y": { "Type": "SHORT", "Description": "Rotation / facing direction" },
+
+    "Reserved": { "Type": "UINT", "Description": "Padding / reserved (usually 0)" }
+  }
+},
   "7E": {
     "Opcode Name": "Mizu_div",
     "Opcode Number": "7E",

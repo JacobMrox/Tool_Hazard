@@ -1597,9 +1597,9 @@
         "Type": "CHAR",
         "Description": "Em_no"
       },
-      "Id": {
+      "EMD_Id": {
         "Type": "UCHAR",
-        "Description": "EMD File Id for Em_bin_load() function"
+        "Description": "EMD File Id for Em_bin_load() function; Enemy ID/type (last two characters of EMD filename)"
       },
       "Type": {
         "Type": "USHORT",
