@@ -4,6 +4,7 @@ Written in C# Windows Forms .Net 8.0 (Not .Net Framework)
 
 * Biohazard/Resident Evil 1-2-3:
   * Unpack/Repack RDT files (BIO1 not tested).
+  * Support for EMD/PLD Unpacking/Repacking for RE1-2-3
   * SCD OpCode Editor (Only Biohazard 3 tested).
   * Ability to Installa Gemini-Loboto3's Classic Rebirth patch from the tool's interface.
 * White Day (2001):
@@ -12,7 +13,6 @@ Written in C# Windows Forms .Net 8.0 (Not .Net Framework)
   * Font Editor.
 
 # Coming Soon
-* Support for EMD/PLD Unpacking/Repacking for RE1-2-3
 * Live HUD feature for RE1-2-3
 * Possible Intel.Orca Biorand implementation in-tool.
 
