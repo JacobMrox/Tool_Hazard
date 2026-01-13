@@ -1,24 +1,18 @@
-﻿using IntelOrca.Biohazard;
-using IntelOrca.Biohazard.Extensions;
-using IntelOrca.Biohazard.Room;
-using IntelOrca.Biohazard.Script;
-using IntelOrca.Biohazard.Script.Compilation;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Text;
 using System.Windows.Forms;
+using Tool_Hazard.White_Day;
 using Tool_Hazard.Biohazard.emd;
 using Tool_Hazard.Biohazard.RDT;
+using IntelOrca.Biohazard;
 using Tool_Hazard.Forms;
 using Tool_Hazard.Sony_PS1;
 using ToolHazard.Nintendo;
 using static System.Net.Mime.MediaTypeNames;
-using Tool_Hazard.White_Day;
-//using Spectre.Console.Cli;
-//using Tool_Hazard.FontEditor;
 
 namespace Tool_Hazard
 {
@@ -214,6 +208,7 @@ namespace Tool_Hazard
 
         }
 
+        //White Day Font Editor
         private void fontEditorToolStripMenuItem1_Click(object sender, EventArgs e)
         {
             // Open Font Editor form
@@ -581,44 +576,6 @@ namespace Tool_Hazard
             }
         }
 
-        //Biohazard EMD/PLD Exporter/Repacker Menu Hooks
-        private void originalMD2TIMToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            //RE3 EMD Original [MD2/BIN and TIM] Unpack
-        }
-        private void editableOBJPNGToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            //RE3 EMD Editable [OBJ and PNG] Unpack
-        }
-        private void originalToolStripMenuItem1_Click(object sender, EventArgs e)
-        {
-            //RE3 EMD Original [MD2/BIN and TIM] Repack
-        }
-        private void editableToolStripMenuItem1_Click(object sender, EventArgs e)
-        {
-            //RE3 EMD Editable [OBJ and PNG] Repack
-        }
-
-        private void editableOBJPNGToolStripMenuItem1_Click(object sender, EventArgs e)
-        {
-            //RE2 EMD Editable [OBJ and PNG]  Unpack
-        }
-
-        private void originalMD2TIMToolStripMenuItem1_Click(object sender, EventArgs e)
-        {
-            //RE2 EMD Original [MD2/BIN and TIM] Unpack
-        }
-
-        private void editableToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            //RE2 Editable EMD Repack
-        }
-
-        private void originalToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            //RE2 Original EMD Repack
-        }
-
         //Biohazard 1-3 SCD decompiler/compiler/extractor menu hooks
         private void decompiletoSToolStripMenuItem_Click_1(object sender, EventArgs e)
         {
@@ -715,7 +672,7 @@ namespace Tool_Hazard
             editor.Show(this);
         }
 
-        //Version set based on selected menu strip item
+        // --- Version set based on selected menu strip item --- 
 
         private void toolStripMenuItem1_Click(object sender, EventArgs e)
         {
@@ -908,7 +865,7 @@ namespace Tool_Hazard
         }
         private void repackEditableToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            //RE3 PLD Editable Repack
+            //RE3 PLD Editable [OBJ + PNG ONLY] Repack
             using (FolderBrowserDialog folderDialog = new FolderBrowserDialog())
             {
                 folderDialog.Description = "Select the folder containing the unpacked PLD files (OBJ + PNG)";
