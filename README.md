@@ -2,6 +2,8 @@ Written in C# Windows Forms .Net 8.0 (Not .Net Framework)
 
 This tool started as "White Day Mod Tool" and eventually evolved into "Tool Hazard" in it's current form, which is based on an earlier attempt to create a tool inspired by [Biofat](https://www.romhacking.net/utilities/1019/).
 
+<img width="647" height="464" alt="image" src="https://github.com/user-attachments/assets/6c4ae543-d295-4b14-8554-b367d4a3ad33" />
+
 # Features
 
 * Biohazard/Resident Evil 1-2-3:
