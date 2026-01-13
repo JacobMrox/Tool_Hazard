@@ -3132,14 +3132,14 @@
   "Opcode Name": "Em_set",
   "Opcode Number": "7D",
   "Opcode Length": "24 Bytes",
-  "Opcode Description": "Spawn/set an enemy (EMD) with pose/flags/sound/texture, position and rotation.",
+  "Opcode Description": "Spawn/set an enemy (EMD) with the specified parameters.",
   "Bytes": {
     "Opcode": { "Type": "UCHAR", "Description": "0x7D" },
 
     "Nop": { "Type": "UCHAR", "Description": "Always 0x00" },
 
     "Em_no": { "Type": "UCHAR", "Description": "Enemy number / room slot (use 0xFF for partner)" },
-    "EMD_Id": { "Type": "UCHAR", "Description": "Enemy ID/type (last two characters of EMD filename)" },
+    "EMD_Id": { "Type": "UCHAR", "Description": "EMD File Id for Em_bin_load() function; Enemy ID/type (last two characters of EMD filename)" },
 
     "Pose": { "Type": "UCHAR", "Description": "Pose / initial state" },
 
@@ -3150,7 +3150,7 @@
     "UnknownC": { "Type": "UCHAR", "Description": "Unknown" },
 
     "Sound_flg": { "Type": "UCHAR", "Description": "Sound set" },
-    "Texture": { "Type": "UCHAR", "Description": "Texture" },
+    "Model_type": { "Type": "UCHAR", "Description": "Texture set to use" },
     "Em_set_flg": { "Type": "UCHAR", "Description": "Enemy flag (varies per enemy type)" },
 
     "Pos_x": { "Type": "SHORT", "Description": "X coordinate (left/right)" },

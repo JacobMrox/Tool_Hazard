@@ -1583,7 +1583,7 @@
     "Opcode Name": "Sce_em_set",
     "Opcode Number": "44",
     "Opcode Length": "22 Bytes",
-    "Opcode Description": "This bytecode sets the specified enemy parameters.",
+    "Opcode Description": "Spawn/set an enemy (EMD) with the specified parameters.",
     "Bytes": {
       "Opcode": {
         "Type": "UCHAR",
@@ -1595,7 +1595,7 @@
       },
       "Em_no": {
         "Type": "CHAR",
-        "Description": "Em_no"
+        "Description": "Enemy number / room slot (use 0xFF for partner)"
       },
       "EMD_Id": {
         "Type": "UCHAR",
@@ -1615,7 +1615,7 @@
       },
       "Model_type": {
         "Type": "UCHAR",
-        "Description": "Model_type"
+        "Description": "Texture set to use"
       },
       "Em_set_flg": {
         "Type": "UCHAR",

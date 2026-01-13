@@ -1771,7 +1771,7 @@
     "Opcode Name": "Sce_em_set",
     "Opcode Number": "44",
     "Opcode Length": "20 Bytes",
-    "Opcode Description": "Sets up an enemy character with specified properties.",
+    "Opcode Description": "Spawn/set an enemy (EMD) with the specified parameters.",
     "Bytes": {
       "Opcode": {
         "Type": "UCHAR",
@@ -1785,9 +1785,9 @@
         "Type": "CHAR",
         "Description": "Em_no"
       },
-      "Id": {
+      "EMD_Id": {
         "Type": "UCHAR",
-        "Description": "EMD File Id for Em_bin_load() function"
+        "Description": "EMD File Id for Em_bin_load() function; Enemy ID/type (last two characters of EMD filename)"
       },
       "Type": {
         "Type": "USHORT",
@@ -1803,7 +1803,7 @@
       },
       "Model_type": {
         "Type": "UCHAR",
-        "Description": "Model_type"
+        "Description": "Texture set to use"
       },
       "Em_set_flg": {
         "Type": "UCHAR",
