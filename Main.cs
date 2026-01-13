@@ -12,6 +12,7 @@ using System.Windows.Forms;
 using Tool_Hazard.Biohazard.emd;
 using Tool_Hazard.Biohazard.RDT;
 using Tool_Hazard.Forms;
+using ToolHazard.Nintendo;
 using static System.Net.Mime.MediaTypeNames;
 //using Spectre.Console.Cli;
 //using Tool_Hazard.FontEditor;
@@ -1612,6 +1613,157 @@ namespace Tool_Hazard
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
+            }
+        }
+
+        private void decompressToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            using var ofd = new OpenFileDialog
+            {
+                Title = "Select a Nintendo LZ77-compressed file (0x10/0x11)",
+                Filter = "All files (*.*)|*.*",
+                CheckFileExists = true,
+                Multiselect = false
+            };
+            if (ofd.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            byte[] input;
+            try { input = File.ReadAllBytes(ofd.FileName); }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, ex.Message, "Read failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            // Try-decompress with validation
+            if (!NdsLz77Wii.TryDecompress(input, out var output) || output.Length == 0)
+            {
+                MessageBox.Show(this,
+                    "This file is not a standalone Nintendo LZ77 stream.\n\n" +
+                    "It likely starts with 0x10 by coincidence (e.g., container header like FILES=0x10).\n" +
+                    "Use: Nintendo DS -> Container Scanner.",
+                    "Not a raw LZ stream",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+                return;
+            }
+
+            using var sfd = new SaveFileDialog
+            {
+                Title = "Save decompressed output as...",
+                Filter = "All files (*.*)|*.*",
+                FileName = Path.GetFileNameWithoutExtension(ofd.FileName) + ".dec"
+            };
+            if (sfd.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            try
+            {
+                File.WriteAllBytes(sfd.FileName, output);
+                MessageBox.Show(this,
+                    $"Decompressed OK.\n\nInput:  {input.Length:N0} bytes\nOutput: {output.Length:N0} bytes",
+                    "Done",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, ex.ToString(), "Write failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void containerScannerToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            // Nintendo DS Container Scanner (Deadly Silence-style)
+            using var ofd = new OpenFileDialog
+            {
+                Title = "Select NDS container/blob to scan (Deadly Silence-style)",
+                Filter = "All files (*.*)|*.*",
+                CheckFileExists = true,
+                Multiselect = false
+            };
+
+            if (ofd.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            using var fbd = new FolderBrowserDialog
+            {
+                Description = "Select output folder (entries will be written as i/x/z.)",
+                UseDescriptionForTitle = true
+            };
+
+            if (fbd.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            string outputRoot = fbd.SelectedPath;
+
+            try
+            {
+                using var fs = File.OpenRead(ofd.FileName);
+
+                // 1) Scan for entries (i/x/z.)
+                var entries = ResidentEvilDeadlySilenceExtractor.Scan(fs);
+
+                if (entries.Count == 0)
+                {
+                    MessageBox.Show(this,
+                        "No entries found using the Deadly Silence container pattern.",
+                        "Nothing found",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                    return;
+                }
+
+                // 2) Extract all
+                // Important: Scan() leaves stream position somewhere else; extraction seeks per entry so it's fine.
+                int written = 0;
+
+                ResidentEvilDeadlySilenceExtractor.ExtractAll(
+                    fs,
+                    entries,
+                    e =>
+                    {
+                        // BMS names: "i/x/z."
+                        // We'll create folders for i/x and keep filename as z. (or keep final '.' if you want exact)
+                        // If you want EXACT "i/x/z." as file name, Windows allows trailing '.'? (it doesn't).
+                        // So we make it "z" with no trailing dot, while keeping folders.
+                        var parts = e.Name.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+
+                        string relPath;
+                        if (parts.Length >= 3)
+                        {
+                            // e.g. "0/1/2."
+                            string filePart = parts[2].TrimEnd('.'); // Windows doesn't like trailing '.'
+                            relPath = Path.Combine(parts[0], parts[1], filePart);
+                        }
+                        else
+                        {
+                            relPath = e.Name.Replace('/', Path.DirectorySeparatorChar).TrimEnd('.');
+                        }
+
+                        string outPath = Path.Combine(outputRoot, relPath);
+
+                        Directory.CreateDirectory(Path.GetDirectoryName(outPath)!);
+
+                        // Optional: add a small extension hint for raw vs decompressed
+                        // (comment these lines if you want no extension)
+                        if (!Path.HasExtension(outPath))
+                            outPath += e.IsCompressed ? ".dec" : ".bin";
+
+                        written++;
+                        return File.Create(outPath);
+                    });
+
+                MessageBox.Show(this,
+                    $"Scan + extract complete.\n\nFound:   {entries.Count:N0} entries\nWritten: {written:N0}\n\nOutput: {outputRoot}",
+                    "Done",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, ex.ToString(), "Container scan/extract failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
     }

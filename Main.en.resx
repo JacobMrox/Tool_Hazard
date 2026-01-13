@@ -200,23 +200,20 @@
   <data name="rDTToolStripMenuItem2.Text" xml:space="preserve">
     <value>RDT</value>
   </data>
-  <data name="unpackOriginalToolStripMenuItem1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>180, 22</value>
-  </data>
   <data name="unpackOriginalToolStripMenuItem1.Text" xml:space="preserve">
     <value>Unpack (Original)</value>
-  </data>
-  <data name="repackOriginalToolStripMenuItem1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>180, 22</value>
   </data>
   <data name="repackOriginalToolStripMenuItem1.Text" xml:space="preserve">
     <value>Repack (Original)</value>
   </data>
-  <data name="toolStripSeparator11.Size" type="System.Drawing.Size, System.Drawing">
-    <value>177, 6</value>
+  <data name="unpackEditableToolStripMenuItem1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>167, 22</value>
   </data>
   <data name="unpackEditableToolStripMenuItem1.Text" xml:space="preserve">
     <value>Unpack (Editable)</value>
+  </data>
+  <data name="repackEditableToolStripMenuItem1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>167, 22</value>
   </data>
   <data name="repackEditableToolStripMenuItem1.Text" xml:space="preserve">
     <value>Repack (Editable)</value>
@@ -728,14 +725,8 @@
   <data name="bIORE31999ToolStripMenuItem.ToolTipText" xml:space="preserve">
     <value>Handle and manage file formats utilized by Biohazard 3 / Resident Evil 3 (1999)</value>
   </data>
-  <data name="unpackToolStripMenuItem1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>114, 22</value>
-  </data>
   <data name="unpackToolStripMenuItem1.Text" xml:space="preserve">
     <value>Unpack</value>
-  </data>
-  <data name="repackToolStripMenuItem1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>114, 22</value>
   </data>
   <data name="repackToolStripMenuItem1.Text" xml:space="preserve">
     <value>Repack</value>
@@ -754,6 +745,15 @@
   </data>
   <data name="wADToolStripMenuItem1.Text" xml:space="preserve">
     <value>WAD</value>
+  </data>
+  <data name="pETToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="pETToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>265, 22</value>
+  </data>
+  <data name="pETToolStripMenuItem.Text" xml:space="preserve">
+    <value>PET</value>
   </data>
   <data name="fontEditorToolStripMenuItem1.Size" type="System.Drawing.Size, System.Drawing">
     <value>265, 22</value>
@@ -806,6 +806,27 @@
   <data name="residentEvilBiohazardToolStripMenuItem.Text" xml:space="preserve">
     <value>Resident Evil / Biohazard</value>
   </data>
+  <data name="decompressToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>139, 22</value>
+  </data>
+  <data name="decompressToolStripMenuItem.Text" xml:space="preserve">
+    <value>Decompress</value>
+  </data>
+  <data name="lZ770x100x11ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>171, 22</value>
+  </data>
+  <data name="lZ770x100x11ToolStripMenuItem.Text" xml:space="preserve">
+    <value>LZ77 (0x10/0x11)</value>
+  </data>
+  <data name="containerScannerToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>171, 22</value>
+  </data>
+  <data name="containerScannerToolStripMenuItem.Text" xml:space="preserve">
+    <value>Container Scanner</value>
+  </data>
+  <data name="nintendoToolStripMenuItem.Text" xml:space="preserve">
+    <value>Nintendo DS</value>
+  </data>
   <data name="toolStripMenuItem2.Size" type="System.Drawing.Size, System.Drawing">
     <value>49, 19</value>
   </data>
@@ -846,7 +867,7 @@
     <value>Help</value>
   </data>
   <data name="menuStrip1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>645, 42</value>
+    <value>645, 23</value>
   </data>
   <data name="notifyIcon1.Text" xml:space="preserve">
     <value>notifyIcon1</value>
