@@ -11,6 +11,8 @@ Written in C# Windows Forms .Net 8.0 (Not .Net Framework)
   * NOP file extraction (the repack functionality is a work in progress).
   * Supports extraction of files with Korean character file names without the need of Locale Emulator.
   * Font Editor.
+* Nintendo DS
+  * Content Scanner + Lz77Wii Decompressor
 
 # Coming Soon
 * Live HUD feature for RE1-2-3
