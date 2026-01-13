@@ -17,6 +17,8 @@ This tool started as "White Day Mod Tool" and eventually evolved into "Tool Haza
   * Font Editor.
 * Nintendo DS
   * Content Scanner + Lz77Wii Decompressor
+* Sony PS1
+  * TIM to PNG and vice versa
 
 # Coming Soon
 * Live HUD feature for RE1-2-3
