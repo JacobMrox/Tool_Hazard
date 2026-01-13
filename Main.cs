@@ -1675,10 +1675,9 @@ namespace Tool_Hazard
 
         private void containerScannerToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // Nintendo DS Container Scanner (Deadly Silence-style)
             using var ofd = new OpenFileDialog
             {
-                Title = "Select NDS container/blob to scan (Deadly Silence-style)",
+                Title = "Select NDS container (Deadly Silence style)",
                 Filter = "All files (*.*)|*.*",
                 CheckFileExists = true,
                 Multiselect = false
@@ -1689,7 +1688,7 @@ namespace Tool_Hazard
 
             using var fbd = new FolderBrowserDialog
             {
-                Description = "Select output folder (entries will be written as i/x/z.)",
+                Description = "Select output folder",
                 UseDescriptionForTitle = true
             };
 
@@ -1702,68 +1701,55 @@ namespace Tool_Hazard
             {
                 using var fs = File.OpenRead(ofd.FileName);
 
-                // 1) Scan for entries (i/x/z.)
+                // 1) Scan container
                 var entries = ResidentEvilDeadlySilenceExtractor.Scan(fs);
 
                 if (entries.Count == 0)
                 {
-                    MessageBox.Show(this,
-                        "No entries found using the Deadly Silence container pattern.",
-                        "Nothing found",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Information);
+                    MessageBox.Show(this, "No entries found.", "Info",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return;
                 }
 
-                // 2) Extract all
-                // Important: Scan() leaves stream position somewhere else; extraction seeks per entry so it's fine.
-                int written = 0;
+                // 2) Extract with proper extension detection
+                foreach (var entry in entries)
+                {
+                    byte[] bytes = ResidentEvilDeadlySilenceExtractor.ExtractEntry(fs, entry);
 
-                ResidentEvilDeadlySilenceExtractor.ExtractAll(
-                    fs,
-                    entries,
-                    e =>
+                    var parts = entry.Name.Split('/', StringSplitOptions.RemoveEmptyEntries);
+
+                    string relPath;
+                    if (parts.Length >= 3)
                     {
-                        // BMS names: "i/x/z."
-                        // We'll create folders for i/x and keep filename as z. (or keep final '.' if you want exact)
-                        // If you want EXACT "i/x/z." as file name, Windows allows trailing '.'? (it doesn't).
-                        // So we make it "z" with no trailing dot, while keeping folders.
-                        var parts = e.Name.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+                        relPath = Path.Combine(parts[0], parts[1], parts[2].TrimEnd('.'));
+                    }
+                    else
+                    {
+                        relPath = entry.Name.Replace('/', Path.DirectorySeparatorChar).TrimEnd('.');
+                    }
 
-                        string relPath;
-                        if (parts.Length >= 3)
-                        {
-                            // e.g. "0/1/2."
-                            string filePart = parts[2].TrimEnd('.'); // Windows doesn't like trailing '.'
-                            relPath = Path.Combine(parts[0], parts[1], filePart);
-                        }
-                        else
-                        {
-                            relPath = e.Name.Replace('/', Path.DirectorySeparatorChar).TrimEnd('.');
-                        }
+                    string basePath = Path.Combine(outputRoot, relPath);
+                    Directory.CreateDirectory(Path.GetDirectoryName(basePath)!);
 
-                        string outPath = Path.Combine(outputRoot, relPath);
+                    string ext = NintendoMagic.GuessExtension(bytes);
+                    if (string.IsNullOrEmpty(ext))
+                        ext = entry.IsCompressed ? ".dec" : ".bin";
 
-                        Directory.CreateDirectory(Path.GetDirectoryName(outPath)!);
-
-                        // Optional: add a small extension hint for raw vs decompressed
-                        // (comment these lines if you want no extension)
-                        if (!Path.HasExtension(outPath))
-                            outPath += e.IsCompressed ? ".dec" : ".bin";
-
-                        written++;
-                        return File.Create(outPath);
-                    });
+                    File.WriteAllBytes(basePath + ext, bytes);
+                }
 
                 MessageBox.Show(this,
-                    $"Scan + extract complete.\n\nFound:   {entries.Count:N0} entries\nWritten: {written:N0}\n\nOutput: {outputRoot}",
+                    $"Extraction complete.\n\nEntries: {entries.Count}",
                     "Done",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, ex.ToString(), "Container scan/extract failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(this, ex.ToString(),
+                    "Extraction failed",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
             }
         }
     }
