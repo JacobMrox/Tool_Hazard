@@ -25,6 +25,10 @@ This tool started as "White Day Mod Tool" and eventually evolved into "Tool Haza
 * Possible Intel.Orca Biorand implementation in-tool.
 * Auto-Updater
 
+# Compile
+
+This is to be compiled in Visual Studio 2026. For compiled ready-to-use release, please wait until an official stable release is published.
+
 # Credits
 
 * [White Day Font Editor](https://github.com/emuyia/wd-fonteditor) v1.2 by Emuiya.
