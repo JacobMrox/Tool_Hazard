@@ -2,6 +2,8 @@ Tool Hazard is a modern, all-in-one modding and research utility written in C# (
 
 Originally started as White Day Mod Tool, it evolved into a full-featured toolkit inspired by [Biofat](https://www.romhacking.net/utilities/1019/), focused on reverse-engineering, modding, file editing, and preservation of classic game assets.
 
+<img width="647" height="464" alt="image" src="https://github.com/user-attachments/assets/6c4ae543-d295-4b14-8554-b367d4a3ad33" />
+
 🇸🇦 العربية
 
 تول هازارد هي أداة حديثة وشاملة للتعديل والبحث، مكتوبة بلغة سي شارب (دوت نت ثمانية، ويندوز فورمز)، ومصممة لألعاب الرعب الكلاسيكية من نوع البقاء مثل بايوهازارد / ريزدنت إيفل من واحد إلى ثلاثة و وايت داي (2001)، إضافة إلى بعض منصات الألعاب القديمة.
@@ -34,8 +36,6 @@ Tool Hazard è uno strumento moderno e completo per il modding e la ricerca, svi
 
 Inizialmente nato come White Day Mod Tool, si è evoluto in un toolkit completo ispirato a Biofat
 , focalizzato su reverse engineering, modding, modifica dei file e conservazione dei contenuti dei giochi classici.
-
-<img width="647" height="464" alt="image" src="https://github.com/user-attachments/assets/6c4ae543-d295-4b14-8554-b367d4a3ad33" />
 
 # Features
 
