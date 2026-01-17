@@ -3,6 +3,7 @@ Tool Hazard is a modern, all-in-one modding and research utility written in C# (
 Originally started as White Day Mod Tool, it evolved into a full-featured toolkit inspired by [Biofat](https://www.romhacking.net/utilities/1019/), focused on reverse-engineering, modding, file editing, and preservation of classic game assets.
 
 <img width="647" height="464" alt="image" src="https://github.com/user-attachments/assets/6c4ae543-d295-4b14-8554-b367d4a3ad33" />
+<img width="402" height="282" alt="image" src="https://github.com/user-attachments/assets/65c9f714-fa4f-4bec-8173-c9d0e8b61752" />
 
 🇸🇦 العربية
 
@@ -43,7 +44,6 @@ Inizialmente nato come White Day Mod Tool, si è evoluto in un toolkit completo 
   * Unpack/Repack RDT files (BIO1 not tested).
   * Support for EMD/PLD editing for RE1,2,3
   * Support for Message (.MSG) file editing for RE1,2,3
-    <img width="402" height="282" alt="image" src="https://github.com/user-attachments/assets/65c9f714-fa4f-4bec-8173-c9d0e8b61752" />
   * SCD OpCode Editor (Only Biohazard 3 tested); with drag-drop updatable opcode database in the form of .json files based on [CRE-SCD-BHS Biohazard SCD Editor](https://github.com/3lric/CRE-SCD-BHS/)
   * Ability to Install [Gemini-Loboto3](https://github.com/Gemini-Loboto3)'s [Classic Rebirth](https://classicrebirth.com/) patch from the tool's interface.
 * White Day (2001):
