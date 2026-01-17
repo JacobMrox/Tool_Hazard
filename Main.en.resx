@@ -140,26 +140,14 @@
   <data name="bSSToolStripMenuItem.Text" xml:space="preserve">
     <value>BSS</value>
   </data>
-  <data name="unpackToolStripMenuItem4.Size" type="System.Drawing.Size, System.Drawing">
-    <value>164, 22</value>
-  </data>
   <data name="unpackToolStripMenuItem4.Text" xml:space="preserve">
     <value>Unpack</value>
-  </data>
-  <data name="repackToolStripMenuItem5.Size" type="System.Drawing.Size, System.Drawing">
-    <value>164, 22</value>
   </data>
   <data name="repackToolStripMenuItem5.Text" xml:space="preserve">
     <value>Repack</value>
   </data>
-  <data name="toolStripSeparator13.Size" type="System.Drawing.Size, System.Drawing">
-    <value>161, 6</value>
-  </data>
   <data name="convertToBIO2ToolStripMenuItem1.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
-  </data>
-  <data name="convertToBIO2ToolStripMenuItem1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>164, 22</value>
   </data>
   <data name="convertToBIO2ToolStripMenuItem1.Text" xml:space="preserve">
     <value>Convert to BIO2</value>
@@ -167,14 +155,8 @@
   <data name="convertToBIO3ToolStripMenuItem1.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
-  <data name="convertToBIO3ToolStripMenuItem1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>164, 22</value>
-  </data>
   <data name="convertToBIO3ToolStripMenuItem1.Text" xml:space="preserve">
     <value>Convert to BIO3</value>
-  </data>
-  <data name="toolStripSeparator14.Size" type="System.Drawing.Size, System.Drawing">
-    <value>161, 6</value>
   </data>
   <data name="toolStripMenuItem3.Size" type="System.Drawing.Size, System.Drawing">
     <value>187, 22</value>
@@ -188,11 +170,11 @@
   <data name="extractSCDFromRDTToolStripMenuItem2.Text" xml:space="preserve">
     <value>Extract SCD from RDT</value>
   </data>
-  <data name="sCDScriptDataToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>164, 22</value>
-  </data>
   <data name="sCDScriptDataToolStripMenuItem.Text" xml:space="preserve">
     <value>SCD (Script Data)</value>
+  </data>
+  <data name="mSGToolStripMenuItem2.Text" xml:space="preserve">
+    <value>MSG</value>
   </data>
   <data name="rDTToolStripMenuItem2.Size" type="System.Drawing.Size, System.Drawing">
     <value>250, 22</value>
@@ -315,16 +297,16 @@
     <value>BSS</value>
   </data>
   <data name="unpackToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>164, 22</value>
+    <value>180, 22</value>
   </data>
   <data name="repackToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>164, 22</value>
-  </data>
-  <data name="toolStripSeparator5.Size" type="System.Drawing.Size, System.Drawing">
-    <value>161, 6</value>
+    <value>180, 22</value>
   </data>
   <data name="convertToBIO1ToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
+  </data>
+  <data name="convertToBIO1ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>180, 22</value>
   </data>
   <data name="convertToBIO1ToolStripMenuItem.Text" xml:space="preserve">
     <value>Convert to BIO1</value>
@@ -333,13 +315,10 @@
     <value>False</value>
   </data>
   <data name="convertToBIO3ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>164, 22</value>
+    <value>180, 22</value>
   </data>
   <data name="convertToBIO3ToolStripMenuItem.Text" xml:space="preserve">
     <value>Convert to BIO3</value>
-  </data>
-  <data name="toolStripSeparator4.Size" type="System.Drawing.Size, System.Drawing">
-    <value>161, 6</value>
   </data>
   <data name="sCDOpCodeEditorToolStripMenuItem1.Text" xml:space="preserve">
     <value>SCD OpCode Editor</value>
@@ -368,11 +347,11 @@
   <data name="recompileSToSCDToolStripMenuItem1.Text" xml:space="preserve">
     <value>Recompile .S to .SCD</value>
   </data>
-  <data name="sCDToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>164, 22</value>
-  </data>
   <data name="sCDToolStripMenuItem.Text" xml:space="preserve">
     <value>SCD (Script Data)</value>
+  </data>
+  <data name="mSGToolStripMenuItem1.Text" xml:space="preserve">
+    <value>MSG</value>
   </data>
   <data name="rDTToolStripMenuItem1.Size" type="System.Drawing.Size, System.Drawing">
     <value>250, 22</value>
@@ -617,6 +596,12 @@
   <data name="sCDToolStripMenuItem1.Text" xml:space="preserve">
     <value>SCD (Script Data)</value>
   </data>
+  <data name="toolStripSeparator16.Size" type="System.Drawing.Size, System.Drawing">
+    <value>161, 6</value>
+  </data>
+  <data name="mSGToolStripMenuItem.Text" xml:space="preserve">
+    <value>MSG</value>
+  </data>
   <data name="rDTToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>250, 22</value>
   </data>
@@ -815,8 +800,14 @@
   <data name="decompressToolStripMenuItem.Text" xml:space="preserve">
     <value>Decompress</value>
   </data>
+  <data name="lZ770x100x11ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>171, 22</value>
+  </data>
   <data name="lZ770x100x11ToolStripMenuItem.Text" xml:space="preserve">
     <value>LZ77 (0x10/0x11)</value>
+  </data>
+  <data name="containerScannerToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>171, 22</value>
   </data>
   <data name="containerScannerToolStripMenuItem.Text" xml:space="preserve">
     <value>Container Scanner</value>
@@ -824,11 +815,20 @@
   <data name="nintendoToolStripMenuItem.Text" xml:space="preserve">
     <value>Nintendo DS</value>
   </data>
+  <data name="tIMToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>131, 22</value>
+  </data>
   <data name="tIMToolStripMenuItem.Text" xml:space="preserve">
     <value>TIM 2 PNG</value>
   </data>
+  <data name="pNG2TIMToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>131, 22</value>
+  </data>
   <data name="pNG2TIMToolStripMenuItem.Text" xml:space="preserve">
     <value>PNG 2 TIM</value>
+  </data>
+  <data name="pS1ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>93, 22</value>
   </data>
   <data name="pS1ToolStripMenuItem.Text" xml:space="preserve">
     <value>PS1</value>
@@ -841,6 +841,9 @@
   </data>
   <data name="pS2ToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
+  </data>
+  <data name="pS2ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>93, 22</value>
   </data>
   <data name="pS2ToolStripMenuItem.Text" xml:space="preserve">
     <value>PS2</value>

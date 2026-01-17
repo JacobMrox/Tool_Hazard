@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace ToolHazard.Nintendo
+namespace Tool_Hazard.Nintendo
 {
     /// <summary>
     /// Equivalent to QuickBMS "comtype lz77wii" for common Nintendo LZ77 formats (0x10, 0x11).

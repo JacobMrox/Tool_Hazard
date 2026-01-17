@@ -5,13 +5,13 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Text;
 using System.Windows.Forms;
-using Tool_Hazard.White_Day;
-using Tool_Hazard.Biohazard.emd;
-using Tool_Hazard.Biohazard.RDT;
-using IntelOrca.Biohazard;
 using Tool_Hazard.Forms;
 using Tool_Hazard.Sony_PS1;
-using ToolHazard.Nintendo;
+using Tool_Hazard.Nintendo;
+using Tool_Hazard.White_Day;
+using IntelOrca.Biohazard;
+using Tool_Hazard.Biohazard.emd;
+using Tool_Hazard.Biohazard.RDT;
 using static System.Net.Mime.MediaTypeNames;
 
 namespace Tool_Hazard
@@ -1363,6 +1363,25 @@ namespace Tool_Hazard
             {
                 MessageBox.Show(this, ex.ToString(), "PNG → TIM failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        //Classic Resident Evil MSG Tool (Bio1/Bio2/Bio3)
+        private void mSGToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            var editor = new ClassicREmsgTool();
+            editor.Show(this);
+        }
+
+        private void mSGToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            var editor = new ClassicREmsgTool();
+            editor.Show(this);
+        }
+
+        private void mSGToolStripMenuItem2_Click(object sender, EventArgs e)
+        {
+            var editor = new ClassicREmsgTool();
+            editor.Show(this);
         }
     }
 }
