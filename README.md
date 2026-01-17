@@ -8,7 +8,8 @@ This tool started as "White Day Mod Tool" and eventually evolved into "Tool Haza
 
 * Biohazard/Resident Evil 1-2-3:
   * Unpack/Repack RDT files (BIO1 not tested).
-  * Support for EMD/PLD Unpacking/Repacking for RE1-2-3
+  * Support for EMD/PLD editing for RE1,2,3
+  * Support for Message (.MSG) file editing for RE1,2,3
   * SCD OpCode Editor (Only Biohazard 3 tested); with drag-drop updatable opcode database in the form of .json files based on [CRE-SCD-BHS Biohazard SCD Editor](https://github.com/3lric/CRE-SCD-BHS/)
   * Ability to Install [Gemini-Loboto3](https://github.com/Gemini-Loboto3)'s [Classic Rebirth](https://classicrebirth.com/) patch from the tool's interface.
 * White Day (2001):
