@@ -140,14 +140,26 @@
   <data name="bSSToolStripMenuItem.Text" xml:space="preserve">
     <value>BSS</value>
   </data>
+  <data name="unpackToolStripMenuItem4.Size" type="System.Drawing.Size, System.Drawing">
+    <value>164, 22</value>
+  </data>
   <data name="unpackToolStripMenuItem4.Text" xml:space="preserve">
     <value>Unpack</value>
+  </data>
+  <data name="repackToolStripMenuItem5.Size" type="System.Drawing.Size, System.Drawing">
+    <value>164, 22</value>
   </data>
   <data name="repackToolStripMenuItem5.Text" xml:space="preserve">
     <value>Repack</value>
   </data>
+  <data name="toolStripSeparator13.Size" type="System.Drawing.Size, System.Drawing">
+    <value>161, 6</value>
+  </data>
   <data name="convertToBIO2ToolStripMenuItem1.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
+  </data>
+  <data name="convertToBIO2ToolStripMenuItem1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>164, 22</value>
   </data>
   <data name="convertToBIO2ToolStripMenuItem1.Text" xml:space="preserve">
     <value>Convert to BIO2</value>
@@ -155,8 +167,14 @@
   <data name="convertToBIO3ToolStripMenuItem1.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
+  <data name="convertToBIO3ToolStripMenuItem1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>164, 22</value>
+  </data>
   <data name="convertToBIO3ToolStripMenuItem1.Text" xml:space="preserve">
     <value>Convert to BIO3</value>
+  </data>
+  <data name="toolStripSeparator14.Size" type="System.Drawing.Size, System.Drawing">
+    <value>161, 6</value>
   </data>
   <data name="toolStripMenuItem3.Size" type="System.Drawing.Size, System.Drawing">
     <value>187, 22</value>
@@ -170,8 +188,17 @@
   <data name="extractSCDFromRDTToolStripMenuItem2.Text" xml:space="preserve">
     <value>Extract SCD from RDT</value>
   </data>
+  <data name="sCDScriptDataToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>164, 22</value>
+  </data>
   <data name="sCDScriptDataToolStripMenuItem.Text" xml:space="preserve">
     <value>SCD (Script Data)</value>
+  </data>
+  <data name="toolStripSeparator21.Size" type="System.Drawing.Size, System.Drawing">
+    <value>161, 6</value>
+  </data>
+  <data name="mSGToolStripMenuItem2.Size" type="System.Drawing.Size, System.Drawing">
+    <value>164, 22</value>
   </data>
   <data name="mSGToolStripMenuItem2.Text" xml:space="preserve">
     <value>MSG</value>
@@ -223,6 +250,18 @@
   </data>
   <data name="menuInstallRE1CR.Text" xml:space="preserve">
     <value>Install/Update RE1 Classic Rebirth</value>
+  </data>
+  <data name="bGMXMLEditorToolStripMenuItem2.Size" type="System.Drawing.Size, System.Drawing">
+    <value>180, 22</value>
+  </data>
+  <data name="bGMXMLEditorToolStripMenuItem2.Text" xml:space="preserve">
+    <value>BGM XML Editor</value>
+  </data>
+  <data name="classicRebirthToolsToolStripMenuItem2.Size" type="System.Drawing.Size, System.Drawing">
+    <value>250, 22</value>
+  </data>
+  <data name="classicRebirthToolsToolStripMenuItem2.Text" xml:space="preserve">
+    <value>Classic Rebirth Tools</value>
   </data>
   <data name="toolStripMenuItem1.Size" type="System.Drawing.Size, System.Drawing">
     <value>103, 19</value>
@@ -297,16 +336,16 @@
     <value>BSS</value>
   </data>
   <data name="unpackToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>180, 22</value>
+    <value>164, 22</value>
   </data>
   <data name="repackToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>180, 22</value>
+    <value>164, 22</value>
+  </data>
+  <data name="toolStripSeparator5.Size" type="System.Drawing.Size, System.Drawing">
+    <value>161, 6</value>
   </data>
   <data name="convertToBIO1ToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
-  </data>
-  <data name="convertToBIO1ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>180, 22</value>
   </data>
   <data name="convertToBIO1ToolStripMenuItem.Text" xml:space="preserve">
     <value>Convert to BIO1</value>
@@ -315,10 +354,13 @@
     <value>False</value>
   </data>
   <data name="convertToBIO3ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>180, 22</value>
+    <value>164, 22</value>
   </data>
   <data name="convertToBIO3ToolStripMenuItem.Text" xml:space="preserve">
     <value>Convert to BIO3</value>
+  </data>
+  <data name="toolStripSeparator4.Size" type="System.Drawing.Size, System.Drawing">
+    <value>161, 6</value>
   </data>
   <data name="sCDOpCodeEditorToolStripMenuItem1.Text" xml:space="preserve">
     <value>SCD OpCode Editor</value>
@@ -347,8 +389,17 @@
   <data name="recompileSToSCDToolStripMenuItem1.Text" xml:space="preserve">
     <value>Recompile .S to .SCD</value>
   </data>
+  <data name="sCDToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>164, 22</value>
+  </data>
   <data name="sCDToolStripMenuItem.Text" xml:space="preserve">
     <value>SCD (Script Data)</value>
+  </data>
+  <data name="toolStripSeparator20.Size" type="System.Drawing.Size, System.Drawing">
+    <value>161, 6</value>
+  </data>
+  <data name="mSGToolStripMenuItem1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>164, 22</value>
   </data>
   <data name="mSGToolStripMenuItem1.Text" xml:space="preserve">
     <value>MSG</value>
@@ -481,6 +532,18 @@
   </data>
   <data name="menuInstallRE2CR.Text" xml:space="preserve">
     <value>Install/Update RE2 Classic Rebirth</value>
+  </data>
+  <data name="bGMXMLEditorToolStripMenuItem1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>161, 22</value>
+  </data>
+  <data name="bGMXMLEditorToolStripMenuItem1.Text" xml:space="preserve">
+    <value>BGM XML Editor</value>
+  </data>
+  <data name="classicRebirthToolsToolStripMenuItem1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>250, 22</value>
+  </data>
+  <data name="classicRebirthToolsToolStripMenuItem1.Text" xml:space="preserve">
+    <value>Classic Rebirth Tools</value>
   </data>
   <data name="bIO2RE21998ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>103, 19</value>
@@ -700,6 +763,18 @@
   </data>
   <data name="menuInstallRE3CR.Text" xml:space="preserve">
     <value>Install/Update RE3 Classic Rebirth</value>
+  </data>
+  <data name="bGMXMLEditorToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>180, 22</value>
+  </data>
+  <data name="bGMXMLEditorToolStripMenuItem.Text" xml:space="preserve">
+    <value>BGM XML Editor</value>
+  </data>
+  <data name="classicRebirthToolsToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>250, 22</value>
+  </data>
+  <data name="classicRebirthToolsToolStripMenuItem.Text" xml:space="preserve">
+    <value>Classic Rebirth Tools</value>
   </data>
   <data name="bIORE31999ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>103, 19</value>

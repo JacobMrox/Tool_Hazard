@@ -174,6 +174,12 @@
             notifyIcon1 = new NotifyIcon(components);
             statusStrip1 = new StatusStrip();
             toolStripStatusLabel1 = new ToolStripStatusLabel();
+            classicRebirthToolsToolStripMenuItem = new ToolStripMenuItem();
+            bGMXMLEditorToolStripMenuItem = new ToolStripMenuItem();
+            classicRebirthToolsToolStripMenuItem1 = new ToolStripMenuItem();
+            bGMXMLEditorToolStripMenuItem1 = new ToolStripMenuItem();
+            classicRebirthToolsToolStripMenuItem2 = new ToolStripMenuItem();
+            bGMXMLEditorToolStripMenuItem2 = new ToolStripMenuItem();
             menuStrip1.SuspendLayout();
             statusStrip1.SuspendLayout();
             SuspendLayout();
@@ -205,7 +211,7 @@
             // 
             resources.ApplyResources(toolStripMenuItem1, "toolStripMenuItem1");
             toolStripMenuItem1.AutoToolTip = true;
-            toolStripMenuItem1.DropDownItems.AddRange(new ToolStripItem[] { bSSToolStripMenuItem, rDTToolStripMenuItem2, eMDToolStripMenuItem2, pLWToolStripMenuItem2, vHVBToolStripMenuItem2, toolStripSeparator7, menuInstallRE1CR });
+            toolStripMenuItem1.DropDownItems.AddRange(new ToolStripItem[] { bSSToolStripMenuItem, rDTToolStripMenuItem2, eMDToolStripMenuItem2, pLWToolStripMenuItem2, vHVBToolStripMenuItem2, toolStripSeparator7, menuInstallRE1CR, classicRebirthToolsToolStripMenuItem2 });
             toolStripMenuItem1.Name = "toolStripMenuItem1";
             toolStripMenuItem1.Click += toolStripMenuItem1_Click;
             // 
@@ -381,7 +387,7 @@
             // bIO2RE21998ToolStripMenuItem
             // 
             resources.ApplyResources(bIO2RE21998ToolStripMenuItem, "bIO2RE21998ToolStripMenuItem");
-            bIO2RE21998ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { bSSToolStripMenuItem1, rDTToolStripMenuItem1, mD1ToolStripMenuItem, eMDToolStripMenuItem1, pLDToolStripMenuItem1, plwToolStripMenuItem1, vHVBToolStripMenuItem, sAPToolStripMenuItem, toolStripSeparator1, installPatch110ToolStripMenuItem, menuInstallRE2CR });
+            bIO2RE21998ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { bSSToolStripMenuItem1, rDTToolStripMenuItem1, mD1ToolStripMenuItem, eMDToolStripMenuItem1, pLDToolStripMenuItem1, plwToolStripMenuItem1, vHVBToolStripMenuItem, sAPToolStripMenuItem, toolStripSeparator1, installPatch110ToolStripMenuItem, menuInstallRE2CR, classicRebirthToolsToolStripMenuItem1 });
             bIO2RE21998ToolStripMenuItem.Name = "bIO2RE21998ToolStripMenuItem";
             bIO2RE21998ToolStripMenuItem.Click += bIO2RE21998ToolStripMenuItem_Click;
             // 
@@ -595,7 +601,7 @@
             // bIORE31999ToolStripMenuItem
             // 
             resources.ApplyResources(bIORE31999ToolStripMenuItem, "bIORE31999ToolStripMenuItem");
-            bIORE31999ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { rOFSToolStripMenuItem, aRDToolStripMenuItem, bSSToolStripMenuItem2, rDTToolStripMenuItem, mD2ToolStripMenuItem, eMDToolStripMenuItem, pLDToolStripMenuItem, pLWToolStripMenuItem, vBVHToolStripMenuItem, toolStripSeparator6, installPatch110ToolStripMenuItem1, menuInstallRE3CR });
+            bIORE31999ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { rOFSToolStripMenuItem, aRDToolStripMenuItem, bSSToolStripMenuItem2, rDTToolStripMenuItem, mD2ToolStripMenuItem, eMDToolStripMenuItem, pLDToolStripMenuItem, pLWToolStripMenuItem, vBVHToolStripMenuItem, toolStripSeparator6, installPatch110ToolStripMenuItem1, menuInstallRE3CR, classicRebirthToolsToolStripMenuItem });
             bIORE31999ToolStripMenuItem.Name = "bIORE31999ToolStripMenuItem";
             bIORE31999ToolStripMenuItem.Click += bIORE31999ToolStripMenuItem_Click;
             // 
@@ -990,6 +996,42 @@
             toolStripStatusLabel1.BackColor = SystemColors.ButtonFace;
             toolStripStatusLabel1.Name = "toolStripStatusLabel1";
             // 
+            // classicRebirthToolsToolStripMenuItem
+            // 
+            resources.ApplyResources(classicRebirthToolsToolStripMenuItem, "classicRebirthToolsToolStripMenuItem");
+            classicRebirthToolsToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { bGMXMLEditorToolStripMenuItem });
+            classicRebirthToolsToolStripMenuItem.Name = "classicRebirthToolsToolStripMenuItem";
+            // 
+            // bGMXMLEditorToolStripMenuItem
+            // 
+            resources.ApplyResources(bGMXMLEditorToolStripMenuItem, "bGMXMLEditorToolStripMenuItem");
+            bGMXMLEditorToolStripMenuItem.Name = "bGMXMLEditorToolStripMenuItem";
+            bGMXMLEditorToolStripMenuItem.Click += bGMXMLEditorToolStripMenuItem_Click;
+            // 
+            // classicRebirthToolsToolStripMenuItem1
+            // 
+            resources.ApplyResources(classicRebirthToolsToolStripMenuItem1, "classicRebirthToolsToolStripMenuItem1");
+            classicRebirthToolsToolStripMenuItem1.DropDownItems.AddRange(new ToolStripItem[] { bGMXMLEditorToolStripMenuItem1 });
+            classicRebirthToolsToolStripMenuItem1.Name = "classicRebirthToolsToolStripMenuItem1";
+            // 
+            // bGMXMLEditorToolStripMenuItem1
+            // 
+            resources.ApplyResources(bGMXMLEditorToolStripMenuItem1, "bGMXMLEditorToolStripMenuItem1");
+            bGMXMLEditorToolStripMenuItem1.Name = "bGMXMLEditorToolStripMenuItem1";
+            bGMXMLEditorToolStripMenuItem1.Click += bGMXMLEditorToolStripMenuItem1_Click;
+            // 
+            // classicRebirthToolsToolStripMenuItem2
+            // 
+            resources.ApplyResources(classicRebirthToolsToolStripMenuItem2, "classicRebirthToolsToolStripMenuItem2");
+            classicRebirthToolsToolStripMenuItem2.DropDownItems.AddRange(new ToolStripItem[] { bGMXMLEditorToolStripMenuItem2 });
+            classicRebirthToolsToolStripMenuItem2.Name = "classicRebirthToolsToolStripMenuItem2";
+            // 
+            // bGMXMLEditorToolStripMenuItem2
+            // 
+            resources.ApplyResources(bGMXMLEditorToolStripMenuItem2, "bGMXMLEditorToolStripMenuItem2");
+            bGMXMLEditorToolStripMenuItem2.Name = "bGMXMLEditorToolStripMenuItem2";
+            bGMXMLEditorToolStripMenuItem2.Click += bGMXMLEditorToolStripMenuItem2_Click;
+            // 
             // Main
             // 
             resources.ApplyResources(this, "$this");
@@ -1157,5 +1199,11 @@
         private ToolStripSeparator toolStripSeparator20;
         private ToolStripMenuItem mSGToolStripMenuItem1;
         private ToolStripMenuItem mSGToolStripMenuItem;
+        private ToolStripMenuItem classicRebirthToolsToolStripMenuItem;
+        private ToolStripMenuItem bGMXMLEditorToolStripMenuItem;
+        private ToolStripMenuItem classicRebirthToolsToolStripMenuItem1;
+        private ToolStripMenuItem bGMXMLEditorToolStripMenuItem1;
+        private ToolStripMenuItem classicRebirthToolsToolStripMenuItem2;
+        private ToolStripMenuItem bGMXMLEditorToolStripMenuItem2;
     }
 }

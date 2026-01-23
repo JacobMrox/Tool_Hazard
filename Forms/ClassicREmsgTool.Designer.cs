@@ -96,7 +96,8 @@
             Controls.Add(menuStrip1);
             MainMenuStrip = menuStrip1;
             Name = "ClassicREmsgTool";
-            Text = "Classic RE MSG Tool";
+            StartPosition = FormStartPosition.CenterScreen;
+            Text = "MSG Tool";
             menuStrip1.ResumeLayout(false);
             menuStrip1.PerformLayout();
             ResumeLayout(false);

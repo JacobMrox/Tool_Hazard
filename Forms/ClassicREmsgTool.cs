@@ -184,6 +184,7 @@ namespace Tool_Hazard.Forms
 
             if (result == DialogResult.Cancel)
                 return false;
+                Close();
 
             if (result == DialogResult.Yes)
                 SaveMsg(overwrite: true);
@@ -197,7 +198,7 @@ namespace Tool_Hazard.Forms
             var filePart = string.IsNullOrEmpty(_currentMsgPath) ? "No MSG" : Path.GetFileName(_currentMsgPath);
             var dictPart = string.IsNullOrEmpty(_dictPath) ? "Default dictionary" : Path.GetFileName(_dictPath);
 
-            Text = $"Classic RE MSG Tool - {filePart} - {dictPart}" + (_dirty ? " *" : "");
+            Text = $"MSG Tool - {filePart} - {dictPart}" + (_dirty ? " *" : "");
         }
     }
 }

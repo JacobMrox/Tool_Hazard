@@ -1,17 +1,18 @@
-﻿using System;
+﻿using IntelOrca.Biohazard;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Text;
 using System.Windows.Forms;
-using Tool_Hazard.Forms;
-using Tool_Hazard.Sony_PS1;
-using Tool_Hazard.Nintendo;
-using Tool_Hazard.White_Day;
-using IntelOrca.Biohazard;
+using Tool_Hazard.Biohazard;
 using Tool_Hazard.Biohazard.emd;
 using Tool_Hazard.Biohazard.RDT;
+using Tool_Hazard.Forms;
+using Tool_Hazard.Nintendo;
+using Tool_Hazard.Sony_PS1;
+using Tool_Hazard.White_Day;
 using static System.Net.Mime.MediaTypeNames;
 
 namespace Tool_Hazard
@@ -1381,6 +1382,25 @@ namespace Tool_Hazard
         private void mSGToolStripMenuItem2_Click(object sender, EventArgs e)
         {
             var editor = new ClassicREmsgTool();
+            editor.Show(this);
+        }
+
+        //Classic Rebirth BGM XML Editor Menu Hooks
+        private void bGMXMLEditorToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            var editor = new RebirthBgmXmlEditorForm();
+            editor.Show(this);
+        }
+
+        private void bGMXMLEditorToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            var editor = new RebirthBgmXmlEditorForm();
+            editor.Show(this);
+        }
+
+        private void bGMXMLEditorToolStripMenuItem2_Click(object sender, EventArgs e)
+        {
+            var editor = new RebirthBgmXmlEditorForm();
             editor.Show(this);
         }
     }
