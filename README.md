@@ -1,14 +1,49 @@
-Written in C# Windows Forms .Net 8.0 (Not .Net Framework)
+Tool Hazard is a modern, all-in-one modding and research utility written in C# (.NET 8, WinForms), designed for classic survival horror titles such as Biohazard / Resident Evil 1–3, White Day (2001), and selected legacy console formats.
 
-This tool started as "White Day Mod Tool" and eventually evolved into "Tool Hazard" in it's current form, which is based on an earlier attempt to create a tool inspired by [Biofat](https://www.romhacking.net/utilities/1019/).
+Originally started as White Day Mod Tool, it evolved into a full-featured toolkit inspired by [Biofat](https://www.romhacking.net/utilities/1019/), focused on reverse-engineering, modding, file editing, and preservation of classic game assets.
 
 <img width="647" height="464" alt="image" src="https://github.com/user-attachments/assets/6c4ae543-d295-4b14-8554-b367d4a3ad33" />
+<img width="402" height="282" alt="image" src="https://github.com/user-attachments/assets/65c9f714-fa4f-4bec-8173-c9d0e8b61752" />
+
+🇸🇦 العربية
+
+تول هازارد هي أداة حديثة وشاملة للتعديل والبحث، مكتوبة بلغة سي شارب (دوت نت ثمانية، ويندوز فورمز)، ومصممة لألعاب الرعب الكلاسيكية من نوع البقاء مثل بايوهازارد / ريزدنت إيفل من واحد إلى ثلاثة و وايت داي (2001)، إضافة إلى بعض منصات الألعاب القديمة.
+
+بدأت الأداة في الأصل تحت اسم وايت داي مود تول، ثم تطورت لاحقًا لتصبح مجموعة أدوات متكاملة مستوحاة من مشروع بايوفات، وتركّز على الهندسة العكسية، والتعديل، وتحرير الملفات، والحفاظ على أصول الألعاب الكلاسيكية.
+
+🇮🇷 فارسی
+
+تول هازارد یک ابزار مدرن و جامع برای مودسازی و پژوهش است که با سی شارپ (دات نت هشت، ویندوز فرم) نوشته شده و برای بازی‌های ترس و بقای کلاسیک مانند بایوهزارد / رزیدنت ایول یک تا سه و وایت دی (2001) و همچنین برخی پلتفرم‌های قدیمی طراحی شده است.
+
+این ابزار در ابتدا با نام وایت دی ماد تول آغاز شد و سپس به یک مجموعه کامل الهام‌گرفته از پروژه بایوفَت تبدیل گردید که تمرکز آن بر مهندسی معکوس، مودسازی، ویرایش فایل‌ها و حفظ دارایی‌های بازی‌های کلاسیک است.
+
+🇵🇹 Portuguese (Português)
+
+Tool Hazard é uma ferramenta moderna e completa de modding e pesquisa, desenvolvida em C# (.NET 8, WinForms), projetada para jogos clássicos de survival horror como Biohazard / Resident Evil 1–3, White Day (2001) e outras plataformas legadas.
+
+Inicialmente criada como White Day Mod Tool, a ferramenta evoluiu para um conjunto completo inspirado no Biofat
+, com foco em engenharia reversa, modding, edição de arquivos e preservação de jogos clássicos.
+
+🇪🇸 Spanish (Español)
+
+Tool Hazard es una herramienta moderna e integral de modding e investigación, escrita en C# (.NET 8, WinForms), diseñada para juegos clásicos de survival horror como Biohazard / Resident Evil 1–3, White Day (2001) y otros sistemas antiguos.
+
+Originalmente comenzó como White Day Mod Tool, y con el tiempo evolucionó en un conjunto completo inspirado en Biofat
+, centrado en la ingeniería inversa, el modding, la edición de archivos y la preservación de juegos clásicos.
+
+🇮🇹 Italian (Italiano)
+
+Tool Hazard è uno strumento moderno e completo per il modding e la ricerca, sviluppato in C# (.NET 8, WinForms), progettato per i classici giochi survival horror come Biohazard / Resident Evil 1–3, White Day (2001) e altre piattaforme legacy.
+
+Inizialmente nato come White Day Mod Tool, si è evoluto in un toolkit completo ispirato a Biofat
+, focalizzato su reverse engineering, modding, modifica dei file e conservazione dei contenuti dei giochi classici.
 
 # Features
 
 * Biohazard/Resident Evil 1-2-3:
   * Unpack/Repack RDT files (BIO1 not tested).
-  * Support for EMD/PLD Unpacking/Repacking for RE1-2-3
+  * Support for EMD/PLD editing for RE1,2,3
+  * Support for Message (.MSG) file editing for RE1,2,3
   * SCD OpCode Editor (Only Biohazard 3 tested); with drag-drop updatable opcode database in the form of .json files based on [CRE-SCD-BHS Biohazard SCD Editor](https://github.com/3lric/CRE-SCD-BHS/)
   * Ability to Install [Gemini-Loboto3](https://github.com/Gemini-Loboto3)'s [Classic Rebirth](https://classicrebirth.com/) patch from the tool's interface.
 * White Day (2001):
