@@ -1,12 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
 using System.Globalization;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml.Linq;
 
@@ -14,140 +9,84 @@ namespace Tool_Hazard.Biohazard
 {
     public partial class RebirthBgmXmlEditorForm : Form
     {
-        private string? _currentPath;
         private XDocument? _doc;
+        private string? _path;
 
-        // Track model in the grid (represents one <Track/> element + where it lives)
-        private sealed class TrackRow
+        private readonly List<TracksBlock> _blocks = new();
+        private readonly List<RowBinding> _rows = new();
+
+        private sealed class TracksBlock
         {
-            public XElement TrackElement { get; }
-            public string GroupPath { get; } // e.g. "Main / MAIN00", "SBgm0 / SBGM0_0C"
+            public int Id;
+            public string SectionName = "";
+            public XElement SectionElement = null!;
+            public XElement TracksElement = null!;
+            public int OrdinalInSection;
+            public XComment? LabelComment;
 
-            public TrackRow(XElement trackElement, string groupPath)
+            public string Label => LabelComment == null ? "" : (LabelComment.Value ?? "").Trim();
+
+            public string Display
             {
-                TrackElement = trackElement;
-                GroupPath = groupPath;
-            }
-        }
-
-        // We store per-row metadata here so we can write back to the exact XML element.
-        private readonly List<TrackRow> _rows = new();
-        public RebirthBgmXmlEditorForm()
-        {
-            InitializeComponent();
-            BuildGrid();
-            WireButtons();
-        }
-
-        private void WireButtons()
-        {
-            btnLoadXml.Click += (_, __) => LoadXml();
-            btnSaveXml.Click += (_, __) => SaveXmlAs(_currentPath ?? "");
-            btnAddRow.Click += (_, __) => AddNewRow();
-            btnDeleteRow.Click += (_, __) => DeleteSelectedRow();
-            if (btnReloadXml != null)
-                btnReloadXml.Click += (_, __) => ReloadXml();
-        }
-
-        private void BuildGrid()
-        {
-            gridTracks.AutoGenerateColumns = false;
-            gridTracks.AllowUserToAddRows = true;
-            gridTracks.AllowUserToDeleteRows = true;
-            gridTracks.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            gridTracks.MultiSelect = false;
-            gridTracks.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-
-            gridTracks.Columns.Clear();
-
-            // GroupPath (read-only): helps user know which slot this belongs to
-            gridTracks.Columns.Add(new DataGridViewTextBoxColumn
-            {
-                Name = "colGroup",
-                HeaderText = "Slot",
-                ReadOnly = true
-            });
-
-            gridTracks.Columns.Add(new DataGridViewTextBoxColumn
-            {
-                Name = "colName",
-                HeaderText = "Track Name"
-            });
-
-            gridTracks.Columns.Add(new DataGridViewTextBoxColumn
-            {
-                Name = "colIndex",
-                HeaderText = "Index"
-            });
-
-            gridTracks.Columns.Add(new DataGridViewCheckBoxColumn
-            {
-                Name = "colLoop",
-                HeaderText = "Loop?"
-            });
-
-            gridTracks.Columns.Add(new DataGridViewTextBoxColumn
-            {
-                Name = "colLoopStartSec",
-                HeaderText = "Loop Start (sec)"
-            });
-
-            gridTracks.Columns.Add(new DataGridViewTextBoxColumn
-            {
-                Name = "colLoopEndSec",
-                HeaderText = "Loop End (sec)"
-            });
-
-            // Hidden column to map grid row -> _rows index
-            gridTracks.Columns.Add(new DataGridViewTextBoxColumn
-            {
-                Name = "colRowId",
-                HeaderText = "RowId",
-                Visible = false
-            });
-
-            gridTracks.CellEndEdit += (_, e) =>
-            {
-                // Optional: basic sanitization for numeric cells
-                if (e.RowIndex < 0) return;
-                NormalizeRow(gridTracks.Rows[e.RowIndex]);
-            };
-        }
-
-        private void NormalizeRow(DataGridViewRow row)
-        {
-            // Index: keep it integer if possible
-            var idxObj = row.Cells["colIndex"].Value;
-            if (idxObj != null)
-            {
-                var s = idxObj.ToString()?.Trim();
-                if (!string.IsNullOrEmpty(s))
+                get
                 {
-                    if (int.TryParse(s, NumberStyles.Integer, CultureInfo.InvariantCulture, out var iv))
-                        row.Cells["colIndex"].Value = iv.ToString(CultureInfo.InvariantCulture);
+                    var c = Label;
+                    if (!string.IsNullOrEmpty(c)) return c;
+                    return "<no comment>"; // instead of #xx
                 }
             }
 
-            // Loop seconds: normalize decimal formatting
-            NormalizeDecimalCell(row.Cells["colLoopStartSec"]);
-            NormalizeDecimalCell(row.Cells["colLoopEndSec"]);
+            public override string ToString() => Display;
         }
 
-        private static void NormalizeDecimalCell(DataGridViewCell cell)
+        private sealed class RowBinding
         {
-            var s = cell.Value?.ToString()?.Trim();
-            if (string.IsNullOrEmpty(s)) return;
-
-            // Accept both comma and dot from user input
-            s = s.Replace(',', '.');
-
-            if (double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out var dv))
-                cell.Value = dv.ToString("0.###", CultureInfo.InvariantCulture);
+            public XElement TrackElement = null!;
+            public int BlockId;
         }
 
-        private int SampleRate => (int)nudSampleRate.Value;
+        public RebirthBgmXmlEditorForm()
+        {
+            InitializeComponent();
 
-        private void LoadXml()
+            // Allow typing a custom comment label into the combo (and also selecting predefined)
+            cmbTracksBlock.DropDownStyle = ComboBoxStyle.DropDown;
+
+            BuildGrid();
+            WireEvents();
+            WireFileButtons();
+        }
+
+        private int SampleRateHz => (int)nudSampleRate.Value;
+
+        private void WireEvents()
+        {
+            btnAddTrackToGroup.Click += (_, __) => AddTrackSmart();
+            btnAddRow.Click += (_, __) => AddTrackSmart();
+
+            cmbSectionName.SelectedIndexChanged += (_, __) => RefreshTracksBlockCombo();
+
+            gridTracks.CurrentCellDirtyStateChanged += (_, __) =>
+            {
+                if (gridTracks.IsCurrentCellDirty)
+                    gridTracks.CommitEdit(DataGridViewDataErrorContexts.Commit);
+            };
+
+            gridTracks.CellValueChanged += (_, e) =>
+            {
+                if (e.RowIndex < 0) return;
+                CommitGridRowToXml(gridTracks.Rows[e.RowIndex]);
+            };
+        }
+        private void WireFileButtons()
+        {
+            btnLoadXml.Click += (_, __) => LoadXmlViaDialog();
+            btnSaveXml.Click += (_, __) => SaveXmlViaDialog();
+            btnReloadXml.Click += (_, __) => ReloadXml();
+            btnDeleteRow.Click += (_, __) => DeleteSelectedRow();
+        }
+        // Load via dialog
+        private void LoadXmlViaDialog()
         {
             using var ofd = new OpenFileDialog
             {
@@ -159,110 +98,323 @@ namespace Tool_Hazard.Biohazard
             if (ofd.ShowDialog(this) != DialogResult.OK)
                 return;
 
-            _currentPath = ofd.FileName;
-            LoadXmlFromPath(_currentPath);
-        }
-
-        private void ReloadXml()
-        {
-            if (string.IsNullOrWhiteSpace(_currentPath) || !File.Exists(_currentPath))
-                return;
-
-            LoadXmlFromPath(_currentPath);
-        }
-
-        private void LoadXmlFromPath(string path)
-        {
             try
             {
-                _doc = XDocument.Load(path, LoadOptions.PreserveWhitespace | LoadOptions.SetLineInfo);
+                LoadXml(ofd.FileName); // your existing method
+                Text = $"Classic Rebirth BGM XML Editor - {Path.GetFileName(ofd.FileName)}";
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, "Failed to load XML:\n" + ex.Message, "BGM XML Editor", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(this, "Failed to load XML:\n" + ex.Message, "BGM XML Editor",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+        // Save via dialog
+        private void SaveXmlViaDialog()
+        {
+            if (_doc == null)
+            {
+                MessageBox.Show(this, "No XML loaded.", "BGM XML Editor",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            PopulateGridFromDoc();
-            Text = $"BGM XML Editor - {Path.GetFileName(path)}";
+            using var sfd = new SaveFileDialog
+            {
+                Title = "Save bgm_attr.xml",
+                Filter = "XML files (*.xml)|*.xml|All files (*.*)|*.*",
+                FileName = string.IsNullOrWhiteSpace(_path) ? "bgm_attr.xml" : Path.GetFileName(_path),
+                InitialDirectory = string.IsNullOrWhiteSpace(_path) ? null : Path.GetDirectoryName(_path)
+            };
+
+            if (sfd.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            try
+            {
+                SaveXml(sfd.FileName); // your existing method
+                _path = sfd.FileName;
+                Text = $"Classic Rebirth BGM XML Editor - {Path.GetFileName(_path)}";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, "Failed to save XML:\n" + ex.Message, "BGM XML Editor",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+        // Reload from disk
+        private void ReloadXml()
+        {
+            if (string.IsNullOrWhiteSpace(_path) || !File.Exists(_path))
+            {
+                MessageBox.Show(this, "No file path to reload (load an XML first).", "BGM XML Editor",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            try
+            {
+                LoadXml(_path); // re-load from disk and rebuild UI
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, "Failed to reload XML:\n" + ex.Message, "BGM XML Editor",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
-        private void PopulateGridFromDoc()
+        //Delete row from both grid and XML
+        private void DeleteSelectedRow()
         {
-            gridTracks.Rows.Clear();
-            _rows.Clear();
+            if (_doc == null) return;
+            if (gridTracks.SelectedRows.Count == 0) return;
 
+            var row = gridTracks.SelectedRows[0];
+            var idStr = row.Cells["colRowId"].Value?.ToString();
+            if (!int.TryParse(idStr, out var rowId)) return;
+            if (rowId < 0 || rowId >= _rows.Count) return;
+
+            // Remove from XML
+            var trackEl = _rows[rowId].TrackElement;
+            trackEl.Remove();
+
+            // Remove from grid
+            gridTracks.Rows.Remove(row);
+
+            // Note: rowId mapping becomes stale after deletes. Easiest fix: rebuild UI.
+            RebuildModelAndUi();
+        }
+
+        private void BuildGrid()
+        {
+            gridTracks.AutoGenerateColumns = false;
+            gridTracks.AllowUserToAddRows = false;
+            gridTracks.AllowUserToDeleteRows = false;
+            gridTracks.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            gridTracks.MultiSelect = false;
+            gridTracks.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+
+            gridTracks.Columns.Clear();
+
+            gridTracks.Columns.Add(new DataGridViewTextBoxColumn { Name = "colSection", HeaderText = "Section", ReadOnly = true });
+            gridTracks.Columns.Add(new DataGridViewTextBoxColumn { Name = "colTracksBlock", HeaderText = "Tracks Block (Comment)", ReadOnly = true });
+
+            gridTracks.Columns.Add(new DataGridViewTextBoxColumn { Name = "colName", HeaderText = "Track Name" });
+            gridTracks.Columns.Add(new DataGridViewTextBoxColumn { Name = "colIndex", HeaderText = "Index" });
+
+            gridTracks.Columns.Add(new DataGridViewCheckBoxColumn { Name = "colLoop", HeaderText = "Loop?" });
+            gridTracks.Columns.Add(new DataGridViewTextBoxColumn { Name = "colStartSec", HeaderText = "Loop Start (sec)" });
+            gridTracks.Columns.Add(new DataGridViewTextBoxColumn { Name = "colEndSec", HeaderText = "Loop End (sec)" });
+
+            gridTracks.Columns.Add(new DataGridViewTextBoxColumn { Name = "colRowId", Visible = false });
+        }
+
+        // Call this from outside or add menu item later
+        public void LoadXml(string path)
+        {
+            _path = path;
+            _doc = XDocument.Load(path, LoadOptions.PreserveWhitespace);
+            RebuildModelAndUi();
+        }
+
+        public void SaveXml(string? path = null)
+        {
+            if (_doc == null) return;
+
+            gridTracks.EndEdit();
+
+            var outPath = path ?? _path;
+            if (string.IsNullOrWhiteSpace(outPath))
+                throw new InvalidOperationException("No output path set.");
+
+            _doc.Save(outPath);
+        }
+
+        private void RebuildModelAndUi()
+        {
             if (_doc?.Root == null) return;
 
-            // Expected root: <BgmAttributes>
-            // Sections: <Main>, <SBgm0>, <SBgm1>, ...
-            foreach (var section in _doc.Root.Elements())
+            BuildTracksBlocks();
+            PopulateSectionCombo();
+            RefreshTracksBlockCombo();
+            PopulateGrid();
+        }
+
+        private void BuildTracksBlocks()
+        {
+            _blocks.Clear();
+            int id = 0;
+
+            foreach (var section in _doc!.Root!.Elements())
             {
-                var sectionName = section.Name.LocalName; // "Main", "SBgm0", ...
+                var sectionName = section.Name.LocalName;
+                var tracksList = section.Elements("Tracks").ToList();
 
-                // Each slot is represented by a <Tracks> element (many of them)
-                // The slot name isn't an element; it's a comment above. We can't reliably bind to comments,
-                // so we number them and show "Tracks #XX" unless you later add explicit ids.
-                var tracksNodes = section.Elements("Tracks").ToList();
-
-                for (int i = 0; i < tracksNodes.Count; i++)
+                for (int i = 0; i < tracksList.Count; i++)
                 {
-                    var tracksNode = tracksNodes[i];
+                    var tracksEl = tracksList[i];
+                    var comment = FindCommentImmediatelyBefore(tracksEl);
 
-                    // Try to find the nearest preceding comment to label slot (best-effort)
-                    var slotLabel = TryGetPreviousCommentLabel(tracksNode) ?? $"Tracks_{i:00}";
-                    var groupPath = $"{sectionName} / {slotLabel}";
-
-                    // If <Tracks/> is empty, still show a placeholder row? Usually no.
-                    foreach (var track in tracksNode.Elements("Track"))
+                    _blocks.Add(new TracksBlock
                     {
-                        AddGridRowForTrack(track, groupPath);
-                    }
+                        Id = id++,
+                        SectionName = sectionName,
+                        SectionElement = section,
+                        TracksElement = tracksEl,
+                        OrdinalInSection = i,
+                        LabelComment = comment
+                    });
                 }
             }
         }
 
-        private static string? TryGetPreviousCommentLabel(XElement tracksNode)
+        private void PopulateSectionCombo()
         {
-            // Best effort: scan siblings backwards for the closest XComment like " MAIN00 "
-            var prev = tracksNode.PreviousNode;
-            while (prev != null)
+            var sections = _blocks.Select(b => b.SectionName).Distinct().ToList();
+
+            cmbSectionName.Items.Clear();
+            foreach (var s in sections)
+                cmbSectionName.Items.Add(s);
+
+            if (cmbSectionName.Items.Count > 0 && cmbSectionName.SelectedIndex < 0)
+                cmbSectionName.SelectedIndex = 0;
+        }
+
+        private void RefreshTracksBlockCombo()
+        {
+            cmbTracksBlock.Items.Clear();
+
+            var section = cmbSectionName.SelectedItem?.ToString();
+            if (string.IsNullOrEmpty(section)) return;
+
+            // Only show blocks that actually have a comment label
+            foreach (var b in _blocks.Where(b => b.SectionName == section)
+                                     .Where(b => !string.IsNullOrWhiteSpace(b.Label))
+                                     .OrderBy(b => b.Label))
             {
-                if (prev is XComment c)
-                {
-                    var t = (c.Value ?? "").Trim();
-                    if (!string.IsNullOrEmpty(t)) return t;
-                }
-                // stop if we hit another Tracks node or element boundary
-                if (prev is XElement) break;
-                prev = prev.PreviousNode;
+                cmbTracksBlock.Items.Add(b.Label);
+            }
+
+            if (cmbTracksBlock.Items.Count > 0)
+                cmbTracksBlock.SelectedIndex = 0;
+        }
+
+        // Smart add: add track to selected block, or create new block if none selected
+        private void AddTrackSmart()
+        {
+            if (_doc?.Root == null) return;
+
+            var sectionName = cmbSectionName.SelectedItem?.ToString();
+            if (string.IsNullOrWhiteSpace(sectionName))
+            {
+                MessageBox.Show(this, "Select a section.");
+                return;
+            }
+
+            var label = (cmbTracksBlock.Text ?? "").Trim();
+            if (string.IsNullOrWhiteSpace(label))
+            {
+                MessageBox.Show(this, "Type or select a Tracks Block label (comment).");
+                return;
+            }
+
+            var trackName = (txtNewGroupLabel.Text ?? "").Trim();
+            if (string.IsNullOrWhiteSpace(trackName))
+            {
+                MessageBox.Show(this, "Enter a track name.");
+                return;
+            }
+
+            var sectionEl = _doc.Root.Elements().FirstOrDefault(e => e.Name.LocalName == sectionName);
+            if (sectionEl == null)
+            {
+                MessageBox.Show(this, $"Section '{sectionName}' not found.");
+                return;
+            }
+
+            // Find existing <Tracks> whose immediate previous non-whitespace node is <!-- label -->
+            var tracksEl = FindTracksByCommentLabel(sectionEl, label);
+
+            // If not found, create <!-- label --> <Tracks/> at end of section
+            if (tracksEl == null)
+            {
+                sectionEl.Add(new XComment(" " + label + " "));
+                tracksEl = new XElement("Tracks");
+                sectionEl.Add(tracksEl);
+            }
+
+            // Add the new Track under that Tracks
+            var newTrack = new XElement("Track",
+                new XAttribute("name", trackName),
+                new XAttribute("index", "0"),
+                new XAttribute("has_loop", "0")
+            );
+            tracksEl.Add(newTrack);
+
+            // Rebuild UI so dropdown + grid reflect new block/track
+            RebuildModelAndUi();
+
+            // Set combo boxes to what user used
+            cmbSectionName.SelectedItem = sectionName;
+            cmbTracksBlock.Text = label;
+        }
+
+        // Helper to find <Tracks> by its preceding comment label
+        private static XElement? FindTracksByCommentLabel(XElement sectionEl, string label)
+        {
+            foreach (var tracks in sectionEl.Elements("Tracks"))
+            {
+                var c = FindCommentImmediatelyBefore(tracks);
+                if (c != null && string.Equals(c.Value.Trim(), label, StringComparison.Ordinal))
+                    return tracks;
             }
             return null;
         }
 
-        private void AddGridRowForTrack(XElement track, string groupPath)
+        private static XComment? FindCommentImmediatelyBefore(XElement tracksEl)
+        {
+            XNode? prev = tracksEl.PreviousNode;
+
+            while (prev is XText t && string.IsNullOrWhiteSpace(t.Value))
+                prev = prev.PreviousNode;
+
+            return prev as XComment;
+        }
+
+
+        private void PopulateGrid()
+        {
+            gridTracks.Rows.Clear();
+            _rows.Clear();
+
+            foreach (var block in _blocks)
+            {
+                foreach (var track in block.TracksElement.Elements("Track"))
+                    AddGridRow(block, track);
+            }
+        }
+
+        private void AddGridRow(TracksBlock block, XElement track)
         {
             var name = (string?)track.Attribute("name") ?? "";
             var index = (string?)track.Attribute("index") ?? "0";
-            var hasLoop = ((string?)track.Attribute("has_loop") ?? "0") == "1";
+            var loop = ((string?)track.Attribute("has_loop") ?? "0") == "1";
 
-            var lStart = ParseLongAttr(track, "l_start");
-            var lEnd = ParseLongAttr(track, "l_end");
+            var ls = ParseLong(track, "l_start");
+            var le = ParseLong(track, "l_end");
 
-            // Convert to seconds (if not present, show blank)
-            string startSec = lStart.HasValue ? SamplesToSeconds(lStart.Value).ToString("0.###", CultureInfo.InvariantCulture) : "";
-            string endSec = lEnd.HasValue ? SamplesToSeconds(lEnd.Value).ToString("0.###", CultureInfo.InvariantCulture) : "";
+            var startSec = ls.HasValue ? SamplesToSeconds(ls.Value).ToString("0.###", CultureInfo.InvariantCulture) : "";
+            var endSec = le.HasValue ? SamplesToSeconds(le.Value).ToString("0.###", CultureInfo.InvariantCulture) : "";
 
             var rowId = _rows.Count;
-            _rows.Add(new TrackRow(track, groupPath));
+            _rows.Add(new RowBinding { TrackElement = track, BlockId = block.Id });
 
-            var gridRowIndex = gridTracks.Rows.Add(groupPath, name, index, hasLoop, startSec, endSec, rowId.ToString(CultureInfo.InvariantCulture));
-            NormalizeRow(gridTracks.Rows[gridRowIndex]);
+            gridTracks.Rows.Add(block.SectionName, block.Display, name, index, loop, startSec, endSec, rowId.ToString(CultureInfo.InvariantCulture));
         }
 
-        private static long? ParseLongAttr(XElement el, string attrName)
+        private static long? ParseLong(XElement el, string attr)
         {
-            var s = (string?)el.Attribute(attrName);
+            var s = (string?)el.Attribute(attr);
             if (string.IsNullOrWhiteSpace(s)) return null;
 
             if (long.TryParse(s.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var v))
@@ -271,188 +423,204 @@ namespace Tool_Hazard.Biohazard
             return null;
         }
 
-        private double SamplesToSeconds(long samples)
+        private double SamplesToSeconds(long samples) => samples / (double)SampleRateHz;
+        private long SecondsToSamples(double sec) => (long)Math.Round(sec * SampleRateHz);
+
+        private TracksBlock? GetSelectedBlock()
         {
-            if (SampleRate <= 0) return 0;
-            return samples / (double)SampleRate;
+            return cmbTracksBlock.SelectedItem as TracksBlock;
         }
 
-        private long SecondsToSamples(double seconds)
+        private void AddTrackToSelectedBlock()
         {
-            if (SampleRate <= 0) return 0;
-            // Round to nearest sample frame
-            return (long)Math.Round(seconds * SampleRate);
-        }
+            if (_doc?.Root == null) return;
 
-        private void AddNewRow()
-        {
-            // Add a grid-only row; user will fill values.
-            // This won't be written back until you decide where in XML to put it.
-            // For now, we require the user edits an existing track row (safe), OR you can add logic to insert into a chosen Tracks node.
-            MessageBox.Show(
-                this,
-                "Add Track creates a new grid row, but inserting brand-new <Track> nodes requires choosing a destination <Tracks> slot.\n\n" +
-                "For safety, edit existing rows for now.\n\n" +
-                "If you want full insert support, tell me how you want to pick the destination (e.g., dropdown of slots).",
-                "BGM XML Editor",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Information
-            );
-        }
-
-        private void DeleteSelectedRow()
-        {
-            if (gridTracks.SelectedRows.Count == 0) return;
-
-            var row = gridTracks.SelectedRows[0];
-            var rowIdStr = row.Cells["colRowId"].Value?.ToString();
-            if (!int.TryParse(rowIdStr, out var rowId)) return;
-            if (rowId < 0 || rowId >= _rows.Count) return;
-
-            var model = _rows[rowId];
-            model.TrackElement.Remove(); // remove from XML
-
-            gridTracks.Rows.Remove(row);
-        }
-
-        private void SaveXmlAs(string currentPath)
-        {
-            if (_doc == null)
+            var block = GetSelectedBlock();
+            if (block == null)
             {
-                MessageBox.Show(this, "No XML loaded.", "BGM XML Editor", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, "Select a Tracks block first.");
                 return;
             }
 
-            // Commit grid edits into XML elements
-            if (!CommitGridToXml())
-                return;
+            // txtNewGroupLabel is used as NEW TRACK NAME (your request)
+            var trackName = (txtNewGroupLabel.Text ?? "").Trim();
+            if (string.IsNullOrEmpty(trackName))
+                trackName = "NEW_TRACK";
 
-            string savePath = currentPath;
-            if (string.IsNullOrWhiteSpace(savePath))
+            var newTrack = new XElement("Track",
+                new XAttribute("name", trackName),
+                new XAttribute("index", "0"),
+                new XAttribute("has_loop", "0")
+            );
+
+            block.TracksElement.Add(newTrack);
+
+            AddGridRow(block, newTrack);
+
+            gridTracks.ClearSelection();
+            gridTracks.Rows[gridTracks.Rows.Count - 1].Selected = true;
+            gridTracks.FirstDisplayedScrollingRowIndex = Math.Max(0, gridTracks.Rows.Count - 1);
+        }
+
+        // Applies/updates the XML comment immediately above the selected <Tracks>
+        private void ApplyLabelToSelectedBlock()
+        {
+            if (_doc?.Root == null) return;
+
+            var block = GetSelectedBlock();
+            if (block == null)
             {
-                using var sfd = new SaveFileDialog
+                MessageBox.Show(this, "Select a Tracks block first.");
+                return;
+            }
+
+            // IMPORTANT: use what the user typed in the combo box
+            var raw = (cmbTracksBlock.Text ?? "").Trim();
+            var label = ExtractLabel(raw);
+
+            // if empty -> remove comment (optional behavior)
+            if (string.IsNullOrWhiteSpace(label))
+            {
+                if (block.LabelComment != null)
                 {
-                    Title = "Save bgm_attr.xml",
-                    Filter = "XML files (*.xml)|*.xml|All files (*.*)|*.*",
-                    FileName = "bgm_attr.xml"
-                };
+                    block.LabelComment.Remove();
+                    block.LabelComment = null;
+                }
+                RebuildModelAndUi();
+                return;
+            }
 
-                if (sfd.ShowDialog(this) != DialogResult.OK)
-                    return;
+            // update or insert the comment immediately above this <Tracks>
+            XNode? prev = block.TracksElement.PreviousNode;
+            while (prev is XText t && string.IsNullOrWhiteSpace(t.Value))
+                prev = prev.PreviousNode;
 
-                savePath = sfd.FileName;
+            if (prev is XComment c)
+            {
+                c.Value = " " + label + " ";
+                block.LabelComment = c;
             }
             else
             {
-                // Ask where to save
-                using var sfd = new SaveFileDialog
-                {
-                    Title = "Save bgm_attr.xml",
-                    Filter = "XML files (*.xml)|*.xml|All files (*.*)|*.*",
-                    FileName = Path.GetFileName(savePath),
-                    InitialDirectory = Path.GetDirectoryName(savePath)
-                };
-
-                if (sfd.ShowDialog(this) != DialogResult.OK)
-                    return;
-
-                savePath = sfd.FileName;
+                var nc = new XComment(" " + label + " ");
+                block.TracksElement.AddBeforeSelf(nc);
+                block.LabelComment = nc;
             }
 
-            try
-            {
-                _doc.Save(savePath);
-                MessageBox.Show(this, "Saved:\n" + savePath, "BGM XML Editor", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(this, "Failed to save XML:\n" + ex.Message, "BGM XML Editor", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+            // rebuild and keep selection on the same physical TracksElement
+            var tracksRef = block.TracksElement;
+            RebuildModelAndUi();
+
+            // find the rebuilt block by reference (best effort: match by section+ordinal)
+            var sectionName = block.SectionName;
+            var ordinal = block.OrdinalInSection;
+            var rebuilt = _blocks.FirstOrDefault(b => b.SectionName == sectionName && b.OrdinalInSection == ordinal);
+            if (rebuilt != null)
+                cmbTracksBlock.SelectedItem = rebuilt;
+        }
+        private static string ExtractLabel(string raw)
+        {
+            int lp = raw.IndexOf('(');
+            int rp = raw.LastIndexOf(')');
+            if (lp >= 0 && rp > lp)
+                return raw.Substring(lp + 1, rp - lp - 1).Trim();
+
+            // If user typed only "#12" treat as empty
+            if (raw.StartsWith("#") && raw.All(ch => ch == '#' || char.IsDigit(ch) || char.IsWhiteSpace(ch)))
+                return "";
+
+            return raw.Trim();
         }
 
-        private bool CommitGridToXml()
+        private void NewTracksBlockInSelectedSection()
         {
-            // Make sure edits are committed from grid UI
-            gridTracks.EndEdit();
+            if (_doc?.Root == null) return;
 
-            foreach (DataGridViewRow gridRow in gridTracks.Rows)
+            var sectionName = cmbSectionName.SelectedItem?.ToString();
+            if (string.IsNullOrEmpty(sectionName))
             {
-                if (gridRow.IsNewRow) continue;
-
-                var rowIdStr = gridRow.Cells["colRowId"].Value?.ToString();
-                if (!int.TryParse(rowIdStr, out var rowId)) continue;
-                if (rowId < 0 || rowId >= _rows.Count) continue;
-
-                var model = _rows[rowId];
-                var trackEl = model.TrackElement;
-
-                var name = (gridRow.Cells["colName"].Value?.ToString() ?? "").Trim();
-                var indexStr = (gridRow.Cells["colIndex"].Value?.ToString() ?? "0").Trim();
-                var loopObj = gridRow.Cells["colLoop"].Value;
-
-                bool hasLoop = false;
-                if (loopObj is bool b) hasLoop = b;
-                else if (loopObj != null && bool.TryParse(loopObj.ToString(), out var pb)) hasLoop = pb;
-
-                // Parse numeric fields (seconds)
-                var startSecStr = (gridRow.Cells["colLoopStartSec"].Value?.ToString() ?? "").Trim().Replace(',', '.');
-                var endSecStr = (gridRow.Cells["colLoopEndSec"].Value?.ToString() ?? "").Trim().Replace(',', '.');
-
-                double? startSec = null;
-                double? endSec = null;
-
-                if (!string.IsNullOrWhiteSpace(startSecStr))
-                {
-                    if (!double.TryParse(startSecStr, NumberStyles.Float, CultureInfo.InvariantCulture, out var v))
-                    {
-                        MessageBox.Show(this, $"Invalid Loop Start seconds: '{startSecStr}'", "BGM XML Editor", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        return false;
-                    }
-                    if (v < 0) v = 0;
-                    startSec = v;
-                }
-
-                if (!string.IsNullOrWhiteSpace(endSecStr))
-                {
-                    if (!double.TryParse(endSecStr, NumberStyles.Float, CultureInfo.InvariantCulture, out var v))
-                    {
-                        MessageBox.Show(this, $"Invalid Loop End seconds: '{endSecStr}'", "BGM XML Editor", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        return false;
-                    }
-                    if (v < 0) v = 0;
-                    endSec = v;
-                }
-
-                // Write attributes back
-                trackEl.SetAttributeValue("name", name);
-                trackEl.SetAttributeValue("index", SafeInt(indexStr, 0).ToString(CultureInfo.InvariantCulture));
-                trackEl.SetAttributeValue("has_loop", hasLoop ? "1" : "0");
-
-                if (hasLoop)
-                {
-                    // If user leaves blanks, default to 0
-                    var ls = SecondsToSamples(startSec ?? 0);
-                    var le = SecondsToSamples(endSec ?? 0);
-
-                    // Guard: if both provided and end < start, clamp or swap
-                    if (endSec.HasValue && startSec.HasValue && le < ls)
-                    {
-                        // swap
-                        var tmp = ls; ls = le; le = tmp;
-                    }
-
-                    trackEl.SetAttributeValue("l_start", ls.ToString(CultureInfo.InvariantCulture));
-                    trackEl.SetAttributeValue("l_end", le.ToString(CultureInfo.InvariantCulture));
-                }
-                else
-                {
-                    // Match the style in your XML: loop disabled tracks omit l_start/l_end
-                    trackEl.Attribute("l_start")?.Remove();
-                    trackEl.Attribute("l_end")?.Remove();
-                }
+                MessageBox.Show(this, "Select a section first.");
+                return;
             }
 
-            return true;
+            var section = _doc.Root.Elements().FirstOrDefault(e => e.Name.LocalName == sectionName);
+            if (section == null)
+            {
+                MessageBox.Show(this, $"Section '{sectionName}' not found.");
+                return;
+            }
+
+            // label comes from whatever user typed in the TracksBlock combo
+            // (since you set DropDownStyle=DropDown)
+            var label = ExtractLabel((cmbTracksBlock.Text ?? "").Trim());
+
+            if (string.IsNullOrWhiteSpace(label))
+            {
+                // auto label if user didn't type one
+                // e.g. CUSTOM_00, CUSTOM_01 ...
+                var existing = _blocks.Where(b => b.SectionName == sectionName)
+                                      .Select(b => b.Label)
+                                      .Where(x => x.StartsWith("CUSTOM_", StringComparison.OrdinalIgnoreCase))
+                                      .Count();
+                label = $"CUSTOM_{existing:00}";
+            }
+
+            // Insert: <!-- label --> <Tracks/>
+            section.Add(new XComment(" " + label + " "));
+            section.Add(new XElement("Tracks"));
+
+            RebuildModelAndUi();
+
+            // select the new block in the combo (last block in that section)
+            var last = _blocks.Where(b => b.SectionName == sectionName).OrderBy(b => b.OrdinalInSection).LastOrDefault();
+            if (last != null)
+                cmbTracksBlock.SelectedItem = last;
+        }
+
+        private void CommitGridRowToXml(DataGridViewRow row)
+        {
+            if (_doc?.Root == null) return;
+            if (row.IsNewRow) return;
+
+            var idStr = row.Cells["colRowId"].Value?.ToString();
+            if (!int.TryParse(idStr, out var rowId)) return;
+            if (rowId < 0 || rowId >= _rows.Count) return;
+
+            var track = _rows[rowId].TrackElement;
+
+            var name = (row.Cells["colName"].Value?.ToString() ?? "").Trim();
+            var indexStr = (row.Cells["colIndex"].Value?.ToString() ?? "0").Trim();
+
+            bool loop = row.Cells["colLoop"].Value is bool b && b;
+
+            var startStr = (row.Cells["colStartSec"].Value?.ToString() ?? "").Trim().Replace(',', '.');
+            var endStr = (row.Cells["colEndSec"].Value?.ToString() ?? "").Trim().Replace(',', '.');
+
+            track.SetAttributeValue("name", name);
+            track.SetAttributeValue("index", SafeInt(indexStr, 0).ToString(CultureInfo.InvariantCulture));
+            track.SetAttributeValue("has_loop", loop ? "1" : "0");
+
+            if (loop)
+            {
+                double.TryParse(startStr, NumberStyles.Float, CultureInfo.InvariantCulture, out var startSec);
+                double.TryParse(endStr, NumberStyles.Float, CultureInfo.InvariantCulture, out var endSec);
+
+                startSec = Math.Max(0, startSec);
+                endSec = Math.Max(0, endSec);
+
+                var ls = SecondsToSamples(startSec);
+                var le = SecondsToSamples(endSec);
+
+                if (le < ls) { var tmp = ls; ls = le; le = tmp; }
+
+                track.SetAttributeValue("l_start", ls.ToString(CultureInfo.InvariantCulture));
+                track.SetAttributeValue("l_end", le.ToString(CultureInfo.InvariantCulture));
+            }
+            else
+            {
+                track.Attribute("l_start")?.Remove();
+                track.Attribute("l_end")?.Remove();
+            }
         }
 
         private static int SafeInt(string s, int fallback)
