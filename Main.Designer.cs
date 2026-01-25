@@ -108,7 +108,11 @@
             classicRebirthToolsToolStripMenuItem1 = new ToolStripMenuItem();
             bGMXMLEditorToolStripMenuItem1 = new ToolStripMenuItem();
             rESURVVBIOGUNSURVToolStripMenuItem = new ToolStripMenuItem();
+            bINPS1ToolStripMenuItem = new ToolStripMenuItem();
+            nACNABPCToolStripMenuItem = new ToolStripMenuItem();
             rECVBIOCV2000ToolStripMenuItem = new ToolStripMenuItem();
+            aFSPS2DCToolStripMenuItem = new ToolStripMenuItem();
+            aRCHDMTToolStripMenuItem = new ToolStripMenuItem();
             bIORE31999ToolStripMenuItem = new ToolStripMenuItem();
             rOFSToolStripMenuItem = new ToolStripMenuItem();
             ROFSunpackToolStripMenuItem = new ToolStripMenuItem();
@@ -627,14 +631,36 @@
             // rESURVVBIOGUNSURVToolStripMenuItem
             // 
             resources.ApplyResources(rESURVVBIOGUNSURVToolStripMenuItem, "rESURVVBIOGUNSURVToolStripMenuItem");
+            rESURVVBIOGUNSURVToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { bINPS1ToolStripMenuItem, nACNABPCToolStripMenuItem });
             rESURVVBIOGUNSURVToolStripMenuItem.Name = "rESURVVBIOGUNSURVToolStripMenuItem";
             rESURVVBIOGUNSURVToolStripMenuItem.Click += rESURVVBIOGUNSURVToolStripMenuItem_Click;
+            // 
+            // bINPS1ToolStripMenuItem
+            // 
+            resources.ApplyResources(bINPS1ToolStripMenuItem, "bINPS1ToolStripMenuItem");
+            bINPS1ToolStripMenuItem.Name = "bINPS1ToolStripMenuItem";
+            // 
+            // nACNABPCToolStripMenuItem
+            // 
+            resources.ApplyResources(nACNABPCToolStripMenuItem, "nACNABPCToolStripMenuItem");
+            nACNABPCToolStripMenuItem.Name = "nACNABPCToolStripMenuItem";
             // 
             // rECVBIOCV2000ToolStripMenuItem
             // 
             resources.ApplyResources(rECVBIOCV2000ToolStripMenuItem, "rECVBIOCV2000ToolStripMenuItem");
+            rECVBIOCV2000ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { aFSPS2DCToolStripMenuItem, aRCHDMTToolStripMenuItem });
             rECVBIOCV2000ToolStripMenuItem.Name = "rECVBIOCV2000ToolStripMenuItem";
             rECVBIOCV2000ToolStripMenuItem.Click += rECVBIOCV2000ToolStripMenuItem_Click;
+            // 
+            // aFSPS2DCToolStripMenuItem
+            // 
+            resources.ApplyResources(aFSPS2DCToolStripMenuItem, "aFSPS2DCToolStripMenuItem");
+            aFSPS2DCToolStripMenuItem.Name = "aFSPS2DCToolStripMenuItem";
+            // 
+            // aRCHDMTToolStripMenuItem
+            // 
+            resources.ApplyResources(aRCHDMTToolStripMenuItem, "aRCHDMTToolStripMenuItem");
+            aRCHDMTToolStripMenuItem.Name = "aRCHDMTToolStripMenuItem";
             // 
             // bIORE31999ToolStripMenuItem
             // 
@@ -1221,5 +1247,9 @@
         private ToolStripMenuItem bGMXMLEditorToolStripMenuItem2;
         private ToolStripMenuItem rESURVVBIOGUNSURVToolStripMenuItem;
         private ToolStripMenuItem rECVBIOCV2000ToolStripMenuItem;
+        private ToolStripMenuItem aFSPS2DCToolStripMenuItem;
+        private ToolStripMenuItem aRCHDMTToolStripMenuItem;
+        private ToolStripMenuItem bINPS1ToolStripMenuItem;
+        private ToolStripMenuItem nACNABPCToolStripMenuItem;
     }
 }

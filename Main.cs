@@ -678,34 +678,34 @@ namespace Tool_Hazard
         private void toolStripMenuItem1_Click(object sender, EventArgs e)
         {
             CurrentBioVersion = BioVersion.Biohazard1;
-            UpdateStatus("Version set to Biohazard 1");
+            UpdateStatus("Game version set to Resident Evil 1/Biohazard 1");
         }
         private void bIO151997ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             CurrentBioVersion = BioVersion.Biohazard1_5;
-            UpdateStatus("Version set to Biohazard 1.5");
+            UpdateStatus("Game version set to Resident Evil 1.5/Biohazard 1.5");
         }
         private void bIO2RE21998ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             CurrentBioVersion = BioVersion.Biohazard2;
-            UpdateStatus("Version set to Biohazard 2");
+            UpdateStatus("Game version set to Resident Evil 2/Biohazard 2");
         }
 
         private void bIORE31999ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             CurrentBioVersion = BioVersion.Biohazard3;
-            UpdateStatus("Version set to Biohazard 3");
+            UpdateStatus("Game version set to Resident Evil 3/Biohazard 3");
         }
         private void rESURVVBIOGUNSURVToolStripMenuItem_Click(object sender, EventArgs e)
         {
             CurrentBioVersion = BioVersion.BiohazardSurvivor;
-            UpdateStatus("Version set to Biohazard Gun Survivor");
+            UpdateStatus("Game version set to Resident Evil Survivor/Biohazard Gun Survivor");
         }
 
         private void rECVBIOCV2000ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             CurrentBioVersion = BioVersion.BiohazardCv;
-            UpdateStatus("Version set to Biohazard CODE: Veronica");
+            UpdateStatus("Game version set to Resident Evil CODE: Veronica/Biohazard CODE: Veronica");
         }
 
         // --- Resident Evil EMD/PLD Unpack/Repack Menu Hooks ---
