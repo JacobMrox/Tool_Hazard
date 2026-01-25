@@ -1,17 +1,11 @@
-﻿using System;
+﻿using IntelOrca.Biohazard;
+using SevenZipExtractor;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using SevenZipExtractor;
-
-public enum RebirthGame
-{
-    RE1,
-    RE2,
-    RE3
-}
 
 public class RebirthManager
 {
@@ -21,17 +15,19 @@ public class RebirthManager
     private const string RE1_URL = "https://classicrebirth.com/index.php/download/resident-evil-dll-fix-for-classic-edition/?wpdmdl=381&refresh=691b62859375e1763402373";
     private const string RE2_URL = "https://classicrebirth.com/index.php/download/resident-evil-2-classic-rebirth/?wpdmdl=390&refresh=691b6273e6eeb1763402355";
     private const string RE3_URL = "https://classicrebirth.com/index.php/download/resident-evil-3-classic-rebirth/?wpdmdl=1327&refresh=691b622263d691763402274";
+    private const string RE_SUR = "https://classicrebirth.com/index.php/download/resident-evil-3-classic-rebirth/?wpdmdl=1327&refresh=691b622263d691763402274";
 
     // Classic Rebirth always uses this file
     private const string CR_DLL = "ddraw.dll";
 
-    private string GetDownloadUrl(RebirthGame game)
+    private string GetDownloadUrl(BioVersion version)
     {
-        return game switch
+        return version switch
         {
-            RebirthGame.RE1 => RE1_URL,
-            RebirthGame.RE2 => RE2_URL,
-            RebirthGame.RE3 => RE3_URL,
+            BioVersion.Biohazard1 => RE1_URL,
+            BioVersion.Biohazard2 => RE2_URL,
+            BioVersion.Biohazard3 => RE3_URL,
+            BioVersion.BiohazardSurvivor => RE_SUR,
             _ => throw new ArgumentOutOfRangeException()
         };
     }
@@ -63,7 +59,7 @@ public class RebirthManager
 
     // ----- Installation -----
 
-    public async Task Install(RebirthGame game, string gameDir)
+    public async Task Install(BioVersion version, string gameDir)
     {
         if (!Directory.Exists(gameDir))
         {
@@ -74,10 +70,10 @@ public class RebirthManager
         // If already installed → confirm update
         if (IsInstalled(gameDir))
         {
-            string version = GetInstalledVersion(gameDir);
+            string install_ver = GetInstalledVersion(gameDir);
             System.Media.SystemSounds.Exclamation.Play();//Play sound to grab attention
             DialogResult ask = MessageBox.Show(
-                $"Classic Rebirth detected.\nInstalled version: {version}\n\nUpdate to latest?",
+                $"Classic Rebirth detected.\nInstalled version: {install_ver}\n\nUpdate to latest?",
                 "Classic Rebirth Installer",
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Question
@@ -87,8 +83,8 @@ public class RebirthManager
                 return;
         }
 
-        string url = GetDownloadUrl(game);
-        string temp7z = Path.Combine(Path.GetTempPath(), $"{game}_CR.7z");
+        string url = GetDownloadUrl(version);
+        string temp7z = Path.Combine(Path.GetTempPath(), $"{version}_CR.7z");
 
         try
         {
@@ -110,7 +106,7 @@ public class RebirthManager
                 return;
             }
 
-            MessageBox.Show($"{game} Classic Rebirth installed/updated successfully.", "Done!");
+            MessageBox.Show($"{version} Classic Rebirth installed/updated successfully.", "Done!");
         }
         catch (Exception ex)
         {

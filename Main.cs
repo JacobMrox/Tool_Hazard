@@ -28,29 +28,6 @@ namespace Tool_Hazard
         //Rebirth Manager
         private readonly RebirthManager rebirth = new RebirthManager();
         private BioVersion CurrentBioVersion;
-
-        public void UpdateStatus(string text)
-        {
-            //Just as a fail safe
-            try
-            {
-                //toolStripStatusLabel1.Text = text;
-                //statusStrip1.Refresh();
-                if (InvokeRequired)
-                {
-                    Invoke(new Action(() => statusStrip1.Text = text));
-                }
-                else
-                {
-                    statusStrip1.Text = text;
-                }
-            }
-            //Fail safe/exeption message triggered if a exception is caught
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error Updating Status Bar to '{text}'.\n\nThe error is: {ex}", "UpdateStatus Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
         public Main()
         {
             try
@@ -66,9 +43,32 @@ namespace Tool_Hazard
                                 "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
             InitializeComponent();
-            //UpdateStatus("Ready");
+            UpdateStatus("Ready");
             //Bio3RDTunpackToolStripMenuItem.Click += Bio3RdtTool.OnUnpackClick;
             //Bio3RDTrepackToolStripMenuItem.Click += Bio3RdtTool.OnRepackClick;
+        }
+        //Update Status Bar Text
+        public void UpdateStatus(string text)
+        {
+            //Just as a fail safe
+            try
+            {
+                //toolStripStatusLabel1.Text = text;
+                //statusStrip1.Refresh();
+                if (InvokeRequired)
+                {
+                    Invoke(new Action(() => toolStripStatusLabel1.Text = text));
+                }
+                else
+                {
+                    toolStripStatusLabel1.Text = text;
+                }
+            }
+            //Fail safe/exeption message triggered if a exception is caught
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error Updating Status Bar to '{text}'.\n\nThe error is: {ex}", "UpdateStatus Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         //White Day (2001) NOP Unpack
@@ -234,7 +234,7 @@ namespace Tool_Hazard
             {
                 using var dlg = new FolderBrowserDialog { Description = "Select Resident Evil 1 directory" };
                 if (dlg.ShowDialog() == DialogResult.OK)
-                    await rebirth.Install(RebirthGame.RE1, dlg.SelectedPath);
+                    await rebirth.Install(CurrentBioVersion, dlg.SelectedPath);
             }
         }
 
@@ -252,7 +252,7 @@ namespace Tool_Hazard
             {
                 using var dlg = new FolderBrowserDialog { Description = "Select Resident Evil 2 directory" };
                 if (dlg.ShowDialog() == DialogResult.OK)
-                    await rebirth.Install(RebirthGame.RE2, dlg.SelectedPath);
+                    await rebirth.Install(CurrentBioVersion, dlg.SelectedPath);
             }
         }
 
@@ -270,7 +270,7 @@ namespace Tool_Hazard
             {
                 using var dlg = new FolderBrowserDialog { Description = "Select Resident Evil 3 directory" };
                 if (dlg.ShowDialog() == DialogResult.OK)
-                    await rebirth.Install(RebirthGame.RE3, dlg.SelectedPath);
+                    await rebirth.Install(CurrentBioVersion, dlg.SelectedPath);
             }
         }
 
@@ -673,14 +673,18 @@ namespace Tool_Hazard
             editor.Show(this);
         }
 
-        // --- Version set based on selected menu strip item --- 
+        // --- Version select/set based on selected menu strip item --- 
 
         private void toolStripMenuItem1_Click(object sender, EventArgs e)
         {
             CurrentBioVersion = BioVersion.Biohazard1;
             UpdateStatus("Version set to Biohazard 1");
         }
-
+        private void bIO151997ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            CurrentBioVersion = BioVersion.Biohazard1_5;
+            UpdateStatus("Version set to Biohazard 1.5");
+        }
         private void bIO2RE21998ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             CurrentBioVersion = BioVersion.Biohazard2;
@@ -692,11 +696,16 @@ namespace Tool_Hazard
             CurrentBioVersion = BioVersion.Biohazard3;
             UpdateStatus("Version set to Biohazard 3");
         }
-
-        private void bIO151997ToolStripMenuItem_Click(object sender, EventArgs e)
+        private void rESURVVBIOGUNSURVToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            CurrentBioVersion = BioVersion.Biohazard1_5;
-            UpdateStatus("Version set to Biohazard 1.5");
+            CurrentBioVersion = BioVersion.BiohazardSurvivor;
+            UpdateStatus("Version set to Biohazard Gun Survivor");
+        }
+
+        private void rECVBIOCV2000ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            CurrentBioVersion = BioVersion.BiohazardCv;
+            UpdateStatus("Version set to Biohazard CODE: Veronica");
         }
 
         // --- Resident Evil EMD/PLD Unpack/Repack Menu Hooks ---

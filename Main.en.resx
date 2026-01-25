@@ -252,13 +252,10 @@
     <value>Install/Update RE1 Classic Rebirth</value>
   </data>
   <data name="bGMXMLEditorToolStripMenuItem2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>180, 22</value>
+    <value>161, 22</value>
   </data>
   <data name="bGMXMLEditorToolStripMenuItem2.Text" xml:space="preserve">
     <value>BGM XML Editor</value>
-  </data>
-  <data name="classicRebirthToolsToolStripMenuItem2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>250, 22</value>
   </data>
   <data name="classicRebirthToolsToolStripMenuItem2.Text" xml:space="preserve">
     <value>Classic Rebirth Tools</value>
@@ -325,6 +322,9 @@
   </data>
   <data name="vHVBToolStripMenuItem1.Text" xml:space="preserve">
     <value>VH/VB</value>
+  </data>
+  <data name="bIO151997ToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
+    <value>False</value>
   </data>
   <data name="bIO151997ToolStripMenuItem.Text" xml:space="preserve">
     <value>BIO1.5 (1997)</value>
@@ -533,14 +533,8 @@
   <data name="menuInstallRE2CR.Text" xml:space="preserve">
     <value>Install/Update RE2 Classic Rebirth</value>
   </data>
-  <data name="bGMXMLEditorToolStripMenuItem1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>161, 22</value>
-  </data>
   <data name="bGMXMLEditorToolStripMenuItem1.Text" xml:space="preserve">
     <value>BGM XML Editor</value>
-  </data>
-  <data name="classicRebirthToolsToolStripMenuItem1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>250, 22</value>
   </data>
   <data name="classicRebirthToolsToolStripMenuItem1.Text" xml:space="preserve">
     <value>Classic Rebirth Tools</value>
@@ -553,6 +547,18 @@
   </data>
   <data name="bIO2RE21998ToolStripMenuItem.ToolTipText" xml:space="preserve">
     <value>Handle and manage file formats utilized by Biohazard 2 / Resident Evil 2 (1998) and its subsequent releases such as "Dual Shock" (1998) and Sourcenext (2006)</value>
+  </data>
+  <data name="rESURVVBIOGUNSURVToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="rESURVVBIOGUNSURVToolStripMenuItem.Text" xml:space="preserve">
+    <value>RESURV/BIOGUN (2000)</value>
+  </data>
+  <data name="rECVBIOCV2000ToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="rECVBIOCV2000ToolStripMenuItem.Text" xml:space="preserve">
+    <value>RECV/BIOCV (2000)</value>
   </data>
   <data name="ROFSunpackToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>114, 22</value>
@@ -765,13 +771,10 @@
     <value>Install/Update RE3 Classic Rebirth</value>
   </data>
   <data name="bGMXMLEditorToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>180, 22</value>
+    <value>161, 22</value>
   </data>
   <data name="bGMXMLEditorToolStripMenuItem.Text" xml:space="preserve">
     <value>BGM XML Editor</value>
-  </data>
-  <data name="classicRebirthToolsToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>250, 22</value>
   </data>
   <data name="classicRebirthToolsToolStripMenuItem.Text" xml:space="preserve">
     <value>Classic Rebirth Tools</value>
@@ -966,7 +969,7 @@
     <value>Help</value>
   </data>
   <data name="menuStrip1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>645, 42</value>
+    <value>714, 42</value>
   </data>
   <data name="notifyIcon1.Text" xml:space="preserve">
     <value>notifyIcon1</value>
@@ -984,17 +987,17 @@
     <value>Ready for Experiments</value>
   </data>
   <data name="statusStrip1.Location" type="System.Drawing.Point, System.Drawing">
-    <value>0, 408</value>
+    <value>0, 472</value>
   </data>
   <data name="statusStrip1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>645, 22</value>
+    <value>714, 22</value>
   </data>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="$this.BackgroundImageLayout" type="System.Windows.Forms.ImageLayout, System.Windows.Forms">
     <value>Stretch</value>
   </data>
   <data name="$this.ClientSize" type="System.Drawing.Size, System.Drawing">
-    <value>645, 430</value>
+    <value>714, 494</value>
   </data>
   <data name="$this.Icon" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>

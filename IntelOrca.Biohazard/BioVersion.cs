@@ -7,5 +7,7 @@
         Biohazard2,
         Biohazard3,
         BiohazardCv,
+        BiohazardSurvivor,//Extra Tool Hazard enum
+        BiohazardOutbreak,//Extra Tool Hazard enum
     }
 }

@@ -58,6 +58,8 @@
             vHVBToolStripMenuItem2 = new ToolStripMenuItem();
             toolStripSeparator7 = new ToolStripSeparator();
             menuInstallRE1CR = new ToolStripMenuItem();
+            classicRebirthToolsToolStripMenuItem2 = new ToolStripMenuItem();
+            bGMXMLEditorToolStripMenuItem2 = new ToolStripMenuItem();
             bIO151997ToolStripMenuItem = new ToolStripMenuItem();
             bSSToolStripMenuItem3 = new ToolStripMenuItem();
             rDTToolStripMenuItem3 = new ToolStripMenuItem();
@@ -103,6 +105,10 @@
             toolStripSeparator1 = new ToolStripSeparator();
             installPatch110ToolStripMenuItem = new ToolStripMenuItem();
             menuInstallRE2CR = new ToolStripMenuItem();
+            classicRebirthToolsToolStripMenuItem1 = new ToolStripMenuItem();
+            bGMXMLEditorToolStripMenuItem1 = new ToolStripMenuItem();
+            rESURVVBIOGUNSURVToolStripMenuItem = new ToolStripMenuItem();
+            rECVBIOCV2000ToolStripMenuItem = new ToolStripMenuItem();
             bIORE31999ToolStripMenuItem = new ToolStripMenuItem();
             rOFSToolStripMenuItem = new ToolStripMenuItem();
             ROFSunpackToolStripMenuItem = new ToolStripMenuItem();
@@ -142,6 +148,8 @@
             toolStripSeparator6 = new ToolStripSeparator();
             installPatch110ToolStripMenuItem1 = new ToolStripMenuItem();
             menuInstallRE3CR = new ToolStripMenuItem();
+            classicRebirthToolsToolStripMenuItem = new ToolStripMenuItem();
+            bGMXMLEditorToolStripMenuItem = new ToolStripMenuItem();
             whiteDayToolStripMenuItem = new ToolStripMenuItem();
             nOPToolStripMenuItem1 = new ToolStripMenuItem();
             unpackToolStripMenuItem1 = new ToolStripMenuItem();
@@ -174,12 +182,6 @@
             notifyIcon1 = new NotifyIcon(components);
             statusStrip1 = new StatusStrip();
             toolStripStatusLabel1 = new ToolStripStatusLabel();
-            classicRebirthToolsToolStripMenuItem = new ToolStripMenuItem();
-            bGMXMLEditorToolStripMenuItem = new ToolStripMenuItem();
-            classicRebirthToolsToolStripMenuItem1 = new ToolStripMenuItem();
-            bGMXMLEditorToolStripMenuItem1 = new ToolStripMenuItem();
-            classicRebirthToolsToolStripMenuItem2 = new ToolStripMenuItem();
-            bGMXMLEditorToolStripMenuItem2 = new ToolStripMenuItem();
             menuStrip1.SuspendLayout();
             statusStrip1.SuspendLayout();
             SuspendLayout();
@@ -189,7 +191,7 @@
             resources.ApplyResources(menuStrip1, "menuStrip1");
             menuStrip1.BackColor = SystemColors.Control;
             menuStrip1.GripMargin = new Padding(2);
-            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, toolStripMenuItem1, bIO151997ToolStripMenuItem, bIO2RE21998ToolStripMenuItem, bIORE31999ToolStripMenuItem, whiteDayToolStripMenuItem, toolStripMenuItem2, helpToolStripMenuItem });
+            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, toolStripMenuItem1, bIO151997ToolStripMenuItem, bIO2RE21998ToolStripMenuItem, rESURVVBIOGUNSURVToolStripMenuItem, rECVBIOCV2000ToolStripMenuItem, bIORE31999ToolStripMenuItem, whiteDayToolStripMenuItem, toolStripMenuItem2, helpToolStripMenuItem });
             menuStrip1.LayoutStyle = ToolStripLayoutStyle.Flow;
             menuStrip1.Name = "menuStrip1";
             menuStrip1.RenderMode = ToolStripRenderMode.Professional;
@@ -346,6 +348,18 @@
             resources.ApplyResources(menuInstallRE1CR, "menuInstallRE1CR");
             menuInstallRE1CR.Name = "menuInstallRE1CR";
             menuInstallRE1CR.Click += menuInstallRE1CR_Click_1;
+            // 
+            // classicRebirthToolsToolStripMenuItem2
+            // 
+            resources.ApplyResources(classicRebirthToolsToolStripMenuItem2, "classicRebirthToolsToolStripMenuItem2");
+            classicRebirthToolsToolStripMenuItem2.DropDownItems.AddRange(new ToolStripItem[] { bGMXMLEditorToolStripMenuItem2 });
+            classicRebirthToolsToolStripMenuItem2.Name = "classicRebirthToolsToolStripMenuItem2";
+            // 
+            // bGMXMLEditorToolStripMenuItem2
+            // 
+            resources.ApplyResources(bGMXMLEditorToolStripMenuItem2, "bGMXMLEditorToolStripMenuItem2");
+            bGMXMLEditorToolStripMenuItem2.Name = "bGMXMLEditorToolStripMenuItem2";
+            bGMXMLEditorToolStripMenuItem2.Click += bGMXMLEditorToolStripMenuItem2_Click;
             // 
             // bIO151997ToolStripMenuItem
             // 
@@ -598,6 +612,30 @@
             menuInstallRE2CR.Name = "menuInstallRE2CR";
             menuInstallRE2CR.Click += menuInstallRE2CR_Click;
             // 
+            // classicRebirthToolsToolStripMenuItem1
+            // 
+            resources.ApplyResources(classicRebirthToolsToolStripMenuItem1, "classicRebirthToolsToolStripMenuItem1");
+            classicRebirthToolsToolStripMenuItem1.DropDownItems.AddRange(new ToolStripItem[] { bGMXMLEditorToolStripMenuItem1 });
+            classicRebirthToolsToolStripMenuItem1.Name = "classicRebirthToolsToolStripMenuItem1";
+            // 
+            // bGMXMLEditorToolStripMenuItem1
+            // 
+            resources.ApplyResources(bGMXMLEditorToolStripMenuItem1, "bGMXMLEditorToolStripMenuItem1");
+            bGMXMLEditorToolStripMenuItem1.Name = "bGMXMLEditorToolStripMenuItem1";
+            bGMXMLEditorToolStripMenuItem1.Click += bGMXMLEditorToolStripMenuItem1_Click;
+            // 
+            // rESURVVBIOGUNSURVToolStripMenuItem
+            // 
+            resources.ApplyResources(rESURVVBIOGUNSURVToolStripMenuItem, "rESURVVBIOGUNSURVToolStripMenuItem");
+            rESURVVBIOGUNSURVToolStripMenuItem.Name = "rESURVVBIOGUNSURVToolStripMenuItem";
+            rESURVVBIOGUNSURVToolStripMenuItem.Click += rESURVVBIOGUNSURVToolStripMenuItem_Click;
+            // 
+            // rECVBIOCV2000ToolStripMenuItem
+            // 
+            resources.ApplyResources(rECVBIOCV2000ToolStripMenuItem, "rECVBIOCV2000ToolStripMenuItem");
+            rECVBIOCV2000ToolStripMenuItem.Name = "rECVBIOCV2000ToolStripMenuItem";
+            rECVBIOCV2000ToolStripMenuItem.Click += rECVBIOCV2000ToolStripMenuItem_Click;
+            // 
             // bIORE31999ToolStripMenuItem
             // 
             resources.ApplyResources(bIORE31999ToolStripMenuItem, "bIORE31999ToolStripMenuItem");
@@ -817,6 +855,18 @@
             menuInstallRE3CR.Name = "menuInstallRE3CR";
             menuInstallRE3CR.Click += menuInstallRE3CR_Click;
             // 
+            // classicRebirthToolsToolStripMenuItem
+            // 
+            resources.ApplyResources(classicRebirthToolsToolStripMenuItem, "classicRebirthToolsToolStripMenuItem");
+            classicRebirthToolsToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { bGMXMLEditorToolStripMenuItem });
+            classicRebirthToolsToolStripMenuItem.Name = "classicRebirthToolsToolStripMenuItem";
+            // 
+            // bGMXMLEditorToolStripMenuItem
+            // 
+            resources.ApplyResources(bGMXMLEditorToolStripMenuItem, "bGMXMLEditorToolStripMenuItem");
+            bGMXMLEditorToolStripMenuItem.Name = "bGMXMLEditorToolStripMenuItem";
+            bGMXMLEditorToolStripMenuItem.Click += bGMXMLEditorToolStripMenuItem_Click;
+            // 
             // whiteDayToolStripMenuItem
             // 
             resources.ApplyResources(whiteDayToolStripMenuItem, "whiteDayToolStripMenuItem");
@@ -996,42 +1046,6 @@
             toolStripStatusLabel1.BackColor = SystemColors.ButtonFace;
             toolStripStatusLabel1.Name = "toolStripStatusLabel1";
             // 
-            // classicRebirthToolsToolStripMenuItem
-            // 
-            resources.ApplyResources(classicRebirthToolsToolStripMenuItem, "classicRebirthToolsToolStripMenuItem");
-            classicRebirthToolsToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { bGMXMLEditorToolStripMenuItem });
-            classicRebirthToolsToolStripMenuItem.Name = "classicRebirthToolsToolStripMenuItem";
-            // 
-            // bGMXMLEditorToolStripMenuItem
-            // 
-            resources.ApplyResources(bGMXMLEditorToolStripMenuItem, "bGMXMLEditorToolStripMenuItem");
-            bGMXMLEditorToolStripMenuItem.Name = "bGMXMLEditorToolStripMenuItem";
-            bGMXMLEditorToolStripMenuItem.Click += bGMXMLEditorToolStripMenuItem_Click;
-            // 
-            // classicRebirthToolsToolStripMenuItem1
-            // 
-            resources.ApplyResources(classicRebirthToolsToolStripMenuItem1, "classicRebirthToolsToolStripMenuItem1");
-            classicRebirthToolsToolStripMenuItem1.DropDownItems.AddRange(new ToolStripItem[] { bGMXMLEditorToolStripMenuItem1 });
-            classicRebirthToolsToolStripMenuItem1.Name = "classicRebirthToolsToolStripMenuItem1";
-            // 
-            // bGMXMLEditorToolStripMenuItem1
-            // 
-            resources.ApplyResources(bGMXMLEditorToolStripMenuItem1, "bGMXMLEditorToolStripMenuItem1");
-            bGMXMLEditorToolStripMenuItem1.Name = "bGMXMLEditorToolStripMenuItem1";
-            bGMXMLEditorToolStripMenuItem1.Click += bGMXMLEditorToolStripMenuItem1_Click;
-            // 
-            // classicRebirthToolsToolStripMenuItem2
-            // 
-            resources.ApplyResources(classicRebirthToolsToolStripMenuItem2, "classicRebirthToolsToolStripMenuItem2");
-            classicRebirthToolsToolStripMenuItem2.DropDownItems.AddRange(new ToolStripItem[] { bGMXMLEditorToolStripMenuItem2 });
-            classicRebirthToolsToolStripMenuItem2.Name = "classicRebirthToolsToolStripMenuItem2";
-            // 
-            // bGMXMLEditorToolStripMenuItem2
-            // 
-            resources.ApplyResources(bGMXMLEditorToolStripMenuItem2, "bGMXMLEditorToolStripMenuItem2");
-            bGMXMLEditorToolStripMenuItem2.Name = "bGMXMLEditorToolStripMenuItem2";
-            bGMXMLEditorToolStripMenuItem2.Click += bGMXMLEditorToolStripMenuItem2_Click;
-            // 
             // Main
             // 
             resources.ApplyResources(this, "$this");
@@ -1205,5 +1219,7 @@
         private ToolStripMenuItem bGMXMLEditorToolStripMenuItem1;
         private ToolStripMenuItem classicRebirthToolsToolStripMenuItem2;
         private ToolStripMenuItem bGMXMLEditorToolStripMenuItem2;
+        private ToolStripMenuItem rESURVVBIOGUNSURVToolStripMenuItem;
+        private ToolStripMenuItem rECVBIOCV2000ToolStripMenuItem;
     }
 }
