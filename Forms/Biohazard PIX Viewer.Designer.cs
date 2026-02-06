@@ -33,6 +33,9 @@
             fileToolStripMenuItem = new ToolStripMenuItem();
             openToolStripMenuItem = new ToolStripMenuItem();
             saveToolStripMenuItem = new ToolStripMenuItem();
+            toolStripSeparator1 = new ToolStripSeparator();
+            exportSelectedMultipackToolStripMenuItem = new ToolStripMenuItem();
+            replaceSelectedMultipackToolStripMenuItem = new ToolStripMenuItem();
             sheetToolStripMenuItem = new ToolStripMenuItem();
             openToolStripMenuItem1 = new ToolStripMenuItem();
             exportToolStripMenuItem = new ToolStripMenuItem();
@@ -66,31 +69,50 @@
             // 
             // fileToolStripMenuItem
             // 
-            fileToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { openToolStripMenuItem, saveToolStripMenuItem });
+            fileToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { openToolStripMenuItem, saveToolStripMenuItem, toolStripSeparator1, exportSelectedMultipackToolStripMenuItem, replaceSelectedMultipackToolStripMenuItem });
             fileToolStripMenuItem.Name = "fileToolStripMenuItem";
-            fileToolStripMenuItem.Size = new Size(83, 20);
-            fileToolStripMenuItem.Text = "Background";
+            fileToolStripMenuItem.Size = new Size(37, 20);
+            fileToolStripMenuItem.Text = "File";
             // 
             // openToolStripMenuItem
             // 
             openToolStripMenuItem.Name = "openToolStripMenuItem";
-            openToolStripMenuItem.Size = new Size(103, 22);
+            openToolStripMenuItem.Size = new Size(226, 22);
             openToolStripMenuItem.Text = "Open";
             openToolStripMenuItem.Click += openToolStripMenuItem_Click;
             // 
             // saveToolStripMenuItem
             // 
             saveToolStripMenuItem.Name = "saveToolStripMenuItem";
-            saveToolStripMenuItem.Size = new Size(103, 22);
-            saveToolStripMenuItem.Text = "Save";
+            saveToolStripMenuItem.Size = new Size(226, 22);
+            saveToolStripMenuItem.Text = "Save As...";
             saveToolStripMenuItem.Click += saveToolStripMenuItem_Click;
+            // 
+            // toolStripSeparator1
+            // 
+            toolStripSeparator1.Name = "toolStripSeparator1";
+            toolStripSeparator1.Size = new Size(223, 6);
+            // 
+            // exportSelectedMultipackToolStripMenuItem
+            // 
+            exportSelectedMultipackToolStripMenuItem.Name = "exportSelectedMultipackToolStripMenuItem";
+            exportSelectedMultipackToolStripMenuItem.Size = new Size(226, 22);
+            exportSelectedMultipackToolStripMenuItem.Text = "Export Selected (Multipack)";
+            exportSelectedMultipackToolStripMenuItem.Click += exportSelectedMultipackToolStripMenuItem_Click;
+            // 
+            // replaceSelectedMultipackToolStripMenuItem
+            // 
+            replaceSelectedMultipackToolStripMenuItem.Name = "replaceSelectedMultipackToolStripMenuItem";
+            replaceSelectedMultipackToolStripMenuItem.Size = new Size(226, 22);
+            replaceSelectedMultipackToolStripMenuItem.Text = "Replace Selected (Multipack)";
+            replaceSelectedMultipackToolStripMenuItem.Click += replaceSelectedMultipackToolStripMenuItem_Click;
             // 
             // sheetToolStripMenuItem
             // 
             sheetToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { openToolStripMenuItem1, exportToolStripMenuItem, replaceToolStripMenuItem, saveToolStripMenuItem1 });
             sheetToolStripMenuItem.Name = "sheetToolStripMenuItem";
-            sheetToolStripMenuItem.Size = new Size(48, 20);
-            sheetToolStripMenuItem.Text = "Sheet";
+            sheetToolStripMenuItem.Size = new Size(68, 20);
+            sheetToolStripMenuItem.Text = "PIX Sheet";
             // 
             // openToolStripMenuItem1
             // 
@@ -165,7 +187,7 @@
             Controls.Add(menuStrip1);
             MainMenuStrip = menuStrip1;
             Name = "Biohazard_PIX_Viewer";
-            Text = "Biohazard_PIX_Viewer";
+            Text = "Biohazard PIX & PS TIM Viewer";
             ((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();
             menuStrip1.ResumeLayout(false);
             menuStrip1.PerformLayout();
@@ -188,5 +210,8 @@
         private Button Next;
         private Button Prev;
         private Label label1;
+        private ToolStripSeparator toolStripSeparator1;
+        private ToolStripMenuItem exportSelectedMultipackToolStripMenuItem;
+        private ToolStripMenuItem replaceSelectedMultipackToolStripMenuItem;
     }
 }

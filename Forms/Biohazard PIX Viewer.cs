@@ -19,15 +19,29 @@ namespace Tool_Hazard.Forms
         // Globals
         private string? _bgPath;
         private string? _bgLoadedExt; // ".pix" ".png" ".bmp" etc
+
+        // Sheet state
         private ItemSheet? sheet;
         private string? _sheetPath;
         private int _iconIndex = 0;
+
+        // TIM pack state (Multi TIM / TIM-in-PIX)
+        private List<byte[]>? _timPack;
+        private int _timIndex = 0;
+
         // Alternative to [DefaultPalette512] base64 string: read from embedded resource (extracted from Biohazard/PIX/Res.res)
         // Call this once and cache it somewhere static if necessary
         byte[] palette512 = BorlandResReader.ReadPalette512FromEmbeddedRes("Tool_Hazard.Biohazard.PIX.Res.res");
+
         public Biohazard_PIX_Viewer()
         {
             InitializeComponent();
+
+            // Keep preview centered when resizing the window
+            this.Resize += (_, __) => CenterPictureBox();
+
+            // Ensure nav buttons are correct on startup
+            UpdateNavButtons();
         }
 
         private void pictureBox1_Click(object sender, EventArgs e)
@@ -68,20 +82,61 @@ namespace Tool_Hazard.Forms
             _sheetPath = null;
             _iconIndex = 0;
             label1.Text = "";
-            //UpdateNavButtons();
+            UpdateNavButtons();
         }
 
         private void ClearBackgroundState()
         {
             _bgPath = null;
             _bgLoadedExt = null;
+            UpdateNavButtons();
         }
+
+        private void ClearTimPackState()
+        {
+            _timPack = null;
+            _timIndex = 0;
+            UpdateNavButtons();
+        }
+
         private void UpdateNavButtons()
         {
+            // Enable Next/Prev if we have either a sheet OR a multi-TIM pack loaded
             bool hasSheet = sheet != null;
-            Next.Enabled = hasSheet;
-            Prev.Enabled = hasSheet;
+            bool hasTimPack = _timPack != null && _timPack.Count > 0;
+
+            Next.Enabled = hasSheet || hasTimPack;
+            Prev.Enabled = hasSheet || hasTimPack;
+
+            // ALSO update multipack menu items
+            UpdateMultipackMenuItems();
+
+            // ALSO update sheet menu items
+            UpdateSheetMenuItems();
         }
+
+        private bool IsMultipackActive()
+        {
+            return sheet == null && _timPack != null && _timPack.Count > 0;
+        }
+
+        private void UpdateMultipackMenuItems()
+        {
+            bool hasMultipack = sheet == null && _timPack != null && _timPack.Count > 0;
+
+            exportSelectedMultipackToolStripMenuItem.Enabled = hasMultipack;
+            replaceSelectedMultipackToolStripMenuItem.Enabled = hasMultipack;
+        }
+
+        private void UpdateSheetMenuItems()
+        {
+            bool hasSheet = sheet != null;
+
+            exportToolStripMenuItem.Enabled = hasSheet;
+            replaceToolStripMenuItem.Enabled = hasSheet;
+            saveToolStripMenuItem1.Enabled = hasSheet;
+        }
+
 
         // ----------------------
         //Background pix handling
@@ -97,6 +152,118 @@ namespace Tool_Hazard.Forms
             var old = pictureBox1.Image;
             pictureBox1.Image = bmp;
             old?.Dispose();
+
+            // Keep preview centered
+            CenterPictureBox();
+        }
+
+        // TIM pack splitter: supports a file containing multiple TIM blocks concatenated (eg ITEMG.PIX)
+        // (Also works for plain .tim files if you ever add that to the open filter.)
+        // IMPORTANT: Some games pad between TIMs, so we scan forward for the next TIM header instead of breaking.
+        private static List<byte[]> SplitTimPack(byte[] data)
+        {
+            var list = new List<byte[]>();
+            int pos = 0;
+
+            while (true)
+            {
+                int start = FindNextTimOffset(data, pos);
+                if (start < 0)
+                    break;
+
+                // Parse one TIM from 'start'. If parse fails, advance and keep scanning.
+                if (!TryReadOneTimBlock(data, start, out int endExclusive))
+                {
+                    pos = start + 4;
+                    continue;
+                }
+
+                var one = new byte[endExclusive - start];
+                Buffer.BlockCopy(data, start, one, 0, one.Length);
+                list.Add(one);
+
+                pos = endExclusive;
+            }
+
+            return list;
+        }
+
+        // Find next TIM header (0x10 00 00 00) starting at/after 'from'
+        private static int FindNextTimOffset(byte[] data, int from)
+        {
+            for (int i = Math.Max(0, from); i + 4 <= data.Length; i++)
+            {
+                if (data[i] == 0x10 && data[i + 1] == 0x00 && data[i + 2] == 0x00 && data[i + 3] == 0x00)
+                    return i;
+            }
+            return -1;
+        }
+
+        // Validate and compute the end offset (exclusive) of a single TIM block at 'start'
+        private static bool TryReadOneTimBlock(byte[] data, int start, out int endExclusive)
+        {
+            endExclusive = start;
+
+            // need at least magic + flags
+            if (start + 8 > data.Length)
+                return false;
+
+            // magic
+            uint magic = BitConverter.ToUInt32(data, start);
+            if (magic != 0x00000010u)
+                return false;
+
+            uint flags = BitConverter.ToUInt32(data, start + 4);
+
+            // Basic sanity: bpp mode is low 3 bits (0..3), plus optional CLUT bit (0x8)
+            uint mode = flags & 0x7;
+            if (mode > 3)
+                return false;
+
+            bool hasClut = (flags & 0x8) != 0;
+
+            int pos = start + 8;
+
+            // CLUT block
+            if (hasClut)
+            {
+                if (pos + 4 > data.Length) return false;
+                uint clutSize = BitConverter.ToUInt32(data, pos);
+                if (clutSize < 12) return false; // header minimum
+                if (pos + (int)clutSize > data.Length) return false;
+                pos += (int)clutSize;
+            }
+
+            // IMAGE block
+            if (pos + 4 > data.Length) return false;
+            uint imgSize = BitConverter.ToUInt32(data, pos);
+            if (imgSize < 12) return false; // header minimum
+            if (pos + (int)imgSize > data.Length) return false;
+            pos += (int)imgSize;
+
+            // TIM blocks are often 4-byte aligned; we can ignore padding for slicing.
+            endExclusive = pos;
+            return true;
+        }
+
+        private void RenderCurrentTimFromPack()
+        {
+            if (_timPack == null || _timPack.Count == 0)
+                return;
+
+            // clamp index
+            if (_timIndex < 0) _timIndex = 0;
+            if (_timIndex >= _timPack.Count) _timIndex = _timPack.Count - 1;
+
+            // Decode current TIM and show it
+            var bmp = Tim.DecodeToBitmap(_timPack[_timIndex]);
+            SetPictureBoxImage(bmp);
+
+            // show "index" like TIMViewer
+            label1.Text = $"{_timIndex + 1}/{_timPack.Count}";
+
+            // optional: disable/enable Next/Prev
+            UpdateNavButtons();
         }
 
         private void openToolStripMenuItem_Click(object sender, EventArgs e)
@@ -104,10 +271,20 @@ namespace Tool_Hazard.Forms
             // Clear the sheet; just in case, before a new PIX:
             ClearSheetState();
 
+            // We are opening a background, so clear any previously loaded sheet state and allow tim pack navigation
+            // (Also clear the previous tim pack, because a new file might not be TIM at all.)
+            ClearTimPackState();
+
             // Open file dialog for background PIX or images
             using OpenFileDialog ofd = new OpenFileDialog
             {
-                Filter = "Background PIX / Images (*.pix;*.png;*.bmp)|*.pix;*.png;*.bmp|PIX files (*.pix)|*.pix|PNG files (*.png)|*.png|Bitmap files (*.bmp)|*.bmp|All files (*.*)|*.*"
+                Filter =
+    "Background PIX / Images / TIM (*.pix;*.tim;*.png;*.bmp)|*.pix;*.tim;*.png;*.bmp|" +
+    "PIX / TIM files (*.pix;*.tim)|*.pix;*.tim|" +
+    "PNG files (*.png)|*.png|" +
+    "Bitmap files (*.bmp)|*.bmp|" +
+    "All files (*.*)|*.*"
+
             };
 
             if (ofd.ShowDialog() != DialogResult.OK)
@@ -121,6 +298,25 @@ namespace Tool_Hazard.Forms
                 if (_bgLoadedExt == ".pix")
                 {
                     // This supports raw 320x240 16bpp PIX and TIM-disguised-as-PIX
+                    // BUT: if it's a MULTI-TIM pack (like RE3 ITEMG.PIX), we allow Next/Prev navigation.
+                    byte[] bytes = File.ReadAllBytes(ofd.FileName);
+
+                    // TIM or MULTI-TIM disguised as .PIX (ITEMG.PIX, etc)
+                    if (bytes.Length >= 4 && BitConverter.ToUInt32(bytes, 0) == 0x00000010u)
+                    {
+                        _timPack = SplitTimPack(bytes);
+                        _timIndex = 0;
+
+                        if (_timPack == null || _timPack.Count == 0)
+                            throw new InvalidDataException("TIM file detected but no TIM blocks could be parsed.");
+
+                        RenderCurrentTimFromPack();
+                        UpdateNavButtons();
+                        return;
+                    }
+
+
+                    // Not a TIM pack, so decode as background PIX
                     var bmp = PixLoader.LoadAsBitmap(ofd.FileName);
                     SetPictureBoxImage(bmp);
                     UpdateNavButtons();
@@ -148,6 +344,7 @@ namespace Tool_Hazard.Forms
                         g.DrawImage(tmp, 0, 0, 320, 240);
 
                     SetPictureBoxImage(bmp);
+                    UpdateNavButtons();
                 }
                 else
                 {
@@ -233,7 +430,10 @@ namespace Tool_Hazard.Forms
             }
         }
 
+        // ----------------------
         // Item sheet pix handling
+        // ----------------------
+
         private void RenderCurrentIcon()
         {
             if (sheet == null) return;
@@ -247,15 +447,21 @@ namespace Tool_Hazard.Forms
             pictureBox1.Image = sheet.RenderIcon(_iconIndex);
             old?.Dispose();
 
-            // optional UI updates
-            // labelIndex.Text = $"{_iconIndex + 1}/{sheet.IconCount}";
-            // toolStripStatusLabel1.Text = $"Icon {_iconIndex}  ({_iconIndex + 1}/{sheet.IconCount})";
+            // keep preview centered
+            CenterPictureBox();
+
+            // show "index/total" like multipack
+            label1.Text = $"{_iconIndex + 1}/{sheet.IconCount}";
+
         }
 
         private void openToolStripMenuItem1_Click(object sender, EventArgs e)
         {
-            // Clear the sheet; just in case, before a new PIX:
-            ClearSheetState();
+            // Clear background state, because we are opening a sheet now:
+            ClearBackgroundState();
+
+            // Clear the previous TIM pack (sheet navigation and TIM-pack navigation are different modes)
+            ClearTimPackState();
 
             // Open file dialog for item sheet PIX
             using OpenFileDialog ofd = new OpenFileDialog
@@ -318,7 +524,6 @@ namespace Tool_Hazard.Forms
                 bmp.Save(sfd.FileName + ".png", ImageFormat.Png);
             }
         }
-
 
         // Replace current selected icon index in sheet with our own TIM file
         private void replaceToolStripMenuItem_Click(object sender, EventArgs e)
@@ -422,29 +627,166 @@ namespace Tool_Hazard.Forms
 
         private void Next_Click(object sender, EventArgs e)
         {
-            if (sheet == null) return;
-            // increment index
-            _iconIndex++;
-            // update a label with current index
-            label1.Text = _iconIndex.ToString();
-            if (_iconIndex >= sheet.IconCount)
-                _iconIndex = 0; // wrap
+            // If a sheet is loaded, Next/Prev moves between icons
+            if (sheet != null)
+            {
+                // increment index
+                _iconIndex++;
+                // update a label with current index
+                //label1.Text = _iconIndex.ToString();
+                //label1.Text = $"{_iconIndex + 1}/{sheet.IconCount}";
+                if (_iconIndex >= sheet.IconCount)
+                    _iconIndex = 0; // wrap
 
-            RenderCurrentIcon();
+                RenderCurrentIcon();
+                return;
+            }
+
+            // If no sheet is loaded, but we have a TIM pack (Multi TIM / TIM-in-PIX), Next/Prev moves between TIM blocks
+            if (_timPack != null && _timPack.Count > 0)
+            {
+                _timIndex++;
+                if (_timIndex >= _timPack.Count)
+                    _timIndex = 0; // wrap
+
+                RenderCurrentTimFromPack();
+                UpdateNavButtons();
+            }
         }
 
         private void Prev_Click(object sender, EventArgs e)
         {
-            if (sheet == null) return;
+            // If a sheet is loaded, Next/Prev moves between icons
+            if (sheet != null)
+            {
+                _iconIndex--;
+                // update a label with current index
+                //label1.Text = _iconIndex.ToString();
+                //label1.Text = $"{_iconIndex + 1}/{sheet.IconCount}";
+                if (_iconIndex < 0)
+                    _iconIndex = sheet.IconCount - 1; // wrap
 
-            _iconIndex--;
-            // update a label with current index
-            label1.Text = _iconIndex.ToString();
-            if (_iconIndex < 0)
-                _iconIndex = sheet.IconCount - 1; // wrap
+                RenderCurrentIcon();
+                return;
+            }
 
-            RenderCurrentIcon();
+            // If no sheet is loaded, but we have a TIM pack (Multi TIM / TIM-in-PIX), Next/Prev moves between TIM blocks
+            if (_timPack != null && _timPack.Count > 0)
+            {
+                _timIndex--;
+                if (_timIndex < 0)
+                    _timIndex = _timPack.Count - 1; // wrap
+
+                RenderCurrentTimFromPack();
+                UpdateNavButtons();
+            }
         }
 
+        private void exportSelectedMultipackToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //Export Selected (Multi TIM) Pack as separate PIX/TIM/PNG/BMP file
+            if (!IsMultipackActive())
+            {
+                MessageBox.Show("Load a Multi-TIM PIX first (eg ITEMG.PIX).", "No multipack loaded",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            using SaveFileDialog sfd = new SaveFileDialog
+            {
+                Filter =
+                    "PlayStation TIM (*.tim)|*.tim|" +
+                    "PIX file (*.pix)|*.pix|" +   // some tools expect .pix even if it's TIM inside
+                    "PNG image (*.png)|*.png|" +
+                    "Bitmap image (*.bmp)|*.bmp|" +
+                    "All files (*.*)|*.*",
+                FileName = $"tim_{_timIndex:D3}"
+            };
+
+            if (sfd.ShowDialog() != DialogResult.OK)
+                return;
+
+            string ext = Path.GetExtension(sfd.FileName).ToLowerInvariant();
+
+            // Export raw TIM block (works for .tim and also "TIM disguised as .pix")
+            if (ext == ".tim" || ext == ".pix")
+            {
+                File.WriteAllBytes(sfd.FileName, _timPack![_timIndex]);
+                return;
+            }
+
+            // Export as PNG/BMP by decoding to bitmap
+            using var bmp = Tim.DecodeToBitmap(_timPack![_timIndex]);
+
+            if (ext == ".png")
+                bmp.Save(sfd.FileName, ImageFormat.Png);
+            else if (ext == ".bmp")
+                bmp.Save(sfd.FileName, ImageFormat.Bmp);
+            else
+                bmp.Save(sfd.FileName + ".png", ImageFormat.Png);
+        }
+
+        private void replaceSelectedMultipackToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //Replace Selected (Multi TIM) Pack as separate PIX/TIM/PNG/BMP file
+            if (!IsMultipackActive())
+            {
+                MessageBox.Show("Load a Multi-TIM PIX first (eg ITEMG.PIX).", "No multipack loaded",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            using OpenFileDialog ofd = new OpenFileDialog
+            {
+                Filter =
+                    "PlayStation TIM (*.tim;*.pix)|*.tim;*.pix|" +
+                    "All files (*.*)|*.*"
+            };
+
+            if (ofd.ShowDialog() != DialogResult.OK)
+                return;
+
+            byte[] repl = File.ReadAllBytes(ofd.FileName);
+
+            // Basic validation: must start with TIM magic
+            if (repl.Length < 8 || BitConverter.ToUInt32(repl, 0) != 0x00000010u)
+            {
+                MessageBox.Show("Selected file is not a valid TIM.", "Replace",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            // Replace the selected entry in memory
+            _timPack![_timIndex] = repl;
+
+            // Ask where to save the updated multipack
+            using SaveFileDialog sfd = new SaveFileDialog
+            {
+                Filter = "PIX file (*.pix)|*.pix|All files (*.*)|*.*",
+                FileName = _bgPath != null ? Path.GetFileName(_bgPath) : "ITEMG.PIX"
+            };
+
+            if (sfd.ShowDialog() != DialogResult.OK)
+                return;
+
+            // Rebuild the multipack by concatenating blocks (pad to 4 bytes)
+            using var ms = new MemoryStream();
+            foreach (var block in _timPack)
+            {
+                ms.Write(block, 0, block.Length);
+
+                // Align to 4 bytes if needed
+                while ((ms.Position & 3) != 0)
+                    ms.WriteByte(0);
+            }
+
+            File.WriteAllBytes(sfd.FileName, ms.ToArray());
+
+            // Reload current preview from updated pack
+            RenderCurrentTimFromPack();
+
+            MessageBox.Show("Replaced and saved multipack.", "Replace",
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
     }
 }
