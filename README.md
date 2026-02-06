@@ -4,7 +4,8 @@ Originally started as White Day Mod Tool, it evolved into a full-featured toolki
 
 <img width="402" height="282" alt="image" src="https://github.com/user-attachments/assets/65c9f714-fa4f-4bec-8173-c9d0e8b61752" />
 <img width="402" height="282" alt="image" src="https://github.com/user-attachments/assets/e7901331-2f55-4645-9bf0-a1b2ff315593" />
-
+<img width="402" height="282" alt="image" src="https://github.com/user-attachments/assets/51d64407-c6dd-48fe-84f5-bd529e9040a0" />
+<img width="402" height="282" alt="image" src="https://github.com/user-attachments/assets/b282cbfd-0aaa-494c-b257-37f2ced9bd0c" />
 
 🇸🇦 العربية
 
