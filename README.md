@@ -2,7 +2,6 @@ Tool Hazard is a modern, all-in-one modding and research utility written in C# (
 
 Originally started as White Day Mod Tool, it evolved into a full-featured toolkit inspired by [Biofat](https://www.romhacking.net/utilities/1019/), focused on reverse-engineering, modding, file editing, and preservation of classic game assets.
 
-<img width="647" height="464" alt="image" src="https://github.com/user-attachments/assets/6c4ae543-d295-4b14-8554-b367d4a3ad33" />
 <img width="402" height="282" alt="image" src="https://github.com/user-attachments/assets/65c9f714-fa4f-4bec-8173-c9d0e8b61752" />
 <img width="402" height="282" alt="image" src="https://github.com/user-attachments/assets/e7901331-2f55-4645-9bf0-a1b2ff315593" />
 
