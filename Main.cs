@@ -1412,5 +1412,17 @@ namespace Tool_Hazard
             var editor = new RebirthBgmXmlEditorForm();
             editor.Show(this);
         }
+
+        private void pIXToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            var editor = new Biohazard_PIX_Viewer();
+            editor.Show(this);
+        }
+
+        private void pIXToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            var editor = new Biohazard_PIX_Viewer();
+            editor.Show(this);
+        }
     }
 }

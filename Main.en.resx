@@ -233,6 +233,9 @@
   <data name="eMDToolStripMenuItem2.Text" xml:space="preserve">
     <value>EMD</value>
   </data>
+  <data name="pIXToolStripMenuItem.Text" xml:space="preserve">
+    <value>PIX</value>
+  </data>
   <data name="pLWToolStripMenuItem2.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
@@ -272,11 +275,17 @@
   <data name="bSSToolStripMenuItem3.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
+  <data name="bSSToolStripMenuItem3.Size" type="System.Drawing.Size, System.Drawing">
+    <value>109, 22</value>
+  </data>
   <data name="bSSToolStripMenuItem3.Text" xml:space="preserve">
     <value>BSS</value>
   </data>
   <data name="rDTToolStripMenuItem3.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
+  </data>
+  <data name="rDTToolStripMenuItem3.Size" type="System.Drawing.Size, System.Drawing">
+    <value>109, 22</value>
   </data>
   <data name="rDTToolStripMenuItem3.Text" xml:space="preserve">
     <value>RDT</value>
@@ -284,11 +293,17 @@
   <data name="eMDToolStripMenuItem3.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
+  <data name="eMDToolStripMenuItem3.Size" type="System.Drawing.Size, System.Drawing">
+    <value>109, 22</value>
+  </data>
   <data name="eMDToolStripMenuItem3.Text" xml:space="preserve">
     <value>EMD</value>
   </data>
   <data name="pLDToolStripMenuItem2.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
+  </data>
+  <data name="pLDToolStripMenuItem2.Size" type="System.Drawing.Size, System.Drawing">
+    <value>109, 22</value>
   </data>
   <data name="pLDToolStripMenuItem2.Text" xml:space="preserve">
     <value>PLD</value>
@@ -296,11 +311,17 @@
   <data name="pLWToolStripMenuItem3.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
+  <data name="pLWToolStripMenuItem3.Size" type="System.Drawing.Size, System.Drawing">
+    <value>109, 22</value>
+  </data>
   <data name="pLWToolStripMenuItem3.Text" xml:space="preserve">
     <value>PLW</value>
   </data>
   <data name="vHVBToolStripMenuItem1.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
+  </data>
+  <data name="vHVBToolStripMenuItem1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>109, 22</value>
   </data>
   <data name="vHVBToolStripMenuItem1.Text" xml:space="preserve">
     <value>VH/VB</value>
@@ -476,11 +497,17 @@
   <data name="sAP2WAVToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
+  <data name="sAP2WAVToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>132, 22</value>
+  </data>
   <data name="sAP2WAVToolStripMenuItem.Text" xml:space="preserve">
     <value>SAP 2 WAV</value>
   </data>
   <data name="wAV2SAPToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
+  </data>
+  <data name="wAV2SAPToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>132, 22</value>
   </data>
   <data name="wAV2SAPToolStripMenuItem.Text" xml:space="preserve">
     <value>WAV 2 SAP</value>
@@ -527,11 +554,17 @@
   <data name="bINPS1ToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
+  <data name="bINPS1ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>154, 22</value>
+  </data>
   <data name="bINPS1ToolStripMenuItem.Text" xml:space="preserve">
     <value>BIN (PS1)</value>
   </data>
   <data name="nACNABPCToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
+  </data>
+  <data name="nACNABPCToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>154, 22</value>
   </data>
   <data name="nACNABPCToolStripMenuItem.Text" xml:space="preserve">
     <value>NAC/NAB (PC)</value>
@@ -554,11 +587,17 @@
   <data name="rECVBIOCV2000ToolStripMenuItem.Text" xml:space="preserve">
     <value>RECV/BIOCV (2000)</value>
   </data>
+  <data name="ROFSunpackToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>114, 22</value>
+  </data>
   <data name="ROFSunpackToolStripMenuItem.Text" xml:space="preserve">
     <value>Unpack</value>
   </data>
   <data name="repackToolStripMenuItem2.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
+  </data>
+  <data name="repackToolStripMenuItem2.Size" type="System.Drawing.Size, System.Drawing">
+    <value>114, 22</value>
   </data>
   <data name="repackToolStripMenuItem2.Text" xml:space="preserve">
     <value>Repack</value>
@@ -704,26 +743,23 @@
   <data name="eMDToolStripMenuItem.Text" xml:space="preserve">
     <value>EMD</value>
   </data>
-  <data name="unpackOriginalToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>167, 22</value>
+  <data name="pIXToolStripMenuItem1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>250, 22</value>
+  </data>
+  <data name="pIXToolStripMenuItem1.Text" xml:space="preserve">
+    <value>PIX</value>
   </data>
   <data name="unpackOriginalToolStripMenuItem.Text" xml:space="preserve">
     <value>Unpack (Original)</value>
   </data>
-  <data name="repackOriginalToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>167, 22</value>
-  </data>
   <data name="repackOriginalToolStripMenuItem.Text" xml:space="preserve">
     <value>Repack (Original)</value>
   </data>
-  <data name="unpackEditableToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>167, 22</value>
+  <data name="toolStripSeparator10.Size" type="System.Drawing.Size, System.Drawing">
+    <value>177, 6</value>
   </data>
   <data name="unpackEditableToolStripMenuItem.Text" xml:space="preserve">
     <value>Unpack (Editable)</value>
-  </data>
-  <data name="repackEditableToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>167, 22</value>
   </data>
   <data name="repackEditableToolStripMenuItem.Text" xml:space="preserve">
     <value>Repack (Editable)</value>
@@ -776,8 +812,14 @@
   <data name="bIORE31999ToolStripMenuItem.ToolTipText" xml:space="preserve">
     <value>Handle and manage file formats utilized by Biohazard 3 / Resident Evil 3 (1999)</value>
   </data>
+  <data name="unpackToolStripMenuItem1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>114, 22</value>
+  </data>
   <data name="unpackToolStripMenuItem1.Text" xml:space="preserve">
     <value>Unpack</value>
+  </data>
+  <data name="repackToolStripMenuItem1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>114, 22</value>
   </data>
   <data name="repackToolStripMenuItem1.Text" xml:space="preserve">
     <value>Repack</value>
@@ -860,8 +902,14 @@
   <data name="decompressToolStripMenuItem.Text" xml:space="preserve">
     <value>Decompress</value>
   </data>
+  <data name="lZ770x100x11ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>171, 22</value>
+  </data>
   <data name="lZ770x100x11ToolStripMenuItem.Text" xml:space="preserve">
     <value>LZ77 (0x10/0x11)</value>
+  </data>
+  <data name="containerScannerToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>171, 22</value>
   </data>
   <data name="containerScannerToolStripMenuItem.Text" xml:space="preserve">
     <value>Container Scanner</value>
@@ -869,11 +917,20 @@
   <data name="nintendoToolStripMenuItem.Text" xml:space="preserve">
     <value>Nintendo DS</value>
   </data>
+  <data name="tIMToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>131, 22</value>
+  </data>
   <data name="tIMToolStripMenuItem.Text" xml:space="preserve">
     <value>TIM 2 PNG</value>
   </data>
+  <data name="pNG2TIMToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>131, 22</value>
+  </data>
   <data name="pNG2TIMToolStripMenuItem.Text" xml:space="preserve">
     <value>PNG 2 TIM</value>
+  </data>
+  <data name="pS1ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>93, 22</value>
   </data>
   <data name="pS1ToolStripMenuItem.Text" xml:space="preserve">
     <value>PS1</value>
@@ -886,6 +943,9 @@
   </data>
   <data name="aFSToolStripMenuItem.Text" xml:space="preserve">
     <value>AFS Explorer</value>
+  </data>
+  <data name="pS2ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>93, 22</value>
   </data>
   <data name="pS2ToolStripMenuItem.Text" xml:space="preserve">
     <value>PS2</value>
@@ -902,17 +962,26 @@
   <data name="versionToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
+  <data name="versionToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>171, 22</value>
+  </data>
   <data name="versionToolStripMenuItem.Text" xml:space="preserve">
     <value>About</value>
   </data>
   <data name="documentationToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
+  <data name="documentationToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>171, 22</value>
+  </data>
   <data name="documentationToolStripMenuItem.Text" xml:space="preserve">
     <value>Documentation</value>
   </data>
   <data name="checkForUpdatesToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
+  </data>
+  <data name="checkForUpdatesToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>171, 22</value>
   </data>
   <data name="checkForUpdatesToolStripMenuItem.Text" xml:space="preserve">
     <value>Check for Updates</value>

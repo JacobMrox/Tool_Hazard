@@ -54,6 +54,7 @@
             toolStripSeparator11 = new ToolStripSeparator();
             unpackEditableToolStripMenuItem1 = new ToolStripMenuItem();
             repackEditableToolStripMenuItem1 = new ToolStripMenuItem();
+            pIXToolStripMenuItem = new ToolStripMenuItem();
             pLWToolStripMenuItem2 = new ToolStripMenuItem();
             vHVBToolStripMenuItem2 = new ToolStripMenuItem();
             toolStripSeparator7 = new ToolStripSeparator();
@@ -186,6 +187,7 @@
             notifyIcon1 = new NotifyIcon(components);
             statusStrip1 = new StatusStrip();
             toolStripStatusLabel1 = new ToolStripStatusLabel();
+            pIXToolStripMenuItem1 = new ToolStripMenuItem();
             menuStrip1.SuspendLayout();
             statusStrip1.SuspendLayout();
             SuspendLayout();
@@ -217,7 +219,7 @@
             // 
             resources.ApplyResources(toolStripMenuItem1, "toolStripMenuItem1");
             toolStripMenuItem1.AutoToolTip = true;
-            toolStripMenuItem1.DropDownItems.AddRange(new ToolStripItem[] { bSSToolStripMenuItem, rDTToolStripMenuItem2, eMDToolStripMenuItem2, pLWToolStripMenuItem2, vHVBToolStripMenuItem2, toolStripSeparator7, menuInstallRE1CR, classicRebirthToolsToolStripMenuItem2 });
+            toolStripMenuItem1.DropDownItems.AddRange(new ToolStripItem[] { bSSToolStripMenuItem, rDTToolStripMenuItem2, eMDToolStripMenuItem2, pIXToolStripMenuItem, pLWToolStripMenuItem2, vHVBToolStripMenuItem2, toolStripSeparator7, menuInstallRE1CR, classicRebirthToolsToolStripMenuItem2 });
             toolStripMenuItem1.Name = "toolStripMenuItem1";
             toolStripMenuItem1.Click += toolStripMenuItem1_Click;
             // 
@@ -331,6 +333,12 @@
             resources.ApplyResources(repackEditableToolStripMenuItem1, "repackEditableToolStripMenuItem1");
             repackEditableToolStripMenuItem1.Name = "repackEditableToolStripMenuItem1";
             repackEditableToolStripMenuItem1.Click += repackEditableToolStripMenuItem1_Click;
+            // 
+            // pIXToolStripMenuItem
+            // 
+            resources.ApplyResources(pIXToolStripMenuItem, "pIXToolStripMenuItem");
+            pIXToolStripMenuItem.Name = "pIXToolStripMenuItem";
+            pIXToolStripMenuItem.Click += pIXToolStripMenuItem_Click;
             // 
             // pLWToolStripMenuItem2
             // 
@@ -665,7 +673,7 @@
             // bIORE31999ToolStripMenuItem
             // 
             resources.ApplyResources(bIORE31999ToolStripMenuItem, "bIORE31999ToolStripMenuItem");
-            bIORE31999ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { rOFSToolStripMenuItem, aRDToolStripMenuItem, bSSToolStripMenuItem2, rDTToolStripMenuItem, mD2ToolStripMenuItem, eMDToolStripMenuItem, pLDToolStripMenuItem, pLWToolStripMenuItem, vBVHToolStripMenuItem, toolStripSeparator6, installPatch110ToolStripMenuItem1, menuInstallRE3CR, classicRebirthToolsToolStripMenuItem });
+            bIORE31999ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { rOFSToolStripMenuItem, aRDToolStripMenuItem, bSSToolStripMenuItem2, rDTToolStripMenuItem, mD2ToolStripMenuItem, eMDToolStripMenuItem, pIXToolStripMenuItem1, pLDToolStripMenuItem, pLWToolStripMenuItem, vBVHToolStripMenuItem, toolStripSeparator6, installPatch110ToolStripMenuItem1, menuInstallRE3CR, classicRebirthToolsToolStripMenuItem });
             bIORE31999ToolStripMenuItem.Name = "bIORE31999ToolStripMenuItem";
             bIORE31999ToolStripMenuItem.Click += bIORE31999ToolStripMenuItem_Click;
             // 
@@ -1072,6 +1080,12 @@
             toolStripStatusLabel1.BackColor = SystemColors.ButtonFace;
             toolStripStatusLabel1.Name = "toolStripStatusLabel1";
             // 
+            // pIXToolStripMenuItem1
+            // 
+            resources.ApplyResources(pIXToolStripMenuItem1, "pIXToolStripMenuItem1");
+            pIXToolStripMenuItem1.Name = "pIXToolStripMenuItem1";
+            pIXToolStripMenuItem1.Click += pIXToolStripMenuItem1_Click;
+            // 
             // Main
             // 
             resources.ApplyResources(this, "$this");
@@ -1251,5 +1265,7 @@
         private ToolStripMenuItem aRCHDMTToolStripMenuItem;
         private ToolStripMenuItem bINPS1ToolStripMenuItem;
         private ToolStripMenuItem nACNABPCToolStripMenuItem;
+        private ToolStripMenuItem pIXToolStripMenuItem;
+        private ToolStripMenuItem pIXToolStripMenuItem1;
     }
 }
