@@ -10,6 +10,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Tool_Hazard.Biohazard.PIX;
 
 namespace Tool_Hazard.Forms
 {
@@ -18,9 +19,12 @@ namespace Tool_Hazard.Forms
         // Globals
         private string? _bgPath;
         private string? _bgLoadedExt; // ".pix" ".png" ".bmp" etc
-        private Tool_Hazard.Imaging.ItemSheet? sheet;
+        private ItemSheet? sheet;
         private string? _sheetPath;
         private int _iconIndex = 0;
+        // Alternative to [DefaultPalette512] base64 string: read from embedded resource (extracted from Biohazard/PIX/Res.res)
+        // Call this once and cache it somewhere static if necessary
+        byte[] palette512 = BorlandResReader.ReadPalette512FromEmbeddedRes("Tool_Hazard.Biohazard.PIX.Res.res");
         public Biohazard_PIX_Viewer()
         {
             InitializeComponent();
@@ -31,7 +35,57 @@ namespace Tool_Hazard.Forms
 
         }
 
+        // UI stuff
+
+        private void CenterPictureBox()
+        {
+            if (pictureBox1.Image == null)
+                return;
+
+            // make PictureBox fit image exactly
+            pictureBox1.SizeMode = PictureBoxSizeMode.Normal;
+            pictureBox1.Width = pictureBox1.Image.Width;
+            pictureBox1.Height = pictureBox1.Image.Height;
+
+            // center it within its parent (panel or form)
+            var parent = pictureBox1.Parent;
+            if (parent == null) return;
+
+            int x = Math.Max(0, (parent.ClientSize.Width - pictureBox1.Width) / 2);
+            int y = Math.Max(0, (parent.ClientSize.Height - pictureBox1.Height) / 2);
+
+            pictureBox1.Left = x;
+            pictureBox1.Top = y;
+        }
+
+        // ----------------------
+        // Helper methods
+        // ----------------------
+
+        private void ClearSheetState()
+        {
+            sheet = null;
+            _sheetPath = null;
+            _iconIndex = 0;
+            label1.Text = "";
+            //UpdateNavButtons();
+        }
+
+        private void ClearBackgroundState()
+        {
+            _bgPath = null;
+            _bgLoadedExt = null;
+        }
+        private void UpdateNavButtons()
+        {
+            bool hasSheet = sheet != null;
+            Next.Enabled = hasSheet;
+            Prev.Enabled = hasSheet;
+        }
+
+        // ----------------------
         //Background pix handling
+        // ----------------------
         private static bool IsImageExt(string? ext)
         {
             ext = ext?.ToLowerInvariant();
@@ -47,6 +101,10 @@ namespace Tool_Hazard.Forms
 
         private void openToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            // Clear the sheet; just in case, before a new PIX:
+            ClearSheetState();
+
+            // Open file dialog for background PIX or images
             using OpenFileDialog ofd = new OpenFileDialog
             {
                 Filter = "Background PIX / Images (*.pix;*.png;*.bmp)|*.pix;*.png;*.bmp|PIX files (*.pix)|*.pix|PNG files (*.png)|*.png|Bitmap files (*.bmp)|*.bmp|All files (*.*)|*.*"
@@ -63,8 +121,9 @@ namespace Tool_Hazard.Forms
                 if (_bgLoadedExt == ".pix")
                 {
                     // This supports raw 320x240 16bpp PIX and TIM-disguised-as-PIX
-                    var bmp = Tool_Hazard.Imaging.PixLoader.LoadAsBitmap(ofd.FileName);
+                    var bmp = PixLoader.LoadAsBitmap(ofd.FileName);
                     SetPictureBoxImage(bmp);
+                    UpdateNavButtons();
                 }
                 else if (IsImageExt(_bgLoadedExt))
                 {
@@ -149,7 +208,7 @@ namespace Tool_Hazard.Forms
                             throw new InvalidOperationException("To save as PIX, image must be 320x240.");
 
                         // Raw 320x240 16-bit BGR555 (matches your background PIX)
-                        var raw = Tool_Hazard.Imaging.Psx1555.EncodeRaw320x240(bmp);
+                        var raw = Psx1555.EncodeRaw320x240(bmp);
                         File.WriteAllBytes(sfd.FileName, raw);
                         break;
 
@@ -188,13 +247,17 @@ namespace Tool_Hazard.Forms
             pictureBox1.Image = sheet.RenderIcon(_iconIndex);
             old?.Dispose();
 
-            // optional UI updates (if you have these controls)
+            // optional UI updates
             // labelIndex.Text = $"{_iconIndex + 1}/{sheet.IconCount}";
             // toolStripStatusLabel1.Text = $"Icon {_iconIndex}  ({_iconIndex + 1}/{sheet.IconCount})";
         }
 
         private void openToolStripMenuItem1_Click(object sender, EventArgs e)
         {
+            // Clear the sheet; just in case, before a new PIX:
+            ClearSheetState();
+
+            // Open file dialog for item sheet PIX
             using OpenFileDialog ofd = new OpenFileDialog
             {
                 Filter = "PIX files (*.pix)|*.pix|All files (*.*)|*.*"
@@ -202,10 +265,12 @@ namespace Tool_Hazard.Forms
 
             if (ofd.ShowDialog() == DialogResult.OK)
             {
-                sheet = Tool_Hazard.Imaging.ItemSheet.Load(ofd.FileName);
+                //sheet = ItemSheet.Load(ofd.FileName);//Old loading method that only supports raw PIX sheets without relying on Borland Res.res Reader
+                sheet = Tool_Hazard.Biohazard.PIX.ItemSheet.Load(ofd.FileName, palette512);
                 _sheetPath = ofd.FileName;
                 _iconIndex = 0;
                 RenderCurrentIcon();
+                UpdateNavButtons();
             }
         }
 
@@ -291,8 +356,8 @@ namespace Tool_Hazard.Forms
                     using var img = new Bitmap(ofd.FileName);
 
                     // Strict size by default. If you want auto-resize, pass resizeIfNeeded: true
-                    if (img.Width != Tool_Hazard.Imaging.ItemSheet.IconW ||
-                        img.Height != Tool_Hazard.Imaging.ItemSheet.IconH)
+                    if (img.Width != ItemSheet.IconW ||
+                        img.Height != ItemSheet.IconH)
                     {
                         var res = MessageBox.Show(
                             $"Image is {img.Width}x{img.Height}. Icon size is 40x30.\n\nResize automatically?",

@@ -12,7 +12,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Runtime.InteropServices;
 
-namespace Tool_Hazard.Imaging
+namespace Tool_Hazard.Biohazard.PIX
 {
     public enum PixKind
     {
@@ -587,6 +587,10 @@ namespace Tool_Hazard.Imaging
             "xznHOMY4xznHOMY4xznHOMY4xznHOMY4xznHOMY4xznHOMY4xznHOMY4xznHOMY4xznHOMY4xznHOMY4" +
             "xznHOMY4xznHOMY4xznHOMY4xznHOMY4xznHOMY4xznHOMY4xznHOMY4xznHOMY4xznHOMY4xznHOMY4"
         );
+
+        //Alternative to [DefaultPalette512] base64 string: read from embedded resource (extracted from Biohazard/PIX/Res.res)
+        // call this once and cache it somewhere static if necessary
+        //byte[] palette512 = BorlandResReader.ReadPalette512FromEmbeddedRes("Tool_Hazard.Biohazard.PIX.Res.res");
 
         private readonly byte[] _pix;
         private readonly byte[] _palette512; // 512 bytes (256*2)

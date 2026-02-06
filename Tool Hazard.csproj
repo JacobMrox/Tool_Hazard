@@ -12,6 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Biohazard\PIX\Res.res" />
     <None Remove="Resources\Biohazard\encoding.xml" />
     <None Remove="Resources\Biohazard\Opcodes\re15_opcodes.json" />
     <None Remove="Resources\Biohazard\Opcodes\re1_opcodes.json" />
@@ -36,6 +37,10 @@
     <Content Include="Resources\Biohazard\Opcodes\re3_opcodes.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Biohazard\PIX\Res.res" />
   </ItemGroup>
 
   <ItemGroup>
