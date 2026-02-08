@@ -14,6 +14,9 @@
   <ItemGroup>
     <None Remove="Biohazard\PIX\Res.res" />
     <None Remove="Resources\Biohazard\encoding.xml" />
+    <None Remove="Resources\Biohazard\encoding_file.xml" />
+    <None Remove="Resources\Biohazard\font.png" />
+    <None Remove="Resources\Biohazard\font_file.png" />
     <None Remove="Resources\Biohazard\Opcodes\re15_opcodes.json" />
     <None Remove="Resources\Biohazard\Opcodes\re1_opcodes.json" />
     <None Remove="Resources\Biohazard\Opcodes\re2_opcodes.json" />
@@ -23,7 +26,16 @@
   <ItemGroup>
     <Content Include="icon.ico" />
     <Content Include="Resources\Biohazard\encoding.xml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Biohazard\encoding_file.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Biohazard\font.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Biohazard\font_file.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Resources\Biohazard\Opcodes\re15_opcodes.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -41,6 +53,8 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Biohazard\PIX\Res.res" />
+    <EmbeddedResource Include="C:\Users\user\.nuget\packages\csharp-prs\2.1.3\build\dlang-prs32.dll" />
+    <EmbeddedResource Include="C:\Users\user\.nuget\packages\csharp-prs\2.1.3\build\dlang-prs64.dll" />
   </ItemGroup>
 
   <ItemGroup>
@@ -63,6 +77,14 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="C:\Users\user\.nuget\packages\csharp-prs\2.1.3\build\dlang-prs64.dll" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="C:\Users\user\.nuget\packages\csharp-prs\2.1.3\build\dlang-prs32.dll" />
   </ItemGroup>
 
 </Project>

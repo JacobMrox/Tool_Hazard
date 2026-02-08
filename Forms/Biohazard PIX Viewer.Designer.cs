@@ -44,8 +44,11 @@
             Next = new Button();
             Prev = new Button();
             label1 = new Label();
+            statusStrip1 = new StatusStrip();
+            toolStripStatusLabel1 = new ToolStripStatusLabel();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
             menuStrip1.SuspendLayout();
+            statusStrip1.SuspendLayout();
             SuspendLayout();
             // 
             // pictureBox1
@@ -53,7 +56,7 @@
             pictureBox1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             pictureBox1.Location = new Point(0, 24);
             pictureBox1.Name = "pictureBox1";
-            pictureBox1.Size = new Size(323, 240);
+            pictureBox1.Size = new Size(423, 340);
             pictureBox1.TabIndex = 0;
             pictureBox1.TabStop = false;
             pictureBox1.Click += pictureBox1_Click;
@@ -63,7 +66,7 @@
             menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, sheetToolStripMenuItem });
             menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
-            menuStrip1.Size = new Size(323, 24);
+            menuStrip1.Size = new Size(423, 24);
             menuStrip1.TabIndex = 1;
             menuStrip1.Text = "menuStrip1";
             // 
@@ -145,7 +148,7 @@
             // Next
             // 
             Next.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            Next.Location = new Point(236, 273);
+            Next.Location = new Point(336, 353);
             Next.Name = "Next";
             Next.Size = new Size(75, 23);
             Next.TabIndex = 2;
@@ -156,7 +159,7 @@
             // Prev
             // 
             Prev.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            Prev.Location = new Point(12, 273);
+            Prev.Location = new Point(12, 353);
             Prev.Name = "Prev";
             Prev.Size = new Size(75, 23);
             Prev.TabIndex = 3;
@@ -168,18 +171,34 @@
             // 
             label1.Anchor = AnchorStyles.Bottom;
             label1.AutoSize = true;
-            label1.Location = new Point(120, 277);
+            label1.Location = new Point(170, 377);
             label1.Name = "label1";
-            label1.Size = new Size(78, 15);
+            label1.Size = new Size(17, 15);
             label1.TabIndex = 4;
-            label1.Text = "Current Index";
+            label1.Text = "--";
             label1.TextAlign = ContentAlignment.BottomCenter;
+            // 
+            // statusStrip1
+            // 
+            statusStrip1.Items.AddRange(new ToolStripItem[] { toolStripStatusLabel1 });
+            statusStrip1.Location = new Point(0, 379);
+            statusStrip1.Name = "statusStrip1";
+            statusStrip1.Size = new Size(423, 22);
+            statusStrip1.TabIndex = 5;
+            statusStrip1.Text = "statusStrip1";
+            // 
+            // toolStripStatusLabel1
+            // 
+            toolStripStatusLabel1.Name = "toolStripStatusLabel1";
+            toolStripStatusLabel1.Size = new Size(39, 17);
+            toolStripStatusLabel1.Text = "Ready";
             // 
             // Biohazard_PIX_Viewer
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(323, 301);
+            ClientSize = new Size(423, 401);
+            Controls.Add(statusStrip1);
             Controls.Add(label1);
             Controls.Add(Prev);
             Controls.Add(Next);
@@ -187,10 +206,13 @@
             Controls.Add(menuStrip1);
             MainMenuStrip = menuStrip1;
             Name = "Biohazard_PIX_Viewer";
+            StartPosition = FormStartPosition.CenterScreen;
             Text = "Biohazard PIX & PS TIM Viewer";
             ((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();
             menuStrip1.ResumeLayout(false);
             menuStrip1.PerformLayout();
+            statusStrip1.ResumeLayout(false);
+            statusStrip1.PerformLayout();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -213,5 +235,7 @@
         private ToolStripSeparator toolStripSeparator1;
         private ToolStripMenuItem exportSelectedMultipackToolStripMenuItem;
         private ToolStripMenuItem replaceSelectedMultipackToolStripMenuItem;
+        private StatusStrip statusStrip1;
+        private ToolStripStatusLabel toolStripStatusLabel1;
     }
 }

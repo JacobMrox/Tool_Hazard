@@ -1412,7 +1412,13 @@ namespace Tool_Hazard
             var editor = new RebirthBgmXmlEditorForm();
             editor.Show(this);
         }
+        private void bGMXMLEditorToolStripMenuItem3_Click(object sender, EventArgs e)
+        {
+            var editor = new RebirthBgmXmlEditorForm();
+            editor.Show(this);
+        }
 
+        //PIX/TIM viewer menu hooks
         private void pIXToolStripMenuItem_Click(object sender, EventArgs e)
         {
             var editor = new Biohazard_PIX_Viewer();
@@ -1422,6 +1428,51 @@ namespace Tool_Hazard
         private void pIXToolStripMenuItem1_Click(object sender, EventArgs e)
         {
             var editor = new Biohazard_PIX_Viewer();
+            editor.Show(this);
+        }
+
+        //BSS Manager/Viewer Hookers
+        private void bSSToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            var editor = new BssViewerForm();
+            editor.Show(this);
+        }
+
+        private void bSSToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            var editor = new BssViewerForm();
+            editor.Show(this);
+        }
+
+        private void bSSToolStripMenuItem2_Click(object sender, EventArgs e)
+        {
+            var editor = new BssViewerForm();
+            editor.Show(this);
+        }
+
+        //File Editor Menu Hooks
+        private void fileEditorToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //BiohazardFileEditor
+            var editor = new BiohazardFileEditor();
+            editor.Show(this);
+        }
+
+        private void fileEditorToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            var editor = new BiohazardFileEditor();
+            editor.Show(this);
+        }
+
+        private void fileEditorToolStripMenuItem2_Click(object sender, EventArgs e)
+        {
+            var editor = new BiohazardFileEditor();
+            editor.Show(this);
+        }
+
+        private void fileEditorToolStripMenuItem3_Click(object sender, EventArgs e)
+        {
+            var editor = new BiohazardFileEditor();
             editor.Show(this);
         }
     }

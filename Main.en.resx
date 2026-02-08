@@ -133,12 +133,15 @@
   <data name="fileToolStripMenuItem.Text" xml:space="preserve">
     <value>File</value>
   </data>
+  <data name="bSSToolStripMenuItem.Text" xml:space="preserve">
+    <value>BSS (PS1)</value>
+  </data>
   <assembly alias="mscorlib" name="mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="bSSToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
+  <data name="pCKPCToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
-  <data name="bSSToolStripMenuItem.Text" xml:space="preserve">
-    <value>BSS</value>
+  <data name="pCKPCToolStripMenuItem.Text" xml:space="preserve">
+    <value>PCK (PC)</value>
   </data>
   <data name="unpackToolStripMenuItem4.Size" type="System.Drawing.Size, System.Drawing">
     <value>164, 22</value>
@@ -254,11 +257,11 @@
   <data name="menuInstallRE1CR.Text" xml:space="preserve">
     <value>Install/Update RE1 Classic Rebirth</value>
   </data>
-  <data name="bGMXMLEditorToolStripMenuItem2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>161, 22</value>
-  </data>
   <data name="bGMXMLEditorToolStripMenuItem2.Text" xml:space="preserve">
     <value>BGM XML Editor</value>
+  </data>
+  <data name="fileEditorToolStripMenuItem.Text" xml:space="preserve">
+    <value>File Editor</value>
   </data>
   <data name="classicRebirthToolsToolStripMenuItem2.Text" xml:space="preserve">
     <value>Classic Rebirth Tools</value>
@@ -331,9 +334,6 @@
   </data>
   <data name="bIO151997ToolStripMenuItem.Text" xml:space="preserve">
     <value>BIO1.5 (1997)</value>
-  </data>
-  <data name="bSSToolStripMenuItem1.Enabled" type="System.Boolean, mscorlib">
-    <value>False</value>
   </data>
   <data name="bSSToolStripMenuItem1.Text" xml:space="preserve">
     <value>BSS</value>
@@ -539,6 +539,12 @@
   <data name="bGMXMLEditorToolStripMenuItem1.Text" xml:space="preserve">
     <value>BGM XML Editor</value>
   </data>
+  <data name="fileEditorToolStripMenuItem1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>161, 22</value>
+  </data>
+  <data name="fileEditorToolStripMenuItem1.Text" xml:space="preserve">
+    <value>File Editor</value>
+  </data>
   <data name="classicRebirthToolsToolStripMenuItem1.Text" xml:space="preserve">
     <value>Classic Rebirth Tools</value>
   </data>
@@ -613,9 +619,6 @@
   </data>
   <data name="aRDToolStripMenuItem.Text" xml:space="preserve">
     <value>ARD (PS1)</value>
-  </data>
-  <data name="bSSToolStripMenuItem2.Enabled" type="System.Boolean, mscorlib">
-    <value>False</value>
   </data>
   <data name="bSSToolStripMenuItem2.Text" xml:space="preserve">
     <value>BSS</value>
@@ -743,23 +746,29 @@
   <data name="eMDToolStripMenuItem.Text" xml:space="preserve">
     <value>EMD</value>
   </data>
-  <data name="pIXToolStripMenuItem1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>250, 22</value>
-  </data>
   <data name="pIXToolStripMenuItem1.Text" xml:space="preserve">
     <value>PIX</value>
+  </data>
+  <data name="unpackOriginalToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>167, 22</value>
   </data>
   <data name="unpackOriginalToolStripMenuItem.Text" xml:space="preserve">
     <value>Unpack (Original)</value>
   </data>
+  <data name="repackOriginalToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>167, 22</value>
+  </data>
   <data name="repackOriginalToolStripMenuItem.Text" xml:space="preserve">
     <value>Repack (Original)</value>
   </data>
-  <data name="toolStripSeparator10.Size" type="System.Drawing.Size, System.Drawing">
-    <value>177, 6</value>
+  <data name="unpackEditableToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>167, 22</value>
   </data>
   <data name="unpackEditableToolStripMenuItem.Text" xml:space="preserve">
     <value>Unpack (Editable)</value>
+  </data>
+  <data name="repackEditableToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>167, 22</value>
   </data>
   <data name="repackEditableToolStripMenuItem.Text" xml:space="preserve">
     <value>Repack (Editable)</value>
@@ -799,6 +808,12 @@
   </data>
   <data name="bGMXMLEditorToolStripMenuItem.Text" xml:space="preserve">
     <value>BGM XML Editor</value>
+  </data>
+  <data name="fileEditorToolStripMenuItem2.Size" type="System.Drawing.Size, System.Drawing">
+    <value>161, 22</value>
+  </data>
+  <data name="fileEditorToolStripMenuItem2.Text" xml:space="preserve">
+    <value>File Editor</value>
   </data>
   <data name="classicRebirthToolsToolStripMenuItem.Text" xml:space="preserve">
     <value>Classic Rebirth Tools</value>
@@ -893,6 +908,18 @@
   <data name="biorandToolStripMenuItem.Text" xml:space="preserve">
     <value>Biorand</value>
   </data>
+  <data name="fileEditorToolStripMenuItem3.Text" xml:space="preserve">
+    <value>File Editor</value>
+  </data>
+  <data name="bGMXMLEditorToolStripMenuItem3.Size" type="System.Drawing.Size, System.Drawing">
+    <value>180, 22</value>
+  </data>
+  <data name="bGMXMLEditorToolStripMenuItem3.Text" xml:space="preserve">
+    <value>BGM XML Editor</value>
+  </data>
+  <data name="classicRebirthToolStripMenuItem.Text" xml:space="preserve">
+    <value>Classic Rebirth</value>
+  </data>
   <data name="residentEvilBiohazardToolStripMenuItem.Text" xml:space="preserve">
     <value>Resident Evil / Biohazard</value>
   </data>
@@ -902,14 +929,8 @@
   <data name="decompressToolStripMenuItem.Text" xml:space="preserve">
     <value>Decompress</value>
   </data>
-  <data name="lZ770x100x11ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>171, 22</value>
-  </data>
   <data name="lZ770x100x11ToolStripMenuItem.Text" xml:space="preserve">
     <value>LZ77 (0x10/0x11)</value>
-  </data>
-  <data name="containerScannerToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>171, 22</value>
   </data>
   <data name="containerScannerToolStripMenuItem.Text" xml:space="preserve">
     <value>Container Scanner</value>

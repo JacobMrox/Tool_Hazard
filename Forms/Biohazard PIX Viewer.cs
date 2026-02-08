@@ -46,11 +46,17 @@ namespace Tool_Hazard.Forms
 
         private void pictureBox1_Click(object sender, EventArgs e)
         {
-
+            SetStatus("Why are you clicking this? This isn't Deadly Silence!");
         }
 
+        // ----------------------
         // UI stuff
-
+        // ----------------------
+        private void SetStatus(string text)
+        {
+            if (toolStripStatusLabel1 != null)
+                toolStripStatusLabel1.Text = text;
+        }
         private void CenterPictureBox()
         {
             if (pictureBox1.Image == null)
@@ -81,7 +87,7 @@ namespace Tool_Hazard.Forms
             sheet = null;
             _sheetPath = null;
             _iconIndex = 0;
-            label1.Text = "";
+            SetStatus("Sheet State Cleared!");
             UpdateNavButtons();
         }
 
@@ -89,6 +95,7 @@ namespace Tool_Hazard.Forms
         {
             _bgPath = null;
             _bgLoadedExt = null;
+            SetStatus("Cleared Background State!");
             UpdateNavButtons();
         }
 
@@ -96,6 +103,7 @@ namespace Tool_Hazard.Forms
         {
             _timPack = null;
             _timIndex = 0;
+            SetStatus("Cleared Tim State Pack!");
             UpdateNavButtons();
         }
 
@@ -260,12 +268,14 @@ namespace Tool_Hazard.Forms
             SetPictureBoxImage(bmp);
 
             // show "index" like TIMViewer
-            label1.Text = $"{_timIndex + 1}/{_timPack.Count}";
+            //toolStripStatusLabel1.Text = $"{_timIndex + 1}/{_timPack.Count}";
+            SetStatus($"Loaded {_timIndex + 1}/{_timPack.Count} from Tim Pack");
 
             // optional: disable/enable Next/Prev
             UpdateNavButtons();
         }
 
+        //File -> Open, Menu strip hooker 
         private void openToolStripMenuItem_Click(object sender, EventArgs e)
         {
             // Clear the sheet; just in case, before a new PIX:
@@ -355,8 +365,10 @@ namespace Tool_Hazard.Forms
             {
                 MessageBox.Show($"Failed to open file:\n{ex.Message}", "Open error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+            SetStatus("Loaded: " + ofd.FileName);
         }
 
+        //Save As Menustrip Hook
         private void saveToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (pictureBox1.Image is not Bitmap bmp)
@@ -451,7 +463,8 @@ namespace Tool_Hazard.Forms
             CenterPictureBox();
 
             // show "index/total" like multipack
-            label1.Text = $"{_iconIndex + 1}/{sheet.IconCount}";
+            //toolStripStatusLabel1.Text = $"{_iconIndex + 1}/{sheet.IconCount}";
+            SetStatus($"Loaded {_iconIndex + 1}/{sheet.IconCount} from PIX Sheet");
 
         }
 
