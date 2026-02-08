@@ -53,7 +53,10 @@ Inizialmente nato come White Day Mod Tool, si è evoluto in un toolkit completo 
   * Support for Message (.MSG) file editing for RE1,2,3
   * Support for viewing PIX files and converting them to PNG and BMP and vice versa.
   * SCD OpCode Editor (Only Biohazard 3 tested); with drag-drop updatable opcode database in the form of .json files based on [CRE-SCD-BHS Biohazard SCD Editor](https://github.com/3lric/CRE-SCD-BHS/)
-  * Ability to Install [Gemini-Loboto3](https://github.com/Gemini-Loboto3)'s [Classic Rebirth](https://classicrebirth.com/) patch from the tool's interface.
+  * Classic Rebirth
+    * Ability to Install [Gemini-Loboto3](https://github.com/Gemini-Loboto3)'s [Classic Rebirth](https://classicrebirth.com/) patch from the tool's interface.
+    * File Editor
+    * BGM XML Editor
 * White Day (2001):
   * NOP file extraction (the repack functionality is a work in progress).
   * Supports extraction of files with Korean character file names without the need of Locale Emulator.
