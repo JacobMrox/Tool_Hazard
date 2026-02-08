@@ -36,6 +36,7 @@
             lblStatus = new ToolStripStatusLabel();
             menuStrip1 = new MenuStrip();
             fileToolStripMenuItem = new ToolStripMenuItem();
+            newToolStripMenuItem = new ToolStripMenuItem();
             openToolStripMenuItem = new ToolStripMenuItem();
             saveToolStripMenuItem = new ToolStripMenuItem();
             saveAsToolStripMenuItem = new ToolStripMenuItem();
@@ -48,7 +49,6 @@
             fontToolStripMenuItem = new ToolStripMenuItem();
             selectEncodingxmlToolStripMenuItem = new ToolStripMenuItem();
             selectFontpngToolStripMenuItem = new ToolStripMenuItem();
-            newToolStripMenuItem = new ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)gridPages).BeginInit();
             ((System.ComponentModel.ISupportInitialize)picPreview).BeginInit();
             statusStrip1.SuspendLayout();
@@ -61,6 +61,7 @@
             gridPages.Columns.AddRange(new DataGridViewColumn[] { Column1 });
             gridPages.Location = new Point(10, 32);
             gridPages.Name = "gridPages";
+            gridPages.RowHeadersWidthSizeMode = DataGridViewRowHeadersWidthSizeMode.AutoSizeToAllHeaders;
             gridPages.Size = new Size(240, 237);
             gridPages.TabIndex = 0;
             // 
@@ -116,6 +117,13 @@
             fileToolStripMenuItem.Size = new Size(37, 20);
             fileToolStripMenuItem.Text = "File";
             // 
+            // newToolStripMenuItem
+            // 
+            newToolStripMenuItem.Name = "newToolStripMenuItem";
+            newToolStripMenuItem.Size = new Size(180, 22);
+            newToolStripMenuItem.Text = "New";
+            newToolStripMenuItem.Click += newToolStripMenuItem_Click;
+            // 
             // openToolStripMenuItem
             // 
             openToolStripMenuItem.Name = "openToolStripMenuItem";
@@ -154,28 +162,28 @@
             // addPageToolStripMenuItem
             // 
             addPageToolStripMenuItem.Name = "addPageToolStripMenuItem";
-            addPageToolStripMenuItem.Size = new Size(138, 22);
+            addPageToolStripMenuItem.Size = new Size(180, 22);
             addPageToolStripMenuItem.Text = "Add Page";
             addPageToolStripMenuItem.Click += addPageToolStripMenuItem_Click;
             // 
             // deletePageToolStripMenuItem
             // 
             deletePageToolStripMenuItem.Name = "deletePageToolStripMenuItem";
-            deletePageToolStripMenuItem.Size = new Size(138, 22);
+            deletePageToolStripMenuItem.Size = new Size(180, 22);
             deletePageToolStripMenuItem.Text = "Delete Page";
             deletePageToolStripMenuItem.Click += deletePageToolStripMenuItem_Click;
             // 
             // moveUpToolStripMenuItem
             // 
             moveUpToolStripMenuItem.Name = "moveUpToolStripMenuItem";
-            moveUpToolStripMenuItem.Size = new Size(138, 22);
+            moveUpToolStripMenuItem.Size = new Size(180, 22);
             moveUpToolStripMenuItem.Text = "Move Up";
             moveUpToolStripMenuItem.Click += moveUpToolStripMenuItem_Click;
             // 
             // moveDownToolStripMenuItem
             // 
             moveDownToolStripMenuItem.Name = "moveDownToolStripMenuItem";
-            moveDownToolStripMenuItem.Size = new Size(138, 22);
+            moveDownToolStripMenuItem.Size = new Size(180, 22);
             moveDownToolStripMenuItem.Text = "Move Down";
             moveDownToolStripMenuItem.Click += moveDownToolStripMenuItem_Click;
             // 
@@ -200,13 +208,6 @@
             selectFontpngToolStripMenuItem.Text = "Select Font.png";
             selectFontpngToolStripMenuItem.Click += selectFontpngToolStripMenuItem_Click;
             // 
-            // newToolStripMenuItem
-            // 
-            newToolStripMenuItem.Name = "newToolStripMenuItem";
-            newToolStripMenuItem.Size = new Size(180, 22);
-            newToolStripMenuItem.Text = "New";
-            newToolStripMenuItem.Click += newToolStripMenuItem_Click;
-            // 
             // BiohazardFileEditor
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -217,9 +218,11 @@
             Controls.Add(picPreview);
             Controls.Add(txtPage);
             Controls.Add(gridPages);
+            FormBorderStyle = FormBorderStyle.Fixed3D;
             MainMenuStrip = menuStrip1;
             Name = "BiohazardFileEditor";
-            Text = "BiohazardFileEditor";
+            StartPosition = FormStartPosition.CenterScreen;
+            Text = "Biohazard File Editor";
             ((System.ComponentModel.ISupportInitialize)gridPages).EndInit();
             ((System.ComponentModel.ISupportInitialize)picPreview).EndInit();
             statusStrip1.ResumeLayout(false);

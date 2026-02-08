@@ -29,6 +29,7 @@ namespace Tool_Hazard.Biohazard.FileEditor
 
         private Bitmap? _font;
         private readonly FileEncoding _encoding;
+        private int _cols = 16;
 
         // If true: treat alpha==0 as transparent (normal PNG transparency)
         // If false: treat RGB==0,0,0 as transparent (old colorkey behavior)
@@ -50,6 +51,10 @@ namespace Tool_Hazard.Biohazard.FileEditor
             // Auto-detect transparency style:
             // If we find any pixel with A < 255, assume proper alpha transparency is used.
             _useAlphaTransparency = DetectAlphaUsage(_font);
+
+            // auto-detect columns (tile width is 16)
+            _cols = Math.Max(1, _font.Width / 16);
+
         }
 
         public Bitmap RenderPage(string text)
@@ -160,6 +165,7 @@ namespace Tool_Hazard.Biohazard.FileEditor
             return w;
         }
 
+        /*
         private int DrawChar(char ch, Bitmap dst, int px, int py)
         {
             if (ch == ' ')
@@ -205,6 +211,65 @@ namespace Tool_Hazard.Biohazard.FileEditor
             }
 
             return px + _encoding.GetWidthByEncode(encode);
+        }
+        */
+
+        private int DrawChar(char ch, Bitmap dst, int px, int py)
+        {
+            if (ch == ' ')
+            {
+                int eSpace = _encoding.FindEncode(' ');
+                return px + _encoding.GetWidthByEncode(eSpace);
+            }
+
+            // ✅ IMPORTANT: use FULL encode index (not & 0xFF)
+            int encodeFull = _encoding.FindEncode(ch);
+
+            // Some tables may use high ranges for control codes; ignore drawing those
+            // (keep earlier behavior; safe)
+            if ((encodeFull >> 8) >= 0xEE)
+                return px;
+
+            int glyphIndex = encodeFull & 0xFFFF;
+
+            var font = _font!;
+
+            // ✅ Auto atlas addressing based on detected columns
+            int cx = (glyphIndex % _cols) * 16;
+            int cy = (glyphIndex / _cols) * 16;
+
+            // If out of bounds, don't crash; just advance
+            if (cx < 0 || cy < 0 || cx + 16 > font.Width || cy + 16 > font.Height)
+                return px + _encoding.GetWidthByEncode(encodeFull);
+
+            for (int y = 0; y < 16; y++)
+            {
+                int dy = py + y;
+                if ((uint)dy >= (uint)PageHeight) continue;
+
+                for (int x = 0; x < 16; x++)
+                {
+                    int dx = px + x;
+                    if ((uint)dx >= (uint)PageWidth) continue;
+
+                    Color col = font.GetPixel(cx + x, cy + y);
+
+                    if (_useAlphaTransparency)
+                    {
+                        if (col.A == 0)
+                            continue;
+                    }
+                    else
+                    {
+                        if (col.R == 0 && col.G == 0 && col.B == 0)
+                            continue;
+                    }
+
+                    dst.SetPixel(dx, dy, col);
+                }
+            }
+
+            return px + _encoding.GetWidthByEncode(encodeFull);
         }
 
         private static bool DetectAlphaUsage(Bitmap bmp)
