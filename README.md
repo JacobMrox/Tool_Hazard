@@ -10,6 +10,7 @@ Tool Hazardは、C#（.NET 8、WinForms）で書かれた、最新のオール�
 <img width="402" height="282" alt="image" src="https://github.com/user-attachments/assets/2a2f830b-69a0-449c-a529-fc48a1b94b46" />
 <img width="402" height="282" alt="image" src="https://github.com/user-attachments/assets/51d64407-c6dd-48fe-84f5-bd529e9040a0" />
 <img width="402" height="282" alt="image" src="https://github.com/user-attachments/assets/b282cbfd-0aaa-494c-b257-37f2ced9bd0c" />
+<img width="402" height="282" alt="image" src="https://github.com/user-attachments/assets/d2a1339e-bd60-4aa6-8670-31926c37d85b" />
 
 🇸🇦 العربية
 
@@ -78,3 +79,4 @@ This is to be compiled in Visual Studio 2026. For compiled ready-to-use release,
 * Utilizes [Biohazard-utils](https://github.com/biorand/biohazard-utils/) .Net library by Intel.Orca for some file formats.
 * Umbrella Corp [wallpaper](https://www.deviantart.com/grungestyle/art/umbrella-corp-wallpaper-v4-142492419) by GrungeStyle.
 * Leo2236 for providing lots of tools for the Resident Evil/Biohazard community including source codes, some of which were used in this project.
+* [Gemini-Loboto3](https://github.com/Gemini-Loboto3): for his immense work and contribution to the RE Community, some of my work which is based or inspired by his work, including the File Editor.
