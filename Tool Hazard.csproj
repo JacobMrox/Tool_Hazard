@@ -24,7 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="icon.ico" />
+    <EmbeddedResource Include="icon.ico" />
     <Content Include="Resources\Biohazard\encoding.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -53,6 +53,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Biohazard\PIX\Res.res" />
+    <EmbeddedResource Include="C:\Users\user\.nuget\packages\csharp-prs\2.1.3\build\csharp-prs.targets" />
     <EmbeddedResource Include="C:\Users\user\.nuget\packages\csharp-prs\2.1.3\build\dlang-prs32.dll" />
     <EmbeddedResource Include="C:\Users\user\.nuget\packages\csharp-prs\2.1.3\build\dlang-prs64.dll" />
   </ItemGroup>
@@ -85,6 +86,18 @@
 
   <ItemGroup>
     <None Remove="C:\Users\user\.nuget\packages\csharp-prs\2.1.3\build\dlang-prs32.dll" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="C:\Users\user\.nuget\packages\csharp-prs\2.1.3\build\csharp-prs.targets" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="C:\Users\user\.nuget\packages\sevenzipextractor\1.0.19\build\x64\7z.dll" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="C:\Users\user\.nuget\packages\sevenzipextractor\1.0.19\build\x86\7z.dll" />
   </ItemGroup>
 
 </Project>
