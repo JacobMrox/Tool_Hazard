@@ -1,19 +1,34 @@
-using System.Drawing.Drawing2D;
-using System.Drawing.Imaging;
-using System.Runtime.InteropServices;
+using System;
+using System.Windows.Forms;
+
+// Alias the form type so it doesn't conflict with Program.Main()
+using MainForm = Tool_Hazard.Main;
 
 namespace Tool_Hazard
 {
-    ///  The main entry point for the application.
+    /// <summary>The main entry point for the application.</summary>
     internal static class Program
     {
         [STAThread]
         static void Main()
         {
-            // To customize application configuration such as set high DPI settings or default font,
+            // Initialize the application configuration (e.g. play startup sound if enabled)
+            // To customize application configuration such as set high DPI settings or default font, 
             // see https://aka.ms/applicationconfiguration.
             ApplicationConfiguration.Initialize();
-            Application.Run(new Main());
+
+            var main = new MainForm();
+
+            main.Shown += (_, __) =>
+            {
+                if (Properties.Settings.Default.PlayStartupSound)
+                {
+                    // This calls the *form type* method (static), not Program.Main()
+                    MainForm.PlayEmbeddedWav("Tool_Hazard.Resources.POWER-ON.WAV");
+                }
+            };
+
+            Application.Run(main);
         }
     }
 }

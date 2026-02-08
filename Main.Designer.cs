@@ -177,6 +177,7 @@
             biorandToolStripMenuItem = new ToolStripMenuItem();
             classicRebirthToolStripMenuItem = new ToolStripMenuItem();
             fileEditorToolStripMenuItem3 = new ToolStripMenuItem();
+            bGMXMLEditorToolStripMenuItem3 = new ToolStripMenuItem();
             nintendoToolStripMenuItem = new ToolStripMenuItem();
             lZ770x100x11ToolStripMenuItem = new ToolStripMenuItem();
             decompressToolStripMenuItem = new ToolStripMenuItem();
@@ -194,7 +195,7 @@
             notifyIcon1 = new NotifyIcon(components);
             statusStrip1 = new StatusStrip();
             toolStripStatusLabel1 = new ToolStripStatusLabel();
-            bGMXMLEditorToolStripMenuItem3 = new ToolStripMenuItem();
+            playStartupSoundToolStripMenuItem = new ToolStripMenuItem();
             menuStrip1.SuspendLayout();
             statusStrip1.SuspendLayout();
             SuspendLayout();
@@ -1034,6 +1035,12 @@
             fileEditorToolStripMenuItem3.Name = "fileEditorToolStripMenuItem3";
             fileEditorToolStripMenuItem3.Click += fileEditorToolStripMenuItem3_Click;
             // 
+            // bGMXMLEditorToolStripMenuItem3
+            // 
+            resources.ApplyResources(bGMXMLEditorToolStripMenuItem3, "bGMXMLEditorToolStripMenuItem3");
+            bGMXMLEditorToolStripMenuItem3.Name = "bGMXMLEditorToolStripMenuItem3";
+            bGMXMLEditorToolStripMenuItem3.Click += bGMXMLEditorToolStripMenuItem3_Click;
+            // 
             // nintendoToolStripMenuItem
             // 
             resources.ApplyResources(nintendoToolStripMenuItem, "nintendoToolStripMenuItem");
@@ -1096,7 +1103,7 @@
             // helpToolStripMenuItem
             // 
             resources.ApplyResources(helpToolStripMenuItem, "helpToolStripMenuItem");
-            helpToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { versionToolStripMenuItem, documentationToolStripMenuItem, checkForUpdatesToolStripMenuItem });
+            helpToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { versionToolStripMenuItem, documentationToolStripMenuItem, checkForUpdatesToolStripMenuItem, playStartupSoundToolStripMenuItem });
             helpToolStripMenuItem.Name = "helpToolStripMenuItem";
             // 
             // versionToolStripMenuItem
@@ -1131,11 +1138,13 @@
             toolStripStatusLabel1.BackColor = SystemColors.ButtonFace;
             toolStripStatusLabel1.Name = "toolStripStatusLabel1";
             // 
-            // bGMXMLEditorToolStripMenuItem3
+            // playStartupSoundToolStripMenuItem
             // 
-            resources.ApplyResources(bGMXMLEditorToolStripMenuItem3, "bGMXMLEditorToolStripMenuItem3");
-            bGMXMLEditorToolStripMenuItem3.Name = "bGMXMLEditorToolStripMenuItem3";
-            bGMXMLEditorToolStripMenuItem3.Click += bGMXMLEditorToolStripMenuItem3_Click;
+            resources.ApplyResources(playStartupSoundToolStripMenuItem, "playStartupSoundToolStripMenuItem");
+            playStartupSoundToolStripMenuItem.Checked = true;
+            playStartupSoundToolStripMenuItem.CheckOnClick = true;
+            playStartupSoundToolStripMenuItem.CheckState = CheckState.Checked;
+            playStartupSoundToolStripMenuItem.Name = "playStartupSoundToolStripMenuItem";
             // 
             // Main
             // 
@@ -1325,5 +1334,6 @@
         private ToolStripMenuItem classicRebirthToolStripMenuItem;
         private ToolStripMenuItem fileEditorToolStripMenuItem3;
         private ToolStripMenuItem bGMXMLEditorToolStripMenuItem3;
+        private ToolStripMenuItem playStartupSoundToolStripMenuItem;
     }
 }

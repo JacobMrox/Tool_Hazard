@@ -1,11 +1,13 @@
-﻿using IntelOrca.Biohazard;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Drawing.Imaging;
+﻿using System;
 using System.IO;
 using System.Text;
+using System.Media;
+using System.Reflection;
+using IntelOrca.Biohazard;
 using System.Windows.Forms;
+using System.ComponentModel;
+using System.Drawing.Imaging;
+using System.Collections.Generic;
 using Tool_Hazard.Biohazard;
 using Tool_Hazard.Biohazard.emd;
 using Tool_Hazard.Biohazard.RDT;
@@ -44,9 +46,32 @@ namespace Tool_Hazard
             }
             InitializeComponent();
             UpdateStatus("Ready");
-            //Bio3RDTunpackToolStripMenuItem.Click += Bio3RdtTool.OnUnpackClick;
-            //Bio3RDTrepackToolStripMenuItem.Click += Bio3RdtTool.OnRepackClick;
+
+            // Sync menu check state from saved setting
+            playStartupSoundToolStripMenuItem.Checked = Properties.Settings.Default.PlayStartupSound;
+
+            playStartupSoundToolStripMenuItem.CheckedChanged += (_, __) =>
+            {
+                Properties.Settings.Default.PlayStartupSound = playStartupSoundToolStripMenuItem.Checked;
+                Properties.Settings.Default.Save();
+            };
         }
+        // --------------------------------------------------------------------
+        // Helpers
+        // --------------------------------------------------------------------
+
+        // Play the embedded WAV at startupPlays a .wav sound embedded as a resource in the assembly.
+        // The resource name is the full namespace path to the .wav file.
+        public static void PlayEmbeddedWav(string resourceName)
+        {
+            var asm = Assembly.GetExecutingAssembly();
+            using Stream? s = asm.GetManifestResourceStream(resourceName);
+            if (s == null) return;
+
+            using var player = new SoundPlayer(s);
+            player.Play();
+        }
+
         //Update Status Bar Text
         public void UpdateStatus(string text)
         {
@@ -70,6 +95,10 @@ namespace Tool_Hazard
                 MessageBox.Show($"Error Updating Status Bar to '{text}'.\n\nThe error is: {ex}", "UpdateStatus Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
+        // --------------------------------------------------------------------
+        // Menu Hooks
+        // --------------------------------------------------------------------
 
         //White Day (2001) NOP Unpack
         private async void unpackToolStripMenuItem1_Click(object sender, EventArgs e)

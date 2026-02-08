@@ -257,8 +257,14 @@
   <data name="menuInstallRE1CR.Text" xml:space="preserve">
     <value>Install/Update RE1 Classic Rebirth</value>
   </data>
+  <data name="bGMXMLEditorToolStripMenuItem2.Size" type="System.Drawing.Size, System.Drawing">
+    <value>161, 22</value>
+  </data>
   <data name="bGMXMLEditorToolStripMenuItem2.Text" xml:space="preserve">
     <value>BGM XML Editor</value>
+  </data>
+  <data name="fileEditorToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>161, 22</value>
   </data>
   <data name="fileEditorToolStripMenuItem.Text" xml:space="preserve">
     <value>File Editor</value>
@@ -908,11 +914,14 @@
   <data name="biorandToolStripMenuItem.Text" xml:space="preserve">
     <value>Biorand</value>
   </data>
+  <data name="fileEditorToolStripMenuItem3.Size" type="System.Drawing.Size, System.Drawing">
+    <value>161, 22</value>
+  </data>
   <data name="fileEditorToolStripMenuItem3.Text" xml:space="preserve">
     <value>File Editor</value>
   </data>
   <data name="bGMXMLEditorToolStripMenuItem3.Size" type="System.Drawing.Size, System.Drawing">
-    <value>180, 22</value>
+    <value>161, 22</value>
   </data>
   <data name="bGMXMLEditorToolStripMenuItem3.Text" xml:space="preserve">
     <value>BGM XML Editor</value>
@@ -929,8 +938,14 @@
   <data name="decompressToolStripMenuItem.Text" xml:space="preserve">
     <value>Decompress</value>
   </data>
+  <data name="lZ770x100x11ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>171, 22</value>
+  </data>
   <data name="lZ770x100x11ToolStripMenuItem.Text" xml:space="preserve">
     <value>LZ77 (0x10/0x11)</value>
+  </data>
+  <data name="containerScannerToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>171, 22</value>
   </data>
   <data name="containerScannerToolStripMenuItem.Text" xml:space="preserve">
     <value>Container Scanner</value>
@@ -983,17 +998,11 @@
   <data name="versionToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
-  <data name="versionToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>171, 22</value>
-  </data>
   <data name="versionToolStripMenuItem.Text" xml:space="preserve">
     <value>About</value>
   </data>
   <data name="documentationToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
-  </data>
-  <data name="documentationToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>171, 22</value>
   </data>
   <data name="documentationToolStripMenuItem.Text" xml:space="preserve">
     <value>Documentation</value>
@@ -1001,17 +1010,20 @@
   <data name="checkForUpdatesToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
-  <data name="checkForUpdatesToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>171, 22</value>
-  </data>
   <data name="checkForUpdatesToolStripMenuItem.Text" xml:space="preserve">
     <value>Check for Updates</value>
   </data>
+  <data name="playStartupSoundToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>180, 22</value>
+  </data>
+  <data name="playStartupSoundToolStripMenuItem.Text" xml:space="preserve">
+    <value>Play Startup Sound</value>
+  </data>
   <data name="helpToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>44, 19</value>
+    <value>61, 19</value>
   </data>
   <data name="helpToolStripMenuItem.Text" xml:space="preserve">
-    <value>Help</value>
+    <value>Settings</value>
   </data>
   <data name="menuStrip1.Size" type="System.Drawing.Size, System.Drawing">
     <value>714, 42</value>
