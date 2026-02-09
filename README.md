@@ -55,6 +55,7 @@ Inizialmente nato come White Day Mod Tool, si è evoluto in un toolkit completo 
   * Support for Message (.MSG) file editing for RE1,2,3
   * Support for viewing PIX files and converting them to PNG and BMP and vice versa.
   * SCD OpCode Editor (Only Biohazard 3 tested); with drag-drop updatable opcode database in the form of .json files based on [CRE-SCD-BHS Biohazard SCD Editor](https://github.com/3lric/CRE-SCD-BHS/)
+  * Support for RE2 (1998) PC Sound Files, complete with playaback, export, repack, with OGG (Classic Rebirth) support as well.
   * Classic Rebirth
     * Ability to Install [Gemini-Loboto3](https://github.com/Gemini-Loboto3)'s [Classic Rebirth](https://classicrebirth.com/) patch from the tool's interface.
     * File Editor
