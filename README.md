@@ -12,6 +12,7 @@ Tool Hazardは、C#（.NET 8、WinForms）で書かれた、最新のオール�
 <img width="402" height="282" alt="image" src="https://github.com/user-attachments/assets/b282cbfd-0aaa-494c-b257-37f2ced9bd0c" />
 <img width="402" height="282" alt="image" src="https://github.com/user-attachments/assets/d2a1339e-bd60-4aa6-8670-31926c37d85b" />
 <img width="402" height="282" alt="image" src="https://github.com/user-attachments/assets/06f057fe-8604-4ade-ae1b-38ca77e9d844" />
+<img width="402" height="282" alt="image" src="https://github.com/user-attachments/assets/6fb3e73f-5bc4-4765-9f31-4ed7f1382f3d" />
 
 🇸🇦 العربية
 
@@ -54,6 +55,7 @@ Inizialmente nato come White Day Mod Tool, si è evoluto in un toolkit completo 
   * Support for Message (.MSG) file editing for RE1,2,3
   * Support for viewing PIX files and converting them to PNG and BMP and vice versa.
   * SCD OpCode Editor (Only Biohazard 3 tested); with drag-drop updatable opcode database in the form of .json files based on [CRE-SCD-BHS Biohazard SCD Editor](https://github.com/3lric/CRE-SCD-BHS/)
+  * Support for RE2 (1998) PC Sound Files, complete with playaback, export, repack, with OGG (Classic Rebirth) support as well.
   * Classic Rebirth
     * Ability to Install [Gemini-Loboto3](https://github.com/Gemini-Loboto3)'s [Classic Rebirth](https://classicrebirth.com/) patch from the tool's interface.
     * File Editor
