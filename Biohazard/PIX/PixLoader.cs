@@ -185,7 +185,7 @@ namespace Tool_Hazard.Biohazard.PIX
     // --------------------------
     public static class Tim
     {
-        public static Bitmap DecodeToBitmap(byte[] tim)
+        public static Bitmap DecodeToBitmap(byte[] tim, int clutIndex = 0)
         {
             using var ms = new MemoryStream(tim, writable: false);
             using var br = new BinaryReader(ms);
@@ -197,22 +197,30 @@ namespace Tool_Hazard.Biohazard.PIX
             int bppMode = (int)(flags & 0x7);
             bool hasClut = (flags & 0x8) != 0;
 
-            ushort[]? clut = null;
+            ushort[]? selectedClut = null;
 
             if (hasClut)
             {
                 uint clutBlockSize = br.ReadUInt32(); // includes this header (12 bytes)
                 ushort clutX = br.ReadUInt16();
                 ushort clutY = br.ReadUInt16();
-                ushort clutW = br.ReadUInt16();
-                ushort clutH = br.ReadUInt16();
+                ushort clutW = br.ReadUInt16(); // colors per CLUT (16 for 4bpp, 256 for 8bpp)
+                ushort clutH = br.ReadUInt16(); // number of CLUT sets (rows)
 
-                int colors = clutW * clutH; // for 8bpp often 256*1
-                clut = new ushort[colors];
-                for (int i = 0; i < colors; i++)
-                    clut[i] = br.ReadUInt16();
+                int colorsTotal = clutW * clutH;
+                var allCluts = new ushort[colorsTotal];
 
-                // TIM blocks are aligned, but BinaryReader position is already correct due to reading exact counts
+                for (int i = 0; i < colorsTotal; i++)
+                    allCluts[i] = br.ReadUInt16();
+
+                // clamp and select one CLUT row
+                int clutCount = Math.Max(1, (int)clutH);
+                if (clutIndex < 0) clutIndex = 0;
+                if (clutIndex >= clutCount) clutIndex = 0;
+
+                int rowSize = clutW;
+                selectedClut = new ushort[rowSize];
+                Buffer.BlockCopy(allCluts, clutIndex * rowSize * sizeof(ushort), selectedClut, 0, rowSize * sizeof(ushort));
             }
 
             // Image block
@@ -228,7 +236,7 @@ namespace Tool_Hazard.Biohazard.PIX
                 0 => wWords * 4, // 4bpp: 1 word = 4 pixels
                 1 => wWords * 2, // 8bpp: 1 word = 2 pixels
                 2 => wWords * 1, // 16bpp: 1 word = 1 pixel
-                3 => (wWords * 1) / 1, // 24bpp stored as 3 bytes per pixel; width formula is quirky, but we’ll handle by bytes.
+                3 => (wWords * 1) / 1, // 24bpp handled by bytes in Decode24bpp
                 _ => throw new NotSupportedException("Unsupported TIM bpp mode.")
             };
 
@@ -236,14 +244,13 @@ namespace Tool_Hazard.Biohazard.PIX
 
             return bppMode switch
             {
-                0 => Decode4bpp(widthPx, h, imgData, clut),
-                1 => Decode8bpp(widthPx, h, imgData, clut),
+                0 => Decode4bpp(widthPx, h, imgData, selectedClut),
+                1 => Decode8bpp(widthPx, h, imgData, selectedClut),
                 2 => Decode16bpp(widthPx, h, imgData),
-                3 => Decode24bpp(wWords, h, imgData), // uses words rather than pixels directly
+                3 => Decode24bpp(wWords, h, imgData),
                 _ => throw new NotSupportedException()
             };
         }
-
         private static Bitmap Decode8bpp(int w, int h, byte[] data, ushort[]? clut)
         {
             if (clut is null || clut.Length < 256)

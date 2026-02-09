@@ -29,6 +29,10 @@ namespace Tool_Hazard.Forms
         private List<byte[]>? _timPack;
         private int _timIndex = 0;
 
+        // CLUT (palette) viewing state for single TIMs that contain multiple CLUTs
+        private int _clutIndex = 0;
+        private int _clutCount = 1;
+
         // Alternative to [DefaultPalette512] base64 string: read from embedded resource (extracted from Biohazard/PIX/Res.res)
         // Call this once and cache it somewhere static if necessary
         byte[] palette512 = BorlandResReader.ReadPalette512FromEmbeddedRes("Tool_Hazard.Biohazard.PIX.Res.res");
@@ -81,6 +85,26 @@ namespace Tool_Hazard.Forms
         // ----------------------
         // Helper methods
         // ----------------------
+
+        private static int GetTimClutCount(byte[] tim)
+        {
+            // TIM: magic(4) flags(4) [clut block] [image block]
+            if (tim.Length < 8) return 1;
+
+            uint flags = BitConverter.ToUInt32(tim, 4);
+            bool hasClut = (flags & 0x8) != 0;
+            if (!hasClut) return 1;
+
+            int pos = 8;
+            if (pos + 12 > tim.Length) return 1;
+
+            // CLUT block:
+            // size(4), x(2), y(2), w(2), h(2)
+            // w = number of colors per CLUT (16 for 4bpp, 256 for 8bpp)
+            // h = number of CLUT rows (this is the # of CLUT sets)
+            ushort h = BitConverter.ToUInt16(tim, pos + 10);
+            return Math.Max(1, (int)h);
+        }
 
         private void ClearSheetState()
         {
@@ -259,21 +283,26 @@ namespace Tool_Hazard.Forms
             if (_timPack == null || _timPack.Count == 0)
                 return;
 
-            // clamp index
+            // clamp tim index
             if (_timIndex < 0) _timIndex = 0;
             if (_timIndex >= _timPack.Count) _timIndex = _timPack.Count - 1;
 
-            // Decode current TIM and show it
-            var bmp = Tim.DecodeToBitmap(_timPack[_timIndex]);
+            // update clut count for this TIM
+            _clutCount = GetTimClutCount(_timPack[_timIndex]);
+            if (_clutIndex < 0) _clutIndex = 0;
+            if (_clutIndex >= _clutCount) _clutIndex = 0;
+
+            // Decode current TIM using selected CLUT and show it
+            var bmp = Tim.DecodeToBitmap(_timPack[_timIndex], clutIndex: _clutIndex);
             SetPictureBoxImage(bmp);
 
-            // show "index" like TIMViewer
-            //toolStripStatusLabel1.Text = $"{_timIndex + 1}/{_timPack.Count}";
-            SetStatus($"Loaded {_timIndex + 1}/{_timPack.Count} from Tim Pack");
+            // show "tim/clut" status
+            SetStatus($"Loaded TIM {_timIndex + 1}/{_timPack.Count}  |  CLUT {_clutIndex + 1}/{_clutCount}");
 
             // optional: disable/enable Next/Prev
             UpdateNavButtons();
         }
+
 
         //File -> Open, Menu strip hooker 
         private void openToolStripMenuItem_Click(object sender, EventArgs e)
@@ -658,14 +687,25 @@ namespace Tool_Hazard.Forms
             }
 
             // If no sheet is loaded, but we have a TIM pack (Multi TIM / TIM-in-PIX), Next/Prev moves between TIM blocks
+            // If Shift held: change CLUT instead of TIM
+            bool shift = (ModifierKeys & Keys.Shift) == Keys.Shift;
+
             if (_timPack != null && _timPack.Count > 0)
             {
-                _timIndex++;
-                if (_timIndex >= _timPack.Count)
-                    _timIndex = 0; // wrap
+                if (shift)
+                {
+                    _clutCount = GetTimClutCount(_timPack[_timIndex]);
+                    _clutIndex++;
+                    if (_clutIndex >= _clutCount) _clutIndex = 0;
+                    RenderCurrentTimFromPack();
+                    return;
+                }
 
+                _timIndex++;
+                if (_timIndex >= _timPack.Count) _timIndex = 0;
+                _clutIndex = 0; // reset palette when switching TIM
                 RenderCurrentTimFromPack();
-                UpdateNavButtons();
+                return;
             }
         }
 
@@ -688,10 +728,26 @@ namespace Tool_Hazard.Forms
             // If no sheet is loaded, but we have a TIM pack (Multi TIM / TIM-in-PIX), Next/Prev moves between TIM blocks
             if (_timPack != null && _timPack.Count > 0)
             {
+                // If Shift held: change CLUT instead of TIM
+                bool shift = (ModifierKeys & Keys.Shift) == Keys.Shift;
+
+                if (shift)
+                {
+                    _clutCount = GetTimClutCount(_timPack[_timIndex]);
+
+                    _clutIndex--;
+                    if (_clutIndex < 0)
+                        _clutIndex = _clutCount - 1; // wrap
+
+                    RenderCurrentTimFromPack();
+                    return;
+                }
+
                 _timIndex--;
                 if (_timIndex < 0)
                     _timIndex = _timPack.Count - 1; // wrap
 
+                _clutIndex = 0; // reset palette when switching TIM
                 RenderCurrentTimFromPack();
                 UpdateNavButtons();
             }
@@ -731,7 +787,8 @@ namespace Tool_Hazard.Forms
             }
 
             // Export as PNG/BMP by decoding to bitmap
-            using var bmp = Tim.DecodeToBitmap(_timPack![_timIndex]);
+            //using var bmp = Tim.DecodeToBitmap(_timPack![_timIndex]);
+            using var bmp = Tim.DecodeToBitmap(_timPack[_timIndex], _clutIndex);
 
             if (ext == ".png")
                 bmp.Save(sfd.FileName, ImageFormat.Png);
