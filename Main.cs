@@ -179,15 +179,6 @@ namespace Tool_Hazard
                 }
             }
         }
-        private void repackToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            //Delete This
-        }
-
-        private void fontEditorToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            //Delete this
-        }
 
         //File -> Exit
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
@@ -249,6 +240,8 @@ namespace Tool_Hazard
         }
 
         //Clasic Rebirth Installers Menu Hooks
+
+        //RE1 Classic Rebirth Installer Menu Hook
         private async void menuInstallRE1CR_Click_1(object sender, EventArgs e)
         {
             System.Media.SystemSounds.Exclamation.Play();//Play sound to grab attention
@@ -267,6 +260,7 @@ namespace Tool_Hazard
             }
         }
 
+        //RE2 Classic Rebirth Installer Menu Hook
         private async void menuInstallRE2CR_Click(object sender, EventArgs e)
         {
             System.Media.SystemSounds.Exclamation.Play();//Play sound to grab attention
@@ -285,6 +279,7 @@ namespace Tool_Hazard
             }
         }
 
+        //RE3 Classic Rebirth Installer Menu Hook
         private async void menuInstallRE3CR_Click(object sender, EventArgs e)
         {
             System.Media.SystemSounds.Exclamation.Play();//Play sound to grab attention
@@ -301,30 +296,6 @@ namespace Tool_Hazard
                 if (dlg.ShowDialog() == DialogResult.OK)
                     await rebirth.Install(CurrentBioVersion, dlg.SelectedPath);
             }
-        }
-
-        private void vHVBToWavToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            /*
-            // Call the conversion action methods sequentially.
-            // Note: Each one will trigger its own dialog, and then the conversion runs.
-
-            // Step 1: Open VH File Dialog
-            psSnd.OpenVhFile_Click(sender, e);
-
-            // Step 2: Open VB File Dialog
-            psSnd.OpenVbFile_Click(sender, e);
-
-            // Step 3: Select Output Directory Dialog
-            psSnd.SelectOutputDirectory_Click(sender, e);
-
-            // Step 4: Start Conversion
-            // This method internally checks if all paths are set before proceeding.
-            psSnd.Convert_Click(sender, e);
-            */
-
-            // 1. Create the new manager form, passing the paths
-
         }
 
         private void vBVHToolStripMenuItem_Click(object sender, EventArgs e)
