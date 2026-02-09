@@ -194,6 +194,7 @@
             notifyIcon1 = new NotifyIcon(components);
             statusStrip1 = new StatusStrip();
             toolStripStatusLabel1 = new ToolStripStatusLabel();
+            aDTPCToolStripMenuItem = new ToolStripMenuItem();
             menuStrip1.SuspendLayout();
             statusStrip1.SuspendLayout();
             SuspendLayout();
@@ -431,7 +432,7 @@
             // bIO2RE21998ToolStripMenuItem
             // 
             resources.ApplyResources(bIO2RE21998ToolStripMenuItem, "bIO2RE21998ToolStripMenuItem");
-            bIO2RE21998ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { bSSToolStripMenuItem1, rDTToolStripMenuItem1, mD1ToolStripMenuItem, eMDToolStripMenuItem1, pLDToolStripMenuItem1, plwToolStripMenuItem1, vHVBToolStripMenuItem, sAPToolStripMenuItem, toolStripSeparator1, installPatch110ToolStripMenuItem, menuInstallRE2CR, classicRebirthToolsToolStripMenuItem1 });
+            bIO2RE21998ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { bSSToolStripMenuItem1, aDTPCToolStripMenuItem, rDTToolStripMenuItem1, mD1ToolStripMenuItem, eMDToolStripMenuItem1, pLDToolStripMenuItem1, plwToolStripMenuItem1, vHVBToolStripMenuItem, sAPToolStripMenuItem, toolStripSeparator1, installPatch110ToolStripMenuItem, menuInstallRE2CR, classicRebirthToolsToolStripMenuItem1 });
             bIO2RE21998ToolStripMenuItem.Name = "bIO2RE21998ToolStripMenuItem";
             bIO2RE21998ToolStripMenuItem.Click += bIO2RE21998ToolStripMenuItem_Click;
             // 
@@ -1134,6 +1135,11 @@
             toolStripStatusLabel1.BackColor = SystemColors.ButtonFace;
             toolStripStatusLabel1.Name = "toolStripStatusLabel1";
             // 
+            // aDTPCToolStripMenuItem
+            // 
+            resources.ApplyResources(aDTPCToolStripMenuItem, "aDTPCToolStripMenuItem");
+            aDTPCToolStripMenuItem.Name = "aDTPCToolStripMenuItem";
+            // 
             // Main
             // 
             resources.ApplyResources(this, "$this");
@@ -1321,5 +1327,6 @@
         private ToolStripMenuItem fileEditorToolStripMenuItem3;
         private ToolStripMenuItem bGMXMLEditorToolStripMenuItem3;
         private ToolStripMenuItem playStartupSoundToolStripMenuItem;
+        private ToolStripMenuItem aDTPCToolStripMenuItem;
     }
 }
