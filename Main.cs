@@ -256,7 +256,7 @@ namespace Tool_Hazard
             {
                 using var dlg = new FolderBrowserDialog { Description = "Select Resident Evil 1 directory" };
                 if (dlg.ShowDialog() == DialogResult.OK)
-                    await rebirth.Install(CurrentBioVersion, dlg.SelectedPath);
+                    await rebirth.Install(BioVersion.Biohazard1, dlg.SelectedPath);
             }
         }
 
@@ -275,7 +275,7 @@ namespace Tool_Hazard
             {
                 using var dlg = new FolderBrowserDialog { Description = "Select Resident Evil 2 directory" };
                 if (dlg.ShowDialog() == DialogResult.OK)
-                    await rebirth.Install(CurrentBioVersion, dlg.SelectedPath);
+                    await rebirth.Install(BioVersion.Biohazard2, dlg.SelectedPath);
             }
         }
 
@@ -294,7 +294,7 @@ namespace Tool_Hazard
             {
                 using var dlg = new FolderBrowserDialog { Description = "Select Resident Evil 3 directory" };
                 if (dlg.ShowDialog() == DialogResult.OK)
-                    await rebirth.Install(CurrentBioVersion, dlg.SelectedPath);
+                    await rebirth.Install(BioVersion.Biohazard3, dlg.SelectedPath);
             }
         }
 
@@ -347,7 +347,7 @@ namespace Tool_Hazard
             string outputDir = Path.Combine(fbd.SelectedPath, rdtName);
             Directory.CreateDirectory(outputDir);
 
-            var unpacker = new RdtUnpacker(CurrentBioVersion, ofd.FileName, outputDir);
+            var unpacker = new RdtUnpacker(BioVersion.Biohazard1, ofd.FileName, outputDir);
             unpacker.Unpack();
             UpdateStatus("Bio1 RDT unpacked successfully!");
 
@@ -362,7 +362,7 @@ namespace Tool_Hazard
             };
             if (ofd.ShowDialog() != DialogResult.OK) return;
 
-            var packer = new RdtPacker(CurrentBioVersion, ofd.FileName);
+            var packer = new RdtPacker(BioVersion.Biohazard1, ofd.FileName);
             packer.Pack();
             UpdateStatus("Bio1 RDT repacked successfully!");
         }
@@ -384,7 +384,7 @@ namespace Tool_Hazard
 
             Directory.CreateDirectory(outputDir);
 
-            var unpacker = new RdtUnpacker(CurrentBioVersion, ofd.FileName, outputDir);
+            var unpacker = new RdtUnpacker(BioVersion.Biohazard2, ofd.FileName, outputDir);
             unpacker.Unpack();
             UpdateStatus("Bio2 RDT unpacked successfully!");
         }
@@ -399,7 +399,7 @@ namespace Tool_Hazard
             };
             if (ofd.ShowDialog() != DialogResult.OK) return;
 
-            var packer = new RdtPacker(CurrentBioVersion, ofd.FileName);
+            var packer = new RdtPacker(BioVersion.Biohazard2, ofd.FileName);
             packer.Pack();
             //MessageBox.Show("Bio2 RDT repacked successfully!", "Success!", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
             UpdateStatus("Bio2 RDT repacked successfully!");
@@ -423,7 +423,7 @@ namespace Tool_Hazard
 
             Directory.CreateDirectory(outputDir);
 
-            var unpacker = new RdtUnpacker(CurrentBioVersion, ofd.FileName, outputDir);
+            var unpacker = new RdtUnpacker(BioVersion.Biohazard3, ofd.FileName, outputDir);
             unpacker.Unpack();
             UpdateStatus("Bio3 RDT unpacked successfully!");
         }
@@ -437,7 +437,7 @@ namespace Tool_Hazard
             };
             if (ofd.ShowDialog() != DialogResult.OK) return;
 
-            var packer = new RdtPacker(CurrentBioVersion, ofd.FileName);
+            var packer = new RdtPacker(BioVersion.Biohazard3, ofd.FileName);
             packer.Pack();
             //MessageBox.Show("Bio3 RDT repacked successfully!", "Success!", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
             UpdateStatus("Bio3 RDT repacked successfully!");
@@ -466,7 +466,7 @@ namespace Tool_Hazard
             string outputDir = Path.Combine(fbd.SelectedPath, rdtName);
             MessageBox.Show("directory set to:\n\n" + outputDir, "DEBUG", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
             Directory.CreateDirectory(outputDir);
-            var unpacker = new RdtUnpacker(CurrentBioVersion, ofd.FileName, outputDir);
+            var unpacker = new RdtUnpacker(BioVersion.Biohazard2, ofd.FileName, outputDir);
             unpacker.Unpack();
 
             // HDR path inside temp
@@ -477,7 +477,7 @@ namespace Tool_Hazard
             MessageBox.Show("HDR File Path:\n\n" + hdrPath, "DEBUG", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
 
             // 2) Repack as Bio3
-            var packer = new RdtPacker(CurrentBioVersion, hdrPath);
+            var packer = new RdtPacker(BioVersion.Biohazard3, hdrPath);
             packer.Pack();
 
             MessageBox.Show("Converted Bio2 → Bio3 successfully!\n\n" + newRDTpath, "Success!", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
@@ -496,7 +496,7 @@ namespace Tool_Hazard
             if (tempFolder.ShowDialog() != DialogResult.OK) return;
 
             // 1) Unpack Bio3
-            var unpacker = new RdtUnpacker(CurrentBioVersion, ofd.FileName, tempFolder.SelectedPath + Path.GetFileNameWithoutExtension(ofd.FileName));
+            var unpacker = new RdtUnpacker(BioVersion.Biohazard3, ofd.FileName, tempFolder.SelectedPath + Path.GetFileNameWithoutExtension(ofd.FileName));
             unpacker.Unpack();
 
             // HDR path inside temp
@@ -504,7 +504,7 @@ namespace Tool_Hazard
                 Path.GetFileNameWithoutExtension(ofd.FileName) + ".hdr");
 
             // 2) Repack as Bio2
-            var packer = new RdtPacker(CurrentBioVersion, hdrPath);
+            var packer = new RdtPacker(BioVersion.Biohazard2, hdrPath);
             packer.Pack();
 
             MessageBox.Show("Converted Bio3 → Bio2 successfully!");
@@ -604,7 +604,7 @@ namespace Tool_Hazard
                     string scdPath = openFileDialog.FileName;
                     string outputPath = Path.ChangeExtension(scdPath, ".s");
                     //Execute our SCD to .S/.LST Decompile function from ScdService.cs
-                    ScdService.DecompileScd(scdPath, CurrentBioVersion);
+                    ScdService.DecompileScd(scdPath, BioVersion.Biohazard3);
                 }
             }
         }
@@ -619,7 +619,7 @@ namespace Tool_Hazard
                     string rdtPath = openFileDialog.FileName;
                     string outputPath = Path.ChangeExtension(rdtPath, ".scd");
                     //Execute our ScdService.cs Extract SCD function and set path, outputpath and global version
-                    ScdService.ExtractScdFromRdt(rdtPath, outputPath, CurrentBioVersion);
+                    ScdService.ExtractScdFromRdt(rdtPath, outputPath, BioVersion.Biohazard2);
                 }
             }
         }
@@ -635,7 +635,7 @@ namespace Tool_Hazard
                     string rdtPath = openFileDialog.FileName;
                     string outputPath = Path.ChangeExtension(rdtPath, ".scd");
                     //Execute our ScdService.cs Extract SCD function and set path, outputpath and global version
-                    ScdService.ExtractScdFromRdt(rdtPath, outputPath, CurrentBioVersion);
+                    ScdService.ExtractScdFromRdt(rdtPath, outputPath, BioVersion.Biohazard3);
                 }
             }
         }
@@ -651,7 +651,7 @@ namespace Tool_Hazard
                     string scdPath = openFileDialog.FileName;
                     string outputPath = Path.ChangeExtension(scdPath, ".s");
                     //Execute our SCD to .S/.LST Decompile function from ScdService.cs
-                    ScdService.DecompileScd(scdPath, CurrentBioVersion);
+                    ScdService.DecompileScd(scdPath, BioVersion.Biohazard2);
                 }
             }
         }
@@ -659,17 +659,17 @@ namespace Tool_Hazard
         //Load SCD Editor with selected game version
         private void sCDOpCodeEditorToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            var editor = new OpcodeEditorForm(CurrentBioVersion);
+            var editor = new OpcodeEditorForm(BioVersion.Biohazard3);
             editor.Show(this);
         }
         private void sCDOpCodeEditorToolStripMenuItem1_Click(object sender, EventArgs e)
         {
-            var editor = new OpcodeEditorForm(CurrentBioVersion);
+            var editor = new OpcodeEditorForm(BioVersion.Biohazard2);
             editor.Show(this);
         }
         private void toolStripMenuItem3_Click(object sender, EventArgs e)
         {
-            var editor = new OpcodeEditorForm(CurrentBioVersion);
+            var editor = new OpcodeEditorForm(BioVersion.Biohazard1);
             editor.Show(this);
         }
 
@@ -678,34 +678,34 @@ namespace Tool_Hazard
         private void toolStripMenuItem1_Click(object sender, EventArgs e)
         {
             CurrentBioVersion = BioVersion.Biohazard1;
-            UpdateStatus("Game version set to Resident Evil 1/Biohazard 1");
+            UpdateStatus("Selected Resident Evil 1/Biohazard 1");
         }
         private void bIO151997ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             CurrentBioVersion = BioVersion.Biohazard1_5;
-            UpdateStatus("Game version set to Resident Evil 1.5/Biohazard 1.5");
+            UpdateStatus("Selected Resident Evil 1.5/Biohazard 1.5");
         }
         private void bIO2RE21998ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             CurrentBioVersion = BioVersion.Biohazard2;
-            UpdateStatus("Game version set to Resident Evil 2/Biohazard 2");
+            UpdateStatus("Selected Resident Evil 2/Biohazard 2");
         }
 
         private void bIORE31999ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             CurrentBioVersion = BioVersion.Biohazard3;
-            UpdateStatus("Game version set to Resident Evil 3/Biohazard 3");
+            UpdateStatus("Selected Resident Evil 3/Biohazard 3");
         }
         private void rESURVVBIOGUNSURVToolStripMenuItem_Click(object sender, EventArgs e)
         {
             CurrentBioVersion = BioVersion.BiohazardSurvivor;
-            UpdateStatus("Game version set to Resident Evil Survivor/Biohazard Gun Survivor");
+            UpdateStatus("Selected Resident Evil Survivor/Biohazard Gun Survivor");
         }
 
         private void rECVBIOCV2000ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             CurrentBioVersion = BioVersion.BiohazardCv;
-            UpdateStatus("Game version set to Resident Evil CODE: Veronica/Biohazard CODE: Veronica");
+            UpdateStatus("Selected Resident Evil CODE: Veronica/Biohazard CODE: Veronica");
         }
 
         // --- Resident Evil EMD/PLD Unpack/Repack Menu Hooks ---
@@ -724,7 +724,7 @@ namespace Tool_Hazard
                     try
                     {
                         //Call EMD tool and pass our paths and version to unpack as Original format
-                        EmdTool.Unpack(selectedFile, CurrentBioVersion, EmdTool.Format.Original);
+                        EmdTool.Unpack(selectedFile, BioVersion.Biohazard3, EmdTool.Format.Original);
                     }
                     catch (Exception ex)
                     {
@@ -747,7 +747,7 @@ namespace Tool_Hazard
                     //try catch errors
                     try
                     {
-                        EmdTool.RepackFromFolder(sourceDir, CurrentBioVersion, EmdTool.Format.Original, "emd");
+                        EmdTool.RepackFromFolder(sourceDir, BioVersion.Biohazard3, EmdTool.Format.Original, "emd");
                     }
                     catch (Exception ex)
                     {
@@ -770,7 +770,7 @@ namespace Tool_Hazard
                     //try catch errors
                     try
                     {
-                        EmdTool.Unpack(selectedFile, CurrentBioVersion, EmdTool.Format.Editable);
+                        EmdTool.Unpack(selectedFile, BioVersion.Biohazard3, EmdTool.Format.Editable);
                     }
                     catch (Exception ex)
                     {
@@ -793,7 +793,7 @@ namespace Tool_Hazard
                     //try catch errors
                     try
                     {
-                        EmdTool.RepackFromFolder(sourceDir, CurrentBioVersion, EmdTool.Format.Editable, "emd");
+                        EmdTool.RepackFromFolder(sourceDir, BioVersion.Biohazard3, EmdTool.Format.Editable, "emd");
                     }
                     catch (Exception ex)
                     {
@@ -910,7 +910,7 @@ namespace Tool_Hazard
                     try
                     {
                         //Call EMD tool and pass our paths and version to unpack as Original format
-                        EmdTool.Unpack(selectedFile, CurrentBioVersion, EmdTool.Format.Original);
+                        EmdTool.Unpack(selectedFile, BioVersion.Biohazard2, EmdTool.Format.Original);
                     }
                     catch (Exception ex)
                     {
@@ -933,7 +933,7 @@ namespace Tool_Hazard
                     //try catch errors
                     try
                     {
-                        EmdTool.RepackFromFolder(sourceDir, CurrentBioVersion, EmdTool.Format.Original, "emd");
+                        EmdTool.RepackFromFolder(sourceDir, BioVersion.Biohazard2, EmdTool.Format.Original, "emd");
                     }
                     catch (Exception ex)
                     {
@@ -958,7 +958,7 @@ namespace Tool_Hazard
                     try
                     {
                         //Call EMD tool and pass our paths and version to unpack as Original format
-                        EmdTool.Unpack(selectedFile, CurrentBioVersion, EmdTool.Format.Editable);
+                        EmdTool.Unpack(selectedFile, BioVersion.Biohazard2, EmdTool.Format.Editable);
                     }
                     catch (Exception ex)
                     {
@@ -981,7 +981,7 @@ namespace Tool_Hazard
                     //try catch errors
                     try
                     {
-                        EmdTool.RepackFromFolder(sourceDir, CurrentBioVersion, EmdTool.Format.Editable, "emd");
+                        EmdTool.RepackFromFolder(sourceDir, BioVersion.Biohazard2, EmdTool.Format.Editable, "emd");
                     }
                     catch (Exception ex)
                     {
@@ -1005,7 +1005,7 @@ namespace Tool_Hazard
                     try
                     {
                         //Call EMD tool and pass our paths and version to unpack as original format
-                        EmdTool.Unpack(selectedFile, CurrentBioVersion, EmdTool.Format.Original);
+                        EmdTool.Unpack(selectedFile, BioVersion.Biohazard2, EmdTool.Format.Original);
                     }
                     catch (Exception ex)
                     {
@@ -1028,7 +1028,7 @@ namespace Tool_Hazard
                     //try catch errors
                     try
                     {
-                        EmdTool.RepackFromFolder(sourceDir, CurrentBioVersion, EmdTool.Format.Original, "pld");
+                        EmdTool.RepackFromFolder(sourceDir, BioVersion.Biohazard2, EmdTool.Format.Original, "pld");
                     }
                     catch (Exception ex)
                     {
@@ -1051,7 +1051,7 @@ namespace Tool_Hazard
                     //try catch errors
                     try
                     {
-                        EmdTool.Unpack(selectedFile, CurrentBioVersion, EmdTool.Format.Editable);
+                        EmdTool.Unpack(selectedFile, BioVersion.Biohazard2, EmdTool.Format.Editable);
                     }
                     catch (Exception ex)
                     {
@@ -1074,7 +1074,7 @@ namespace Tool_Hazard
                     //try catch errors
                     try
                     {
-                        EmdTool.RepackFromFolder(sourceDir, CurrentBioVersion, EmdTool.Format.Editable, "pld");
+                        EmdTool.RepackFromFolder(sourceDir, BioVersion.Biohazard2, EmdTool.Format.Editable, "pld");
                     }
                     catch (Exception ex)
                     {
@@ -1099,7 +1099,7 @@ namespace Tool_Hazard
                     try
                     {
                         //Call EMD tool and pass our paths and version to unpack as Original format
-                        EmdTool.Unpack(selectedFile, CurrentBioVersion, EmdTool.Format.Original);
+                        EmdTool.Unpack(selectedFile, BioVersion.Biohazard1, EmdTool.Format.Original);
                     }
                     catch (Exception ex)
                     {
@@ -1122,7 +1122,7 @@ namespace Tool_Hazard
                     //try catch errors
                     try
                     {
-                        EmdTool.RepackFromFolder(sourceDir, CurrentBioVersion, EmdTool.Format.Original, "emd");
+                        EmdTool.RepackFromFolder(sourceDir, BioVersion.Biohazard1, EmdTool.Format.Original, "emd");
                     }
                     catch (Exception ex)
                     {
@@ -1146,7 +1146,7 @@ namespace Tool_Hazard
                     try
                     {
                         //Call EMD tool and pass our paths and version to unpack as Original format
-                        EmdTool.Unpack(selectedFile, CurrentBioVersion, EmdTool.Format.Editable);
+                        EmdTool.Unpack(selectedFile, BioVersion.Biohazard1, EmdTool.Format.Editable);
                     }
                     catch (Exception ex)
                     {
@@ -1169,7 +1169,7 @@ namespace Tool_Hazard
                     //try catch errors
                     try
                     {
-                        EmdTool.RepackFromFolder(sourceDir, CurrentBioVersion, EmdTool.Format.Editable, "emd");
+                        EmdTool.RepackFromFolder(sourceDir, BioVersion.Biohazard1, EmdTool.Format.Editable, "emd");
                     }
                     catch (Exception ex)
                     {
@@ -1180,6 +1180,7 @@ namespace Tool_Hazard
             }
         }
 
+        // --- Nintendo LZ77 Decompressor Tool Menu Hook ---
         private void decompressToolStripMenuItem_Click(object sender, EventArgs e)
         {
             using var ofd = new OpenFileDialog
@@ -1237,6 +1238,7 @@ namespace Tool_Hazard
             }
         }
 
+        // --- Nintendo DS Container Scanner/Extractor Tool Menu Hook ---
         private void containerScannerToolStripMenuItem_Click(object sender, EventArgs e)
         {
             using var ofd = new OpenFileDialog
