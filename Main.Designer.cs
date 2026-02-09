@@ -188,6 +188,7 @@
             pS1ToolStripMenuItem = new ToolStripMenuItem();
             tIMToolStripMenuItem = new ToolStripMenuItem();
             pNG2TIMToolStripMenuItem = new ToolStripMenuItem();
+            tIMViewerToolStripMenuItem = new ToolStripMenuItem();
             pS2ToolStripMenuItem = new ToolStripMenuItem();
             aFSToolStripMenuItem = new ToolStripMenuItem();
             helpToolStripMenuItem = new ToolStripMenuItem();
@@ -198,7 +199,6 @@
             notifyIcon1 = new NotifyIcon(components);
             statusStrip1 = new StatusStrip();
             toolStripStatusLabel1 = new ToolStripStatusLabel();
-            tIMViewerToolStripMenuItem = new ToolStripMenuItem();
             menuStrip1.SuspendLayout();
             statusStrip1.SuspendLayout();
             SuspendLayout();
@@ -1090,7 +1090,7 @@
             // pS1ToolStripMenuItem
             // 
             resources.ApplyResources(pS1ToolStripMenuItem, "pS1ToolStripMenuItem");
-            pS1ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { tIMToolStripMenuItem, pNG2TIMToolStripMenuItem, tIMViewerToolStripMenuItem });
+            pS1ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { tIMViewerToolStripMenuItem, tIMToolStripMenuItem, pNG2TIMToolStripMenuItem });
             pS1ToolStripMenuItem.Name = "pS1ToolStripMenuItem";
             // 
             // tIMToolStripMenuItem
@@ -1104,6 +1104,12 @@
             resources.ApplyResources(pNG2TIMToolStripMenuItem, "pNG2TIMToolStripMenuItem");
             pNG2TIMToolStripMenuItem.Name = "pNG2TIMToolStripMenuItem";
             pNG2TIMToolStripMenuItem.Click += pNG2TIMToolStripMenuItem_Click;
+            // 
+            // tIMViewerToolStripMenuItem
+            // 
+            resources.ApplyResources(tIMViewerToolStripMenuItem, "tIMViewerToolStripMenuItem");
+            tIMViewerToolStripMenuItem.Name = "tIMViewerToolStripMenuItem";
+            tIMViewerToolStripMenuItem.Click += tIMViewerToolStripMenuItem_Click;
             // 
             // pS2ToolStripMenuItem
             // 
@@ -1162,12 +1168,6 @@
             resources.ApplyResources(toolStripStatusLabel1, "toolStripStatusLabel1");
             toolStripStatusLabel1.BackColor = SystemColors.ButtonFace;
             toolStripStatusLabel1.Name = "toolStripStatusLabel1";
-            // 
-            // tIMViewerToolStripMenuItem
-            // 
-            resources.ApplyResources(tIMViewerToolStripMenuItem, "tIMViewerToolStripMenuItem");
-            tIMViewerToolStripMenuItem.Name = "tIMViewerToolStripMenuItem";
-            tIMViewerToolStripMenuItem.Click += tIMViewerToolStripMenuItem_Click;
             // 
             // Main
             // 
