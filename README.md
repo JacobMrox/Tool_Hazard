@@ -13,6 +13,8 @@ Tool Hazardは、C#（.NET 8、WinForms）で書かれた、最新のオール�
 <img width="402" height="282" alt="image" src="https://github.com/user-attachments/assets/d2a1339e-bd60-4aa6-8670-31926c37d85b" />
 <img width="402" height="282" alt="image" src="https://github.com/user-attachments/assets/06f057fe-8604-4ade-ae1b-38ca77e9d844" />
 <img width="402" height="282" alt="image" src="https://github.com/user-attachments/assets/6fb3e73f-5bc4-4765-9f31-4ed7f1382f3d" />
+<img width="402" height="282" alt="image" src="https://github.com/user-attachments/assets/538b6a8e-1b24-4bfa-aaab-489f3acc7511" />
+
 
 🇸🇦 العربية
 
@@ -67,7 +69,8 @@ Inizialmente nato come White Day Mod Tool, si è evoluto in un toolkit completo 
 * Nintendo DS
   * Content Scanner + Lz77Wii Decompressor
 * Sony PS1
-  * TIM to PNG and vice versa
+  * TIM Viewer complete with multipack and multiclut support.
+  * TIM to PNG/BMP/PIX (BIO) and vice versa.
 
 # Planned features
 * Live HUD feature for RE1-2-3
