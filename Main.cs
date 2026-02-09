@@ -1477,5 +1477,14 @@ namespace Tool_Hazard
             var editor = new BiohazardFileEditor();
             editor.Show(this);
         }
+
+        //Biohazard 2 SAP Viewer Menu Hook
+        private void sAPToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //BiohazardSapViewerForm
+            var editor = new BiohazardSapViewerForm();
+            editor.Show(this);
+
+        }
     }
 }

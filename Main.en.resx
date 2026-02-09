@@ -500,27 +500,6 @@
   <data name="vHVBToolStripMenuItem.Text" xml:space="preserve">
     <value>VH/VB (PS1)</value>
   </data>
-  <data name="sAP2WAVToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
-    <value>False</value>
-  </data>
-  <data name="sAP2WAVToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>132, 22</value>
-  </data>
-  <data name="sAP2WAVToolStripMenuItem.Text" xml:space="preserve">
-    <value>SAP 2 WAV</value>
-  </data>
-  <data name="wAV2SAPToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
-    <value>False</value>
-  </data>
-  <data name="wAV2SAPToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>132, 22</value>
-  </data>
-  <data name="wAV2SAPToolStripMenuItem.Text" xml:space="preserve">
-    <value>WAV 2 SAP</value>
-  </data>
-  <data name="sAPToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
-    <value>False</value>
-  </data>
   <data name="sAPToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>250, 22</value>
   </data>
@@ -998,11 +977,17 @@
   <data name="versionToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
+  <data name="versionToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>174, 22</value>
+  </data>
   <data name="versionToolStripMenuItem.Text" xml:space="preserve">
     <value>About</value>
   </data>
   <data name="documentationToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
+  </data>
+  <data name="documentationToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>174, 22</value>
   </data>
   <data name="documentationToolStripMenuItem.Text" xml:space="preserve">
     <value>Documentation</value>
@@ -1010,11 +995,14 @@
   <data name="checkForUpdatesToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
+  <data name="checkForUpdatesToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>174, 22</value>
+  </data>
   <data name="checkForUpdatesToolStripMenuItem.Text" xml:space="preserve">
     <value>Check for Updates</value>
   </data>
   <data name="playStartupSoundToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>180, 22</value>
+    <value>174, 22</value>
   </data>
   <data name="playStartupSoundToolStripMenuItem.Text" xml:space="preserve">
     <value>Play Startup Sound</value>

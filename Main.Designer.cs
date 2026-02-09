@@ -103,8 +103,6 @@
             plwToolStripMenuItem1 = new ToolStripMenuItem();
             vHVBToolStripMenuItem = new ToolStripMenuItem();
             sAPToolStripMenuItem = new ToolStripMenuItem();
-            sAP2WAVToolStripMenuItem = new ToolStripMenuItem();
-            wAV2SAPToolStripMenuItem = new ToolStripMenuItem();
             toolStripSeparator1 = new ToolStripSeparator();
             installPatch110ToolStripMenuItem = new ToolStripMenuItem();
             menuInstallRE2CR = new ToolStripMenuItem();
@@ -192,10 +190,10 @@
             versionToolStripMenuItem = new ToolStripMenuItem();
             documentationToolStripMenuItem = new ToolStripMenuItem();
             checkForUpdatesToolStripMenuItem = new ToolStripMenuItem();
+            playStartupSoundToolStripMenuItem = new ToolStripMenuItem();
             notifyIcon1 = new NotifyIcon(components);
             statusStrip1 = new StatusStrip();
             toolStripStatusLabel1 = new ToolStripStatusLabel();
-            playStartupSoundToolStripMenuItem = new ToolStripMenuItem();
             menuStrip1.SuspendLayout();
             statusStrip1.SuspendLayout();
             SuspendLayout();
@@ -616,18 +614,8 @@
             // sAPToolStripMenuItem
             // 
             resources.ApplyResources(sAPToolStripMenuItem, "sAPToolStripMenuItem");
-            sAPToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { sAP2WAVToolStripMenuItem, wAV2SAPToolStripMenuItem });
             sAPToolStripMenuItem.Name = "sAPToolStripMenuItem";
-            // 
-            // sAP2WAVToolStripMenuItem
-            // 
-            resources.ApplyResources(sAP2WAVToolStripMenuItem, "sAP2WAVToolStripMenuItem");
-            sAP2WAVToolStripMenuItem.Name = "sAP2WAVToolStripMenuItem";
-            // 
-            // wAV2SAPToolStripMenuItem
-            // 
-            resources.ApplyResources(wAV2SAPToolStripMenuItem, "wAV2SAPToolStripMenuItem");
-            wAV2SAPToolStripMenuItem.Name = "wAV2SAPToolStripMenuItem";
+            sAPToolStripMenuItem.Click += sAPToolStripMenuItem_Click;
             // 
             // toolStripSeparator1
             // 
@@ -1121,6 +1109,14 @@
             resources.ApplyResources(checkForUpdatesToolStripMenuItem, "checkForUpdatesToolStripMenuItem");
             checkForUpdatesToolStripMenuItem.Name = "checkForUpdatesToolStripMenuItem";
             // 
+            // playStartupSoundToolStripMenuItem
+            // 
+            resources.ApplyResources(playStartupSoundToolStripMenuItem, "playStartupSoundToolStripMenuItem");
+            playStartupSoundToolStripMenuItem.Checked = true;
+            playStartupSoundToolStripMenuItem.CheckOnClick = true;
+            playStartupSoundToolStripMenuItem.CheckState = CheckState.Checked;
+            playStartupSoundToolStripMenuItem.Name = "playStartupSoundToolStripMenuItem";
+            // 
             // notifyIcon1
             // 
             resources.ApplyResources(notifyIcon1, "notifyIcon1");
@@ -1137,14 +1133,6 @@
             resources.ApplyResources(toolStripStatusLabel1, "toolStripStatusLabel1");
             toolStripStatusLabel1.BackColor = SystemColors.ButtonFace;
             toolStripStatusLabel1.Name = "toolStripStatusLabel1";
-            // 
-            // playStartupSoundToolStripMenuItem
-            // 
-            resources.ApplyResources(playStartupSoundToolStripMenuItem, "playStartupSoundToolStripMenuItem");
-            playStartupSoundToolStripMenuItem.Checked = true;
-            playStartupSoundToolStripMenuItem.CheckOnClick = true;
-            playStartupSoundToolStripMenuItem.CheckState = CheckState.Checked;
-            playStartupSoundToolStripMenuItem.Name = "playStartupSoundToolStripMenuItem";
             // 
             // Main
             // 
@@ -1201,8 +1189,6 @@
         private ToolStripMenuItem menuInstallRE3CR;
         private ToolStripMenuItem installEnglishCompatibilityPatchToolStripMenuItem;
         private ToolStripMenuItem menuInstallRE2CR;
-        private ToolStripMenuItem sAP2WAVToolStripMenuItem;
-        private ToolStripMenuItem wAV2SAPToolStripMenuItem;
         private ToolStripMenuItem aRDToolStripMenuItem;
         private ToolStripMenuItem toolStripMenuItem1;
         private ToolStripMenuItem rDTToolStripMenuItem2;
