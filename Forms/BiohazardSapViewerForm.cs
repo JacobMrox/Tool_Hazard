@@ -60,7 +60,7 @@ namespace Tool_Hazard.Forms
                 //Get duration of sample
                 var duration = GetDurationText(entry);
 
-                // If you have columns, this fills: [Index] [Type] [Size]
+                // This fills: [Index] [Type] [Size]
                 var lvi = new ListViewItem(entry.Index.ToString("00"));
                 lvi.SubItems.Add(kindText);
                 lvi.SubItems.Add(entry.Data.Length.ToString("N0"));

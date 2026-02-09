@@ -61,7 +61,8 @@
             gridPages.Columns.AddRange(new DataGridViewColumn[] { Column1 });
             gridPages.Location = new Point(10, 32);
             gridPages.Name = "gridPages";
-            gridPages.RowHeadersWidthSizeMode = DataGridViewRowHeadersWidthSizeMode.AutoSizeToAllHeaders;
+            gridPages.RowHeadersWidthSizeMode = DataGridViewRowHeadersWidthSizeMode.AutoSizeToDisplayedHeaders;
+            gridPages.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             gridPages.Size = new Size(240, 237);
             gridPages.TabIndex = 0;
             // 
@@ -120,35 +121,35 @@
             // newToolStripMenuItem
             // 
             newToolStripMenuItem.Name = "newToolStripMenuItem";
-            newToolStripMenuItem.Size = new Size(180, 22);
+            newToolStripMenuItem.Size = new Size(114, 22);
             newToolStripMenuItem.Text = "New";
             newToolStripMenuItem.Click += newToolStripMenuItem_Click;
             // 
             // openToolStripMenuItem
             // 
             openToolStripMenuItem.Name = "openToolStripMenuItem";
-            openToolStripMenuItem.Size = new Size(180, 22);
+            openToolStripMenuItem.Size = new Size(114, 22);
             openToolStripMenuItem.Text = "Open";
             openToolStripMenuItem.Click += openToolStripMenuItem_Click;
             // 
             // saveToolStripMenuItem
             // 
             saveToolStripMenuItem.Name = "saveToolStripMenuItem";
-            saveToolStripMenuItem.Size = new Size(180, 22);
+            saveToolStripMenuItem.Size = new Size(114, 22);
             saveToolStripMenuItem.Text = "Save";
             saveToolStripMenuItem.Click += saveToolStripMenuItem_Click;
             // 
             // saveAsToolStripMenuItem
             // 
             saveAsToolStripMenuItem.Name = "saveAsToolStripMenuItem";
-            saveAsToolStripMenuItem.Size = new Size(180, 22);
+            saveAsToolStripMenuItem.Size = new Size(114, 22);
             saveAsToolStripMenuItem.Text = "Save As";
             saveAsToolStripMenuItem.Click += saveAsToolStripMenuItem_Click;
             // 
             // exportToolStripMenuItem
             // 
             exportToolStripMenuItem.Name = "exportToolStripMenuItem";
-            exportToolStripMenuItem.Size = new Size(180, 22);
+            exportToolStripMenuItem.Size = new Size(114, 22);
             exportToolStripMenuItem.Text = "Export";
             exportToolStripMenuItem.Click += exportToolStripMenuItem_Click;
             // 
@@ -162,28 +163,28 @@
             // addPageToolStripMenuItem
             // 
             addPageToolStripMenuItem.Name = "addPageToolStripMenuItem";
-            addPageToolStripMenuItem.Size = new Size(180, 22);
+            addPageToolStripMenuItem.Size = new Size(138, 22);
             addPageToolStripMenuItem.Text = "Add Page";
             addPageToolStripMenuItem.Click += addPageToolStripMenuItem_Click;
             // 
             // deletePageToolStripMenuItem
             // 
             deletePageToolStripMenuItem.Name = "deletePageToolStripMenuItem";
-            deletePageToolStripMenuItem.Size = new Size(180, 22);
+            deletePageToolStripMenuItem.Size = new Size(138, 22);
             deletePageToolStripMenuItem.Text = "Delete Page";
             deletePageToolStripMenuItem.Click += deletePageToolStripMenuItem_Click;
             // 
             // moveUpToolStripMenuItem
             // 
             moveUpToolStripMenuItem.Name = "moveUpToolStripMenuItem";
-            moveUpToolStripMenuItem.Size = new Size(180, 22);
+            moveUpToolStripMenuItem.Size = new Size(138, 22);
             moveUpToolStripMenuItem.Text = "Move Up";
             moveUpToolStripMenuItem.Click += moveUpToolStripMenuItem_Click;
             // 
             // moveDownToolStripMenuItem
             // 
             moveDownToolStripMenuItem.Name = "moveDownToolStripMenuItem";
-            moveDownToolStripMenuItem.Size = new Size(180, 22);
+            moveDownToolStripMenuItem.Size = new Size(138, 22);
             moveDownToolStripMenuItem.Text = "Move Down";
             moveDownToolStripMenuItem.Click += moveDownToolStripMenuItem_Click;
             // 
