@@ -536,17 +536,11 @@
   <data name="bINPS1ToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
-  <data name="bINPS1ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>154, 22</value>
-  </data>
   <data name="bINPS1ToolStripMenuItem.Text" xml:space="preserve">
     <value>BIN (PS1)</value>
   </data>
   <data name="nACNABPCToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
-  </data>
-  <data name="nACNABPCToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>154, 22</value>
   </data>
   <data name="nACNABPCToolStripMenuItem.Text" xml:space="preserve">
     <value>NAC/NAB (PC)</value>
@@ -557,11 +551,17 @@
   <data name="aFSPS2DCToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
+  <data name="aFSPS2DCToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>180, 22</value>
+  </data>
   <data name="aFSPS2DCToolStripMenuItem.Text" xml:space="preserve">
     <value>AFS (PS2/DC)</value>
   </data>
   <data name="aRCHDMTToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
+  </data>
+  <data name="aRCHDMTToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>180, 22</value>
   </data>
   <data name="aRCHDMTToolStripMenuItem.Text" xml:space="preserve">
     <value>ARC (HD/MT)</value>
@@ -917,14 +917,26 @@
   <data name="nintendoToolStripMenuItem.Text" xml:space="preserve">
     <value>Nintendo DS</value>
   </data>
+  <data name="tIMViewerToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>133, 22</value>
+  </data>
   <data name="tIMViewerToolStripMenuItem.Text" xml:space="preserve">
     <value>TIM Viewer</value>
+  </data>
+  <data name="tIMToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>133, 22</value>
   </data>
   <data name="tIMToolStripMenuItem.Text" xml:space="preserve">
     <value>TIM 2 PNG</value>
   </data>
+  <data name="pNG2TIMToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>133, 22</value>
+  </data>
   <data name="pNG2TIMToolStripMenuItem.Text" xml:space="preserve">
     <value>PNG 2 TIM</value>
+  </data>
+  <data name="pS1ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>93, 22</value>
   </data>
   <data name="pS1ToolStripMenuItem.Text" xml:space="preserve">
     <value>PS1</value>
@@ -934,6 +946,9 @@
   </data>
   <data name="aFSToolStripMenuItem.Text" xml:space="preserve">
     <value>AFS Explorer</value>
+  </data>
+  <data name="pS2ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>93, 22</value>
   </data>
   <data name="pS2ToolStripMenuItem.Text" xml:space="preserve">
     <value>PS2</value>
@@ -949,9 +964,6 @@
   </data>
   <data name="versionToolStripMenuItem.Text" xml:space="preserve">
     <value>About</value>
-  </data>
-  <data name="documentationToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
-    <value>False</value>
   </data>
   <data name="documentationToolStripMenuItem.Text" xml:space="preserve">
     <value>Documentation</value>

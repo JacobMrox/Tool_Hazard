@@ -1138,6 +1138,7 @@
             // 
             resources.ApplyResources(documentationToolStripMenuItem, "documentationToolStripMenuItem");
             documentationToolStripMenuItem.Name = "documentationToolStripMenuItem";
+            documentationToolStripMenuItem.Click += documentationToolStripMenuItem_Click;
             // 
             // checkForUpdatesToolStripMenuItem
             // 

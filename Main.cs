@@ -1525,5 +1525,24 @@ namespace Tool_Hazard
 
             MessageBox.Show(aboutMessage, "About Tool Hazard", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
+
+        private void documentationToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //Open GitHub documentation in default browser
+            string url = "https://github.com/JacobMrox/Tool_Hazard/wiki";
+            try
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = url,
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to open documentation URL:\n{ex.Message}", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
     }
 }
