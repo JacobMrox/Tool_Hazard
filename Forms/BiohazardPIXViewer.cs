@@ -305,13 +305,12 @@ namespace Tool_Hazard.Forms
 
             try
             {
-                if (_bgLoadedExt == ".pix")
+                if (_bgLoadedExt == ".pix" || _bgLoadedExt == ".tim")
                 {
-                    // This supports raw 320x240 16bpp PIX and TIM-disguised-as-PIX
-                    // BUT: if it's a MULTI-TIM pack (like RE3 ITEMG.PIX), we allow Next/Prev navigation.
+                    // This supports raw 320x240 16bpp PIX and TIM/MULTI-TIM (both real .tim and disguised as .pix)
                     byte[] bytes = File.ReadAllBytes(ofd.FileName);
 
-                    // TIM or MULTI-TIM disguised as .PIX (ITEMG.PIX, etc)
+                    // TIM or MULTI-TIM (ITEMG.PIX, .tim, etc)
                     if (bytes.Length >= 4 && BitConverter.ToUInt32(bytes, 0) == 0x00000010u)
                     {
                         _timPack = SplitTimPack(bytes);
@@ -325,8 +324,11 @@ namespace Tool_Hazard.Forms
                         return;
                     }
 
+                    // If user opened a real .tim but it doesn't start with TIM magic, it's invalid
+                    if (_bgLoadedExt == ".tim")
+                        throw new InvalidDataException("File has .tim extension but does not contain a valid TIM header.");
 
-                    // Not a TIM pack, so decode as background PIX
+                    // Not a TIM, so decode as background PIX (raw 320x240)
                     var bmp = PixLoader.LoadAsBitmap(ofd.FileName);
                     SetPictureBoxImage(bmp);
                     UpdateNavButtons();
