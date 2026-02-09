@@ -49,6 +49,7 @@
             // 
             // listView1
             // 
+            listView1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             listView1.Columns.AddRange(new ColumnHeader[] { Index, Type, Size, Duration });
             listView1.FullRowSelect = true;
             listView1.GridLines = true;
@@ -78,6 +79,7 @@
             // 
             // button1
             // 
+            button1.Anchor = AnchorStyles.Right;
             button1.Location = new Point(277, 39);
             button1.Name = "button1";
             button1.Size = new Size(113, 23);
@@ -88,6 +90,7 @@
             // 
             // button2
             // 
+            button2.Anchor = AnchorStyles.Right;
             button2.Location = new Point(277, 68);
             button2.Name = "button2";
             button2.Size = new Size(113, 23);
@@ -98,6 +101,7 @@
             // 
             // button3
             // 
+            button3.Anchor = AnchorStyles.Right;
             button3.Location = new Point(277, 97);
             button3.Name = "button3";
             button3.Size = new Size(113, 23);
@@ -108,6 +112,7 @@
             // 
             // button4
             // 
+            button4.Anchor = AnchorStyles.Right;
             button4.Location = new Point(277, 126);
             button4.Name = "button4";
             button4.Size = new Size(113, 23);
@@ -118,6 +123,7 @@
             // 
             // button5
             // 
+            button5.Anchor = AnchorStyles.Right;
             button5.Location = new Point(277, 155);
             button5.Name = "button5";
             button5.Size = new Size(113, 23);
@@ -165,6 +171,7 @@
             // 
             // button6
             // 
+            button6.Anchor = AnchorStyles.Right;
             button6.Location = new Point(277, 184);
             button6.Name = "button6";
             button6.Size = new Size(113, 23);
