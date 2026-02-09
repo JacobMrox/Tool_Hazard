@@ -347,23 +347,20 @@
   <data name="aDTPCToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
-  <data name="aDTPCToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>250, 22</value>
-  </data>
   <data name="aDTPCToolStripMenuItem.Text" xml:space="preserve">
     <value>ADT (PC)</value>
   </data>
   <data name="unpackToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>180, 22</value>
+    <value>164, 22</value>
   </data>
   <data name="repackToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>180, 22</value>
+    <value>164, 22</value>
+  </data>
+  <data name="toolStripSeparator5.Size" type="System.Drawing.Size, System.Drawing">
+    <value>161, 6</value>
   </data>
   <data name="convertToBIO1ToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
-  </data>
-  <data name="convertToBIO1ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>180, 22</value>
   </data>
   <data name="convertToBIO1ToolStripMenuItem.Text" xml:space="preserve">
     <value>Convert to BIO1</value>
@@ -372,10 +369,13 @@
     <value>False</value>
   </data>
   <data name="convertToBIO3ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>180, 22</value>
+    <value>164, 22</value>
   </data>
   <data name="convertToBIO3ToolStripMenuItem.Text" xml:space="preserve">
     <value>Convert to BIO3</value>
+  </data>
+  <data name="toolStripSeparator4.Size" type="System.Drawing.Size, System.Drawing">
+    <value>161, 6</value>
   </data>
   <data name="sCDOpCodeEditorToolStripMenuItem1.Text" xml:space="preserve">
     <value>SCD OpCode Editor</value>
@@ -404,8 +404,17 @@
   <data name="recompileSToSCDToolStripMenuItem1.Text" xml:space="preserve">
     <value>Recompile .S to .SCD</value>
   </data>
+  <data name="sCDToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>164, 22</value>
+  </data>
   <data name="sCDToolStripMenuItem.Text" xml:space="preserve">
     <value>SCD (Script Data)</value>
+  </data>
+  <data name="toolStripSeparator20.Size" type="System.Drawing.Size, System.Drawing">
+    <value>161, 6</value>
+  </data>
+  <data name="mSGToolStripMenuItem1.Size" type="System.Drawing.Size, System.Drawing">
+    <value>164, 22</value>
   </data>
   <data name="mSGToolStripMenuItem1.Text" xml:space="preserve">
     <value>MSG</value>
@@ -971,20 +980,11 @@
   <data name="toolStripMenuItem2.Text" xml:space="preserve">
     <value>Extras</value>
   </data>
-  <data name="versionToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
-    <value>False</value>
-  </data>
-  <data name="versionToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>174, 22</value>
-  </data>
   <data name="versionToolStripMenuItem.Text" xml:space="preserve">
     <value>About</value>
   </data>
   <data name="documentationToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
-  </data>
-  <data name="documentationToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>174, 22</value>
   </data>
   <data name="documentationToolStripMenuItem.Text" xml:space="preserve">
     <value>Documentation</value>
@@ -992,14 +992,8 @@
   <data name="checkForUpdatesToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
-  <data name="checkForUpdatesToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>174, 22</value>
-  </data>
   <data name="checkForUpdatesToolStripMenuItem.Text" xml:space="preserve">
     <value>Check for Updates</value>
-  </data>
-  <data name="playStartupSoundToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>174, 22</value>
   </data>
   <data name="playStartupSoundToolStripMenuItem.Text" xml:space="preserve">
     <value>Play Startup Sound</value>

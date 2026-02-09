@@ -72,6 +72,7 @@
             vHVBToolStripMenuItem1 = new ToolStripMenuItem();
             bIO2RE21998ToolStripMenuItem = new ToolStripMenuItem();
             bSSToolStripMenuItem1 = new ToolStripMenuItem();
+            aDTPCToolStripMenuItem = new ToolStripMenuItem();
             rDTToolStripMenuItem1 = new ToolStripMenuItem();
             unpackToolStripMenuItem = new ToolStripMenuItem();
             repackToolStripMenuItem = new ToolStripMenuItem();
@@ -194,7 +195,6 @@
             notifyIcon1 = new NotifyIcon(components);
             statusStrip1 = new StatusStrip();
             toolStripStatusLabel1 = new ToolStripStatusLabel();
-            aDTPCToolStripMenuItem = new ToolStripMenuItem();
             menuStrip1.SuspendLayout();
             statusStrip1.SuspendLayout();
             SuspendLayout();
@@ -441,6 +441,11 @@
             resources.ApplyResources(bSSToolStripMenuItem1, "bSSToolStripMenuItem1");
             bSSToolStripMenuItem1.Name = "bSSToolStripMenuItem1";
             bSSToolStripMenuItem1.Click += bSSToolStripMenuItem1_Click;
+            // 
+            // aDTPCToolStripMenuItem
+            // 
+            resources.ApplyResources(aDTPCToolStripMenuItem, "aDTPCToolStripMenuItem");
+            aDTPCToolStripMenuItem.Name = "aDTPCToolStripMenuItem";
             // 
             // rDTToolStripMenuItem1
             // 
@@ -1099,6 +1104,7 @@
             // 
             resources.ApplyResources(versionToolStripMenuItem, "versionToolStripMenuItem");
             versionToolStripMenuItem.Name = "versionToolStripMenuItem";
+            versionToolStripMenuItem.Click += versionToolStripMenuItem_Click;
             // 
             // documentationToolStripMenuItem
             // 
@@ -1134,11 +1140,6 @@
             resources.ApplyResources(toolStripStatusLabel1, "toolStripStatusLabel1");
             toolStripStatusLabel1.BackColor = SystemColors.ButtonFace;
             toolStripStatusLabel1.Name = "toolStripStatusLabel1";
-            // 
-            // aDTPCToolStripMenuItem
-            // 
-            resources.ApplyResources(aDTPCToolStripMenuItem, "aDTPCToolStripMenuItem");
-            aDTPCToolStripMenuItem.Name = "aDTPCToolStripMenuItem";
             // 
             // Main
             // 

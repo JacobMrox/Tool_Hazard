@@ -1,13 +1,14 @@
-﻿using System;
-using System.IO;
-using System.Text;
-using System.Media;
-using System.Reflection;
-using IntelOrca.Biohazard;
-using System.Windows.Forms;
+﻿using IntelOrca.Biohazard;
+using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing.Imaging;
-using System.Collections.Generic;
+using System.IO;
+using System.Media;
+using System.Reflection;
+using System.Security.Policy;
+using System.Text;
+using System.Windows.Forms;
 using Tool_Hazard.Biohazard;
 using Tool_Hazard.Biohazard.emd;
 using Tool_Hazard.Biohazard.RDT;
@@ -16,6 +17,7 @@ using Tool_Hazard.Nintendo;
 using Tool_Hazard.Sony_PS1;
 using Tool_Hazard.White_Day;
 using static System.Net.Mime.MediaTypeNames;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace Tool_Hazard
 {
@@ -110,7 +112,7 @@ namespace Tool_Hazard
 
                 if (openDialog.ShowDialog() == DialogResult.OK)
                 {
-                    ProgressBar progressBar = new ProgressBar
+                    System.Windows.Forms.ProgressBar progressBar = new System.Windows.Forms.ProgressBar
                     {
                         Dock = DockStyle.Bottom,
                         Minimum = 0,
@@ -1485,6 +1487,20 @@ namespace Tool_Hazard
             var editor = new BiohazardSapViewerForm();
             editor.Show(this);
 
+        }
+
+        private void versionToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            string aboutMessage = "Tool Hazard\n\n" +
+                "A modern, all-in-one modding and research utility designed for classic survival horror titles " +
+                "such as Biohazard / Resident Evil 1–3, White Day (2001), and legacy console formats.\n\n" +
+                "Originally evolved from the White Day Mod Tool, inspired by Biofat.\n\n" +
+                "Special Thanks: Emuiya, 3lric, Intel.Orca, GrungeStyle, Leo2236, Gemini-Loboto3\n\n" +
+                "Copyright (c) 2026 Jacob Qarooni (Karuni/Lari/Mallallah)\n" +
+                "يعقوب القاروني/كارونی/لاری/مال‌الله\n" +
+                "All rights reserved.";
+
+            MessageBox.Show(aboutMessage, "About Tool Hazard", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
     }
 }
