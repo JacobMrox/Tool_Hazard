@@ -239,6 +239,9 @@
   <data name="pIXToolStripMenuItem.Text" xml:space="preserve">
     <value>PIX</value>
   </data>
+  <data name="tIMToolStripMenuItem1.Text" xml:space="preserve">
+    <value>TIM</value>
+  </data>
   <data name="pLWToolStripMenuItem2.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
@@ -502,6 +505,9 @@
   </data>
   <data name="plwToolStripMenuItem1.Text" xml:space="preserve">
     <value>PLW</value>
+  </data>
+  <data name="tIMToolStripMenuItem2.Text" xml:space="preserve">
+    <value>TIM</value>
   </data>
   <data name="vHVBToolStripMenuItem.Text" xml:space="preserve">
     <value>VH/VB (PS1)</value>
@@ -776,6 +782,9 @@
   <data name="pLWToolStripMenuItem.Text" xml:space="preserve">
     <value>PLW</value>
   </data>
+  <data name="tIMToolStripMenuItem3.Text" xml:space="preserve">
+    <value>TIM</value>
+  </data>
   <data name="vBVHToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
     <value>250, 22</value>
   </data>
@@ -938,20 +947,17 @@
   <data name="nintendoToolStripMenuItem.Text" xml:space="preserve">
     <value>Nintendo DS</value>
   </data>
-  <data name="tIMToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>131, 22</value>
-  </data>
   <data name="tIMToolStripMenuItem.Text" xml:space="preserve">
     <value>TIM 2 PNG</value>
-  </data>
-  <data name="pNG2TIMToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>131, 22</value>
   </data>
   <data name="pNG2TIMToolStripMenuItem.Text" xml:space="preserve">
     <value>PNG 2 TIM</value>
   </data>
-  <data name="pS1ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>93, 22</value>
+  <data name="tIMViewerToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>180, 22</value>
+  </data>
+  <data name="tIMViewerToolStripMenuItem.Text" xml:space="preserve">
+    <value>TIM Viewer</value>
   </data>
   <data name="pS1ToolStripMenuItem.Text" xml:space="preserve">
     <value>PS1</value>
@@ -959,14 +965,8 @@
   <data name="aFSToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
-  <data name="aFSToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>139, 22</value>
-  </data>
   <data name="aFSToolStripMenuItem.Text" xml:space="preserve">
     <value>AFS Explorer</value>
-  </data>
-  <data name="pS2ToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>93, 22</value>
   </data>
   <data name="pS2ToolStripMenuItem.Text" xml:space="preserve">
     <value>PS2</value>
@@ -980,11 +980,17 @@
   <data name="toolStripMenuItem2.Text" xml:space="preserve">
     <value>Extras</value>
   </data>
+  <data name="versionToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>174, 22</value>
+  </data>
   <data name="versionToolStripMenuItem.Text" xml:space="preserve">
     <value>About</value>
   </data>
   <data name="documentationToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
+  </data>
+  <data name="documentationToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>174, 22</value>
   </data>
   <data name="documentationToolStripMenuItem.Text" xml:space="preserve">
     <value>Documentation</value>
@@ -992,8 +998,14 @@
   <data name="checkForUpdatesToolStripMenuItem.Enabled" type="System.Boolean, mscorlib">
     <value>False</value>
   </data>
+  <data name="checkForUpdatesToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>174, 22</value>
+  </data>
   <data name="checkForUpdatesToolStripMenuItem.Text" xml:space="preserve">
     <value>Check for Updates</value>
+  </data>
+  <data name="playStartupSoundToolStripMenuItem.Size" type="System.Drawing.Size, System.Drawing">
+    <value>174, 22</value>
   </data>
   <data name="playStartupSoundToolStripMenuItem.Text" xml:space="preserve">
     <value>Play Startup Sound</value>

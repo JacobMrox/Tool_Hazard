@@ -56,6 +56,7 @@
             unpackEditableToolStripMenuItem1 = new ToolStripMenuItem();
             repackEditableToolStripMenuItem1 = new ToolStripMenuItem();
             pIXToolStripMenuItem = new ToolStripMenuItem();
+            tIMToolStripMenuItem1 = new ToolStripMenuItem();
             pLWToolStripMenuItem2 = new ToolStripMenuItem();
             vHVBToolStripMenuItem2 = new ToolStripMenuItem();
             toolStripSeparator7 = new ToolStripSeparator();
@@ -102,6 +103,7 @@
             unpackEditableToolStripMenuItem2 = new ToolStripMenuItem();
             repackEditableToolStripMenuItem2 = new ToolStripMenuItem();
             plwToolStripMenuItem1 = new ToolStripMenuItem();
+            tIMToolStripMenuItem2 = new ToolStripMenuItem();
             vHVBToolStripMenuItem = new ToolStripMenuItem();
             sAPToolStripMenuItem = new ToolStripMenuItem();
             toolStripSeparator1 = new ToolStripSeparator();
@@ -152,6 +154,7 @@
             unpackEditableToolStripMenuItem = new ToolStripMenuItem();
             repackEditableToolStripMenuItem = new ToolStripMenuItem();
             pLWToolStripMenuItem = new ToolStripMenuItem();
+            tIMToolStripMenuItem3 = new ToolStripMenuItem();
             vBVHToolStripMenuItem = new ToolStripMenuItem();
             toolStripSeparator6 = new ToolStripSeparator();
             installPatch110ToolStripMenuItem1 = new ToolStripMenuItem();
@@ -195,6 +198,7 @@
             notifyIcon1 = new NotifyIcon(components);
             statusStrip1 = new StatusStrip();
             toolStripStatusLabel1 = new ToolStripStatusLabel();
+            tIMViewerToolStripMenuItem = new ToolStripMenuItem();
             menuStrip1.SuspendLayout();
             statusStrip1.SuspendLayout();
             SuspendLayout();
@@ -226,7 +230,7 @@
             // 
             resources.ApplyResources(toolStripMenuItem1, "toolStripMenuItem1");
             toolStripMenuItem1.AutoToolTip = true;
-            toolStripMenuItem1.DropDownItems.AddRange(new ToolStripItem[] { bSSToolStripMenuItem, pCKPCToolStripMenuItem, rDTToolStripMenuItem2, eMDToolStripMenuItem2, pIXToolStripMenuItem, pLWToolStripMenuItem2, vHVBToolStripMenuItem2, toolStripSeparator7, menuInstallRE1CR, classicRebirthToolsToolStripMenuItem2 });
+            toolStripMenuItem1.DropDownItems.AddRange(new ToolStripItem[] { bSSToolStripMenuItem, pCKPCToolStripMenuItem, rDTToolStripMenuItem2, eMDToolStripMenuItem2, pIXToolStripMenuItem, tIMToolStripMenuItem1, pLWToolStripMenuItem2, vHVBToolStripMenuItem2, toolStripSeparator7, menuInstallRE1CR, classicRebirthToolsToolStripMenuItem2 });
             toolStripMenuItem1.Name = "toolStripMenuItem1";
             toolStripMenuItem1.Click += toolStripMenuItem1_Click;
             // 
@@ -353,6 +357,12 @@
             pIXToolStripMenuItem.Name = "pIXToolStripMenuItem";
             pIXToolStripMenuItem.Click += pIXToolStripMenuItem_Click;
             // 
+            // tIMToolStripMenuItem1
+            // 
+            resources.ApplyResources(tIMToolStripMenuItem1, "tIMToolStripMenuItem1");
+            tIMToolStripMenuItem1.Name = "tIMToolStripMenuItem1";
+            tIMToolStripMenuItem1.Click += tIMToolStripMenuItem1_Click;
+            // 
             // pLWToolStripMenuItem2
             // 
             resources.ApplyResources(pLWToolStripMenuItem2, "pLWToolStripMenuItem2");
@@ -432,7 +442,7 @@
             // bIO2RE21998ToolStripMenuItem
             // 
             resources.ApplyResources(bIO2RE21998ToolStripMenuItem, "bIO2RE21998ToolStripMenuItem");
-            bIO2RE21998ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { bSSToolStripMenuItem1, aDTPCToolStripMenuItem, rDTToolStripMenuItem1, mD1ToolStripMenuItem, eMDToolStripMenuItem1, pLDToolStripMenuItem1, plwToolStripMenuItem1, vHVBToolStripMenuItem, sAPToolStripMenuItem, toolStripSeparator1, installPatch110ToolStripMenuItem, menuInstallRE2CR, classicRebirthToolsToolStripMenuItem1 });
+            bIO2RE21998ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { bSSToolStripMenuItem1, aDTPCToolStripMenuItem, rDTToolStripMenuItem1, mD1ToolStripMenuItem, eMDToolStripMenuItem1, pLDToolStripMenuItem1, plwToolStripMenuItem1, tIMToolStripMenuItem2, vHVBToolStripMenuItem, sAPToolStripMenuItem, toolStripSeparator1, installPatch110ToolStripMenuItem, menuInstallRE2CR, classicRebirthToolsToolStripMenuItem1 });
             bIO2RE21998ToolStripMenuItem.Name = "bIO2RE21998ToolStripMenuItem";
             bIO2RE21998ToolStripMenuItem.Click += bIO2RE21998ToolStripMenuItem_Click;
             // 
@@ -611,6 +621,12 @@
             resources.ApplyResources(plwToolStripMenuItem1, "plwToolStripMenuItem1");
             plwToolStripMenuItem1.Name = "plwToolStripMenuItem1";
             // 
+            // tIMToolStripMenuItem2
+            // 
+            resources.ApplyResources(tIMToolStripMenuItem2, "tIMToolStripMenuItem2");
+            tIMToolStripMenuItem2.Name = "tIMToolStripMenuItem2";
+            tIMToolStripMenuItem2.Click += tIMToolStripMenuItem2_Click;
+            // 
             // vHVBToolStripMenuItem
             // 
             resources.ApplyResources(vHVBToolStripMenuItem, "vHVBToolStripMenuItem");
@@ -694,7 +710,7 @@
             // bIORE31999ToolStripMenuItem
             // 
             resources.ApplyResources(bIORE31999ToolStripMenuItem, "bIORE31999ToolStripMenuItem");
-            bIORE31999ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { rOFSToolStripMenuItem, aRDToolStripMenuItem, bSSToolStripMenuItem2, rDTToolStripMenuItem, mD2ToolStripMenuItem, eMDToolStripMenuItem, pIXToolStripMenuItem1, pLDToolStripMenuItem, pLWToolStripMenuItem, vBVHToolStripMenuItem, toolStripSeparator6, installPatch110ToolStripMenuItem1, menuInstallRE3CR, classicRebirthToolsToolStripMenuItem });
+            bIORE31999ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { rOFSToolStripMenuItem, aRDToolStripMenuItem, bSSToolStripMenuItem2, rDTToolStripMenuItem, mD2ToolStripMenuItem, eMDToolStripMenuItem, pIXToolStripMenuItem1, pLDToolStripMenuItem, pLWToolStripMenuItem, tIMToolStripMenuItem3, vBVHToolStripMenuItem, toolStripSeparator6, installPatch110ToolStripMenuItem1, menuInstallRE3CR, classicRebirthToolsToolStripMenuItem });
             bIORE31999ToolStripMenuItem.Name = "bIORE31999ToolStripMenuItem";
             bIORE31999ToolStripMenuItem.Click += bIORE31999ToolStripMenuItem_Click;
             // 
@@ -895,6 +911,12 @@
             resources.ApplyResources(pLWToolStripMenuItem, "pLWToolStripMenuItem");
             pLWToolStripMenuItem.Name = "pLWToolStripMenuItem";
             // 
+            // tIMToolStripMenuItem3
+            // 
+            resources.ApplyResources(tIMToolStripMenuItem3, "tIMToolStripMenuItem3");
+            tIMToolStripMenuItem3.Name = "tIMToolStripMenuItem3";
+            tIMToolStripMenuItem3.Click += tIMToolStripMenuItem3_Click;
+            // 
             // vBVHToolStripMenuItem
             // 
             resources.ApplyResources(vBVHToolStripMenuItem, "vBVHToolStripMenuItem");
@@ -1068,7 +1090,7 @@
             // pS1ToolStripMenuItem
             // 
             resources.ApplyResources(pS1ToolStripMenuItem, "pS1ToolStripMenuItem");
-            pS1ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { tIMToolStripMenuItem, pNG2TIMToolStripMenuItem });
+            pS1ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { tIMToolStripMenuItem, pNG2TIMToolStripMenuItem, tIMViewerToolStripMenuItem });
             pS1ToolStripMenuItem.Name = "pS1ToolStripMenuItem";
             // 
             // tIMToolStripMenuItem
@@ -1140,6 +1162,12 @@
             resources.ApplyResources(toolStripStatusLabel1, "toolStripStatusLabel1");
             toolStripStatusLabel1.BackColor = SystemColors.ButtonFace;
             toolStripStatusLabel1.Name = "toolStripStatusLabel1";
+            // 
+            // tIMViewerToolStripMenuItem
+            // 
+            resources.ApplyResources(tIMViewerToolStripMenuItem, "tIMViewerToolStripMenuItem");
+            tIMViewerToolStripMenuItem.Name = "tIMViewerToolStripMenuItem";
+            tIMViewerToolStripMenuItem.Click += tIMViewerToolStripMenuItem_Click;
             // 
             // Main
             // 
@@ -1329,5 +1357,9 @@
         private ToolStripMenuItem bGMXMLEditorToolStripMenuItem3;
         private ToolStripMenuItem playStartupSoundToolStripMenuItem;
         private ToolStripMenuItem aDTPCToolStripMenuItem;
+        private ToolStripMenuItem tIMToolStripMenuItem1;
+        private ToolStripMenuItem tIMToolStripMenuItem2;
+        private ToolStripMenuItem tIMToolStripMenuItem3;
+        private ToolStripMenuItem tIMViewerToolStripMenuItem;
     }
 }

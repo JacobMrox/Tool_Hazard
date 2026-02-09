@@ -1435,6 +1435,29 @@ namespace Tool_Hazard
             editor.Show(this);
         }
 
+        private void tIMToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            var editor = new Biohazard_PIX_Viewer();
+            editor.Show(this);
+        }
+
+        private void tIMToolStripMenuItem2_Click(object sender, EventArgs e)
+        {
+            var editor = new Biohazard_PIX_Viewer();
+            editor.Show(this);
+        }
+
+        private void tIMToolStripMenuItem3_Click(object sender, EventArgs e)
+        {
+            var editor = new Biohazard_PIX_Viewer();
+            editor.Show(this);
+        }
+        private void tIMViewerToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            var editor = new Biohazard_PIX_Viewer();
+            editor.Show(this);
+        }
+
         //BSS Manager/Viewer Hookers
         private void bSSToolStripMenuItem_Click(object sender, EventArgs e)
         {

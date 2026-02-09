@@ -50,7 +50,7 @@ namespace Tool_Hazard.Forms
 
         private void pictureBox1_Click(object sender, EventArgs e)
         {
-            SetStatus("Why are you clicking this? This isn't Deadly Silence!");
+            //SetStatus("Why are you clicking this? This isn't Deadly Silence!");
         }
 
         // ----------------------
