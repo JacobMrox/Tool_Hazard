@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace IntelOrca.Biohazard.Room
+﻿namespace IntelOrca.Biohazard.Room
 {
     public interface IRdt
     {

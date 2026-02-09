@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using IntelOrca.Biohazard.Extensions;
 using System.Diagnostics;
-using System.Linq;
 using System.Runtime.InteropServices;
-using IntelOrca.Biohazard.Extensions;
 
 namespace IntelOrca.Biohazard.Model
 {

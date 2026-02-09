@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace IntelOrca.Biohazard.Script.Compilation
+﻿namespace IntelOrca.Biohazard.Script.Compilation
 {
     public partial class ScdAssembler
     {

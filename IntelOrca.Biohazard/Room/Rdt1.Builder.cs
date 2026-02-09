@@ -1,8 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using IntelOrca.Biohazard.Model;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using IntelOrca.Biohazard.Model;
 
 namespace IntelOrca.Biohazard.Room
 {

@@ -3,10 +3,6 @@
 // This is a port of the editor XML project format from the original C++ tool,
 // which uses a simple structure with a root <Strings> element and child <Text> elements for each page.
 #nullable enable
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Text;
 using System.Xml.Linq;
 

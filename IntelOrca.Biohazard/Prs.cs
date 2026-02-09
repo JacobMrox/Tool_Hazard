@@ -1,8 +1,6 @@
 ﻿// Based on the PRS compression/decompression algorithm by Sewer56
 // https://github.com/Sewer56/dlang-prs
 
-using System;
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 

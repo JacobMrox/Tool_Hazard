@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.IO;
-
-namespace IntelOrca.Biohazard.Model
+﻿namespace IntelOrca.Biohazard.Model
 {
     public sealed partial class Edd1
     {

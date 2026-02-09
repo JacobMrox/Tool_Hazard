@@ -7,11 +7,8 @@
 // - BSS "frame" here means ONE camera chunk (0x8000 or 0x10000) that your form already slices.
 // - Encoder is currently a stub (won't produce original-valid BS). Decode is the priority.
 
-using System;
 using System.Buffers.Binary;
-using System.Drawing;
 using System.Drawing.Imaging;
-using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 

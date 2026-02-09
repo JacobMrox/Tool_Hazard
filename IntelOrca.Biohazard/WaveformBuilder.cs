@@ -1,7 +1,5 @@
-﻿using System;
-using System.IO;
+﻿using NVorbis;
 using System.Runtime.InteropServices;
-using NVorbis;
 
 namespace IntelOrca.Biohazard
 {

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
+﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -286,31 +283,31 @@ namespace IntelOrca.Biohazard.Script
                 case OpcodeV1.Nop:
                     break;
                 case OpcodeV1.IfelCk:
-                {
-                    sb.Write("if (");
-                    _constructingBinaryExpression = true;
-                    _expressionCount = 0;
-                    break;
-                }
+                    {
+                        sb.Write("if (");
+                        _constructingBinaryExpression = true;
+                        _expressionCount = 0;
+                        break;
+                    }
                 case OpcodeV1.ElseCk:
-                {
-                    var blockLen = br.ReadByte();
-                    _sb.CloseBlock();
-                    _blockEnds.Push(((byte)opcode, offset + blockLen));
-                    sb.WriteLine("else");
-                    _sb.OpenBlock();
-                    break;
-                }
+                    {
+                        var blockLen = br.ReadByte();
+                        _sb.CloseBlock();
+                        _blockEnds.Push(((byte)opcode, offset + blockLen));
+                        sb.WriteLine("else");
+                        _sb.OpenBlock();
+                        break;
+                    }
                 case OpcodeV1.EndIf:
                     _sb.CloseBlock();
                     break;
                 case OpcodeV1.End:
-                {
-                    br.ReadByte();
-                    _lastReturnLine = sb.LineCount;
-                    sb.WriteLine($"return;");
-                    break;
-                }
+                    {
+                        br.ReadByte();
+                        _lastReturnLine = sb.LineCount;
+                        sb.WriteLine($"return;");
+                        break;
+                    }
             }
             return true;
         }
@@ -327,108 +324,108 @@ namespace IntelOrca.Biohazard.Script
                 case OpcodeV2.Nop20:
                     break;
                 case OpcodeV2.EvtEnd:
-                {
-                    br.ReadByte();
-                    _lastReturnLine = sb.LineCount;
-                    sb.WriteLine($"evt_end(0);");
-                    break;
-                }
+                    {
+                        br.ReadByte();
+                        _lastReturnLine = sb.LineCount;
+                        sb.WriteLine($"evt_end(0);");
+                        break;
+                    }
                 case OpcodeV2.EvtExec:
-                {
-                    var p0 = br.ReadByte();
-                    var p1 = br.ReadByte();
-                    if (p0 == 0xFF && p1 == 0x18)
                     {
-                        var p2 = br.ReadByte();
-                        sb.WriteLine($"fork {GetProcedureName(p2)};");
+                        var p0 = br.ReadByte();
+                        var p1 = br.ReadByte();
+                        if (p0 == 0xFF && p1 == 0x18)
+                        {
+                            var p2 = br.ReadByte();
+                            sb.WriteLine($"fork {GetProcedureName(p2)};");
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                        break;
                     }
-                    else
-                    {
-                        return false;
-                    }
-                    break;
-                }
                 case OpcodeV2.IfelCk:
-                {
-                    sb.Write("if (");
-                    _constructingBinaryExpression = true;
-                    _expressionCount = 0;
-                    break;
-                }
+                    {
+                        sb.Write("if (");
+                        _constructingBinaryExpression = true;
+                        _expressionCount = 0;
+                        break;
+                    }
                 case OpcodeV2.ElseCk:
-                {
-                    br.ReadByte();
-                    var blockLen = br.ReadUInt16();
-                    _sb.CloseBlock();
-                    _blockEnds.Push(((byte)opcode, offset + blockLen));
-                    sb.WriteLine("else");
-                    _sb.OpenBlock();
-                    break;
-                }
+                    {
+                        br.ReadByte();
+                        var blockLen = br.ReadUInt16();
+                        _sb.CloseBlock();
+                        _blockEnds.Push(((byte)opcode, offset + blockLen));
+                        sb.WriteLine("else");
+                        _sb.OpenBlock();
+                        break;
+                    }
                 case OpcodeV2.EndIf:
                     _sb.CloseBlock();
                     break;
                 case OpcodeV2.For:
-                {
-                    br.ReadByte();
-                    var blockLen = br.ReadUInt16();
-                    var count = br.ReadUInt16();
-                    sb.WriteLine($"repeat ({count})");
-                    _sb.OpenBlock();
-                    break;
-                }
+                    {
+                        br.ReadByte();
+                        var blockLen = br.ReadUInt16();
+                        var count = br.ReadUInt16();
+                        sb.WriteLine($"repeat ({count})");
+                        _sb.OpenBlock();
+                        break;
+                    }
                 case OpcodeV2.Next:
                     sb.CloseBlock();
                     break;
                 case OpcodeV2.While:
-                {
-                    br.ReadByte();
-                    var blockLen = br.ReadUInt16();
-                    sb.Write($"while (");
-                    // _sb.OpenBlock();
-                    _constructingBinaryExpression = true;
-                    _expressionCount = 0;
-                    break;
-                }
+                    {
+                        br.ReadByte();
+                        var blockLen = br.ReadUInt16();
+                        sb.Write($"while (");
+                        // _sb.OpenBlock();
+                        _constructingBinaryExpression = true;
+                        _expressionCount = 0;
+                        break;
+                    }
                 case OpcodeV2.Ewhile:
                     sb.CloseBlock();
                     break;
                 case OpcodeV2.Do:
-                {
-                    br.ReadByte();
-                    var blockLen = br.ReadUInt16();
-                    _blockEnds.Push(((byte)opcode, offset + blockLen));
-                    sb.WriteLine($"do");
-                    _sb.OpenBlock();
-                    break;
-                }
+                    {
+                        br.ReadByte();
+                        var blockLen = br.ReadUInt16();
+                        _blockEnds.Push(((byte)opcode, offset + blockLen));
+                        sb.WriteLine($"do");
+                        _sb.OpenBlock();
+                        break;
+                    }
                 case OpcodeV2.Edwhile:
-                {
-                    _endDoWhile = true;
-                    CloseCurrentBlock();
-                    sb.Unindent();
-                    sb.Write("} while (");
-                    _constructingBinaryExpression = true;
-                    _expressionCount = 0;
-                    break;
-                }
+                    {
+                        _endDoWhile = true;
+                        CloseCurrentBlock();
+                        sb.Unindent();
+                        sb.Write("} while (");
+                        _constructingBinaryExpression = true;
+                        _expressionCount = 0;
+                        break;
+                    }
                 case OpcodeV2.Switch:
-                {
-                    var varw = br.ReadByte();
-                    sb.WriteLine($"switch ({GetVariableName(varw)})");
-                    _sb.OpenBlock();
-                    break;
-                }
+                    {
+                        var varw = br.ReadByte();
+                        sb.WriteLine($"switch ({GetVariableName(varw)})");
+                        _sb.OpenBlock();
+                        break;
+                    }
                 case OpcodeV2.Case:
-                {
-                    br.ReadByte();
-                    br.ReadUInt16();
-                    var value = br.ReadUInt16();
-                    sb.Unindent();
-                    sb.WriteLine($"case {value}:");
-                    sb.Indent();
-                    break;
-                }
+                    {
+                        br.ReadByte();
+                        br.ReadUInt16();
+                        var value = br.ReadUInt16();
+                        sb.Unindent();
+                        sb.WriteLine($"case {value}:");
+                        sb.Indent();
+                        break;
+                    }
                 case OpcodeV2.Default:
                     sb.Unindent();
                     sb.WriteLine($"default:");
@@ -471,107 +468,107 @@ namespace IntelOrca.Biohazard.Script
                 case OpcodeV3.Nop:
                     break;
                 case OpcodeV3.EvtEnd:
-                {
-                    br.ReadByte();
-                    _lastReturnLine = sb.LineCount;
-                    sb.WriteLine($"evt_end(0);");
-                    break;
-                }
+                    {
+                        br.ReadByte();
+                        _lastReturnLine = sb.LineCount;
+                        sb.WriteLine($"evt_end(0);");
+                        break;
+                    }
                 case OpcodeV3.EvtExec:
-                {
-                    var p0 = br.ReadByte();
-                    var p1 = br.ReadByte();
-                    if (p0 == 0xFF && p1 == 0x18)
                     {
-                        var p2 = br.ReadByte();
-                        sb.WriteLine($"fork {GetProcedureName(p2)};");
+                        var p0 = br.ReadByte();
+                        var p1 = br.ReadByte();
+                        if (p0 == 0xFF && p1 == 0x18)
+                        {
+                            var p2 = br.ReadByte();
+                            sb.WriteLine($"fork {GetProcedureName(p2)};");
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                        break;
                     }
-                    else
-                    {
-                        return false;
-                    }
-                    break;
-                }
                 case OpcodeV3.IfelCk:
-                {
-                    sb.Write("if (");
-                    _constructingBinaryExpression = true;
-                    _expressionCount = 0;
-                    break;
-                }
+                    {
+                        sb.Write("if (");
+                        _constructingBinaryExpression = true;
+                        _expressionCount = 0;
+                        break;
+                    }
                 case OpcodeV3.ElseCk:
-                {
-                    br.ReadByte();
-                    var blockLen = br.ReadUInt16();
-                    _sb.CloseBlock();
-                    _blockEnds.Push(((byte)opcode, offset + blockLen));
-                    sb.WriteLine("else");
-                    _sb.OpenBlock();
-                    break;
-                }
+                    {
+                        br.ReadByte();
+                        var blockLen = br.ReadUInt16();
+                        _sb.CloseBlock();
+                        _blockEnds.Push(((byte)opcode, offset + blockLen));
+                        sb.WriteLine("else");
+                        _sb.OpenBlock();
+                        break;
+                    }
                 case OpcodeV3.EndIf:
                     _sb.CloseBlock();
                     break;
                 case OpcodeV3.For:
-                {
-                    br.ReadByte();
-                    var blockLen = br.ReadUInt16();
-                    var count = br.ReadUInt16();
-                    sb.WriteLine($"repeat ({count})");
-                    _sb.OpenBlock();
-                    break;
-                }
+                    {
+                        br.ReadByte();
+                        var blockLen = br.ReadUInt16();
+                        var count = br.ReadUInt16();
+                        sb.WriteLine($"repeat ({count})");
+                        _sb.OpenBlock();
+                        break;
+                    }
                 case OpcodeV3.EndFor:
                     sb.CloseBlock();
                     break;
                 case OpcodeV3.While:
-                {
-                    br.ReadByte();
-                    var blockLen = br.ReadUInt16();
-                    sb.Write($"while (");
-                    _constructingBinaryExpression = true;
-                    _expressionCount = 0;
-                    break;
-                }
+                    {
+                        br.ReadByte();
+                        var blockLen = br.ReadUInt16();
+                        sb.Write($"while (");
+                        _constructingBinaryExpression = true;
+                        _expressionCount = 0;
+                        break;
+                    }
                 case OpcodeV3.Ewhile:
                     sb.CloseBlock();
                     break;
                 case OpcodeV3.Do:
-                {
-                    br.ReadByte();
-                    var blockLen = br.ReadUInt16();
-                    _blockEnds.Push(((byte)opcode, offset + blockLen));
-                    sb.WriteLine($"do");
-                    _sb.OpenBlock();
-                    break;
-                }
+                    {
+                        br.ReadByte();
+                        var blockLen = br.ReadUInt16();
+                        _blockEnds.Push(((byte)opcode, offset + blockLen));
+                        sb.WriteLine($"do");
+                        _sb.OpenBlock();
+                        break;
+                    }
                 case OpcodeV3.Edwhile:
-                {
-                    _endDoWhile = true;
-                    CloseCurrentBlock();
-                    sb.Unindent();
-                    sb.Write("} while (");
-                    _constructingBinaryExpression = true;
-                    _expressionCount = 0;
-                    break;
-                }
+                    {
+                        _endDoWhile = true;
+                        CloseCurrentBlock();
+                        sb.Unindent();
+                        sb.Write("} while (");
+                        _constructingBinaryExpression = true;
+                        _expressionCount = 0;
+                        break;
+                    }
                 case OpcodeV3.Switch:
-                {
-                    var varw = br.ReadByte();
-                    sb.WriteLine($"switch ({GetVariableName(varw)})");
-                    _sb.OpenBlock();
-                    break;
-                }
+                    {
+                        var varw = br.ReadByte();
+                        sb.WriteLine($"switch ({GetVariableName(varw)})");
+                        _sb.OpenBlock();
+                        break;
+                    }
                 case OpcodeV3.Case:
-                {
-                    br.ReadByte();
-                    br.ReadUInt16();
-                    var value = br.ReadUInt16();
-                    sb.Unindent();
-                    sb.WriteLine($"case {value}:");
-                    sb.Indent();
-                    break;
-                }
+                    {
+                        br.ReadByte();
+                        br.ReadUInt16();
+                        var value = br.ReadUInt16();
+                        sb.Unindent();
+                        sb.WriteLine($"case {value}:");
+                        sb.Indent();
+                        break;
+                    }
                 case OpcodeV3.Default:
                     sb.Unindent();
                     sb.WriteLine($"default:");
@@ -612,28 +609,28 @@ namespace IntelOrca.Biohazard.Script
                 default:
                     return false;
                 case 0x00:
-                {
-                    br.ReadByte();
-                    _lastReturnLine = sb.LineCount;
-                    sb.WriteLine($"evt_end(0);");
-                    break;
-                }
+                    {
+                        br.ReadByte();
+                        _lastReturnLine = sb.LineCount;
+                        sb.WriteLine($"evt_end(0);");
+                        break;
+                    }
                 case 0x01:
-                {
-                    sb.Write("if (");
-                    _constructingBinaryExpression = true;
-                    _expressionCount = 0;
-                    break;
-                }
+                    {
+                        sb.Write("if (");
+                        _constructingBinaryExpression = true;
+                        _expressionCount = 0;
+                        break;
+                    }
                 case 0x02:
-                {
-                    var blockLen = br.ReadByte();
-                    _sb.CloseBlock();
-                    _blockEnds.Push(((byte)opcode, offset + blockLen));
-                    sb.WriteLine("else");
-                    _sb.OpenBlock();
-                    break;
-                }
+                    {
+                        var blockLen = br.ReadByte();
+                        _sb.CloseBlock();
+                        _blockEnds.Push(((byte)opcode, offset + blockLen));
+                        sb.WriteLine("else");
+                        _sb.OpenBlock();
+                        break;
+                    }
                 case 0x03:
                     _sb.CloseBlock();
                     break;
@@ -702,48 +699,48 @@ namespace IntelOrca.Biohazard.Script
                         switch (c)
                         {
                             case 'l':
-                            {
-                                var blockLen = br.ReadByte();
-                                var labelOffset = offset + blockLen;
-                                _sb.InsertLabel(labelOffset);
-                                parameters.Add(_sb.GetLabelName(labelOffset));
-                                break;
-                            }
+                                {
+                                    var blockLen = br.ReadByte();
+                                    var labelOffset = offset + blockLen;
+                                    _sb.InsertLabel(labelOffset);
+                                    parameters.Add(_sb.GetLabelName(labelOffset));
+                                    break;
+                                }
                             case '\'':
-                            {
-                                var blockLen = br.ReadByte();
-                                var labelOffset = offset + instructionLength + blockLen;
-                                _sb.InsertLabel(labelOffset);
-                                parameters.Add(_sb.GetLabelName(labelOffset));
-                                break;
-                            }
+                                {
+                                    var blockLen = br.ReadByte();
+                                    var labelOffset = offset + instructionLength + blockLen;
+                                    _sb.InsertLabel(labelOffset);
+                                    parameters.Add(_sb.GetLabelName(labelOffset));
+                                    break;
+                                }
                             case 'L':
                             case '~':
-                            {
-                                var blockLen = c == '~' ? (int)br.ReadInt16() : (int)br.ReadUInt16();
-                                var labelOffset = offset + instructionLength + blockLen;
-                                if (c == '~')
-                                    labelOffset = offset + blockLen;
-                                _sb.InsertLabel(labelOffset);
-                                parameters.Add(_sb.GetLabelName(labelOffset));
-                                break;
-                            }
+                                {
+                                    var blockLen = c == '~' ? (int)br.ReadInt16() : (int)br.ReadUInt16();
+                                    var labelOffset = offset + instructionLength + blockLen;
+                                    if (c == '~')
+                                        labelOffset = offset + blockLen;
+                                    _sb.InsertLabel(labelOffset);
+                                    parameters.Add(_sb.GetLabelName(labelOffset));
+                                    break;
+                                }
                             case '@':
-                            {
-                                var blockLen = br.ReadInt16();
-                                var labelOffset = offset + blockLen;
-                                _sb.InsertLabel(labelOffset);
-                                parameters.Add(_sb.GetLabelName(labelOffset));
-                                break;
-                            }
+                                {
+                                    var blockLen = br.ReadInt16();
+                                    var labelOffset = offset + blockLen;
+                                    _sb.InsertLabel(labelOffset);
+                                    parameters.Add(_sb.GetLabelName(labelOffset));
+                                    break;
+                                }
                             case 'b':
-                            {
-                                var temp = br.ReadByte();
-                                var bitArray = temp >> 5;
-                                var number = temp & 0b11111;
-                                parameters.Add($"{bitArray << 5} | {number}");
-                                break;
-                            }
+                                {
+                                    var temp = br.ReadByte();
+                                    var bitArray = temp >> 5;
+                                    var number = temp & 0b11111;
+                                    parameters.Add($"{bitArray << 5} | {number}");
+                                    break;
+                                }
                             case 'u':
                                 parameters.Add(br.ReadByte());
                                 break;
@@ -754,12 +751,12 @@ namespace IntelOrca.Biohazard.Script
                                 parameters.Add(br.ReadInt16());
                                 break;
                             default:
-                            {
-                                var v = char.IsUpper(c) ? br.ReadUInt16() : br.ReadByte();
-                                szv = _constantTable.GetConstant(c, v);
-                                parameters.Add(szv ?? (object)v);
-                                break;
-                            }
+                                {
+                                    var v = char.IsUpper(c) ? br.ReadUInt16() : br.ReadByte();
+                                    szv = _constantTable.GetConstant(c, v);
+                                    parameters.Add(szv ?? (object)v);
+                                    break;
+                                }
                         }
                     }
                     pIndex++;

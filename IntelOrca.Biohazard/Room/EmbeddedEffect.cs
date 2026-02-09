@@ -1,7 +1,4 @@
-﻿using System;
-using System.Linq;
-
-namespace IntelOrca.Biohazard.Room
+﻿namespace IntelOrca.Biohazard.Room
 {
     public readonly struct EmbeddedEffect
     {

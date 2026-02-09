@@ -1,8 +1,7 @@
-using System;
-using System.Windows.Forms;
-
 // Alias the form type so it doesn't conflict with Program.Main()
 using MainForm = Tool_Hazard.Main;
+using System.Globalization;
+using System.Threading;
 
 namespace Tool_Hazard
 {
@@ -12,6 +11,8 @@ namespace Tool_Hazard
         [STAThread]
         static void Main()
         {
+            Thread.CurrentThread.CurrentUICulture = CultureInfo.InvariantCulture;
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
             // Initialize the application configuration (e.g. play startup sound if enabled)
             // To customize application configuration such as set high DPI settings or default font, 
             // see https://aka.ms/applicationconfiguration.

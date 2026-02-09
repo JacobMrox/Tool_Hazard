@@ -1,6 +1,4 @@
-﻿using System;
-using System.Globalization;
-using System.IO;
+﻿using System.Globalization;
 using System.Text;
 
 namespace IntelOrca.Biohazard.Room
@@ -100,24 +98,24 @@ namespace IntelOrca.Biohazard.Room
                 switch (b)
                 {
                     case Green:
-                    {
-                        var p = span[++i];
-                        if (p == 1)
-                            sb.Append('{');
-                        else
-                            sb.Append('}');
-                        break;
-                    }
+                        {
+                            var p = span[++i];
+                            if (p == 1)
+                                sb.Append('{');
+                            else
+                                sb.Append('}');
+                            break;
+                        }
                     case StartText:
                         i++;
                         break;
                     case YesNoQuestion:
-                    {
-                        var p = span[++i];
-                        sb.Append('@');
-                        sb.Append(p.ToString("X2"));
-                        break;
-                    }
+                        {
+                            var p = span[++i];
+                            sb.Append('@');
+                            sb.Append(p.ToString("X2"));
+                            break;
+                        }
                     case LineBreak:
                         sb.Append('\n');
                         break;

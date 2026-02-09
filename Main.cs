@@ -1,14 +1,7 @@
 ﻿using IntelOrca.Biohazard;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Drawing.Imaging;
-using System.IO;
 using System.Media;
 using System.Reflection;
-using System.Security.Policy;
 using System.Text;
-using System.Windows.Forms;
 using Tool_Hazard.Biohazard;
 using Tool_Hazard.Biohazard.emd;
 using Tool_Hazard.Biohazard.RDT;
@@ -16,8 +9,6 @@ using Tool_Hazard.Forms;
 using Tool_Hazard.Nintendo;
 using Tool_Hazard.Sony_PS1;
 using Tool_Hazard.White_Day;
-using static System.Net.Mime.MediaTypeNames;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace Tool_Hazard
 {
@@ -1521,7 +1512,7 @@ namespace Tool_Hazard
                 "Special Thanks: Emuiya, 3lric, Intel.Orca, GrungeStyle, Leo2236, Gemini-Loboto3\n\n" +
                 "Copyright (c) 2026 Jacob Qarooni (Karuni/Lari/Mallallah)\n" +
                 "يعقوب القاروني/كارونی/لاری/مال‌الله\n" +
-                "All rights reserved.";
+                "All rights reserved.\n@Mehrqarox";
 
             MessageBox.Show(aboutMessage, "About Tool Hazard", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }

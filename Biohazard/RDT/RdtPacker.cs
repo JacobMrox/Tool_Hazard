@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using IntelOrca.Biohazard;
+﻿using IntelOrca.Biohazard;
 using IntelOrca.Biohazard.Model;
 using IntelOrca.Biohazard.Room;
 

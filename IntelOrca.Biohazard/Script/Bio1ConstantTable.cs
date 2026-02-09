@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-
-namespace IntelOrca.Biohazard.Script
+﻿namespace IntelOrca.Biohazard.Script
 {
     public class Bio1ConstantTable : IConstantTable
     {

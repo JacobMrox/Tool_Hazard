@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using IntelOrca.Biohazard.Room;
+﻿using IntelOrca.Biohazard.Room;
 
 namespace IntelOrca.Biohazard.Script.Compilation
 {

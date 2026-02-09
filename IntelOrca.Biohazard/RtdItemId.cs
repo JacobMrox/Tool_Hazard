@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace IntelOrca.Biohazard
+﻿namespace IntelOrca.Biohazard
 {
     public struct RdtItemId : IComparable<RdtItemId>, IEquatable<RdtItemId>
     {

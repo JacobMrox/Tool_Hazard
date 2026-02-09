@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using IntelOrca.Biohazard.Model;
 using System.Text;
-using IntelOrca.Biohazard.Model;
 
 namespace IntelOrca.Biohazard.Script.Compilation
 {

@@ -1,7 +1,4 @@
-﻿using System;
-using System.IO;
-
-namespace IntelOrca.Biohazard
+﻿namespace IntelOrca.Biohazard
 {
     internal class ForkedBinaryReader : BinaryReader, IDisposable
     {

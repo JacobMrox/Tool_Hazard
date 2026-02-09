@@ -5,12 +5,7 @@
 // - Item sheet PIX: file size divisible by 1200, each icon is 40x30 8bpp indices
 //   rendered using the ItemEditor embedded PALETTE resource (extracted from ItemEditor/Res.res).
 
-using System;
-using System.Collections.Generic;
-using System.Drawing;
 using System.Drawing.Imaging;
-using System.IO;
-using System.Runtime.InteropServices;
 
 namespace Tool_Hazard.Biohazard.PIX
 {
@@ -617,7 +612,7 @@ namespace Tool_Hazard.Biohazard.PIX
         {
             if (pixBytes.Length % IconBytes != 0)
                 MessageBox.Show($"Failed to open file.\n\nItem sheet PIX must have size divisible by 1200 (40*30 bytes per icon", "Open error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                //throw new InvalidDataException("Item sheet PIX must have size divisible by 1200 (40*30 bytes per icon).");//Replce with message box
+            //throw new InvalidDataException("Item sheet PIX must have size divisible by 1200 (40*30 bytes per icon).");//Replce with message box
 
             return new ItemSheet(pixBytes, palette512 ?? DefaultPalette512);
         }

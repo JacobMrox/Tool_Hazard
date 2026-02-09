@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
+﻿using IntelOrca.Biohazard;
 using System.Drawing.Imaging;
-using IntelOrca.Biohazard;
 
 namespace Tool_Hazard.Sony_PS1
 {

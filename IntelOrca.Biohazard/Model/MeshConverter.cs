@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace IntelOrca.Biohazard.Model
+﻿namespace IntelOrca.Biohazard.Model
 {
     public class MeshConverter
     {
@@ -85,23 +82,23 @@ namespace IntelOrca.Biohazard.Model
             switch (version)
             {
                 case BioVersion.Biohazard1:
-                {
-                    var visitor = new TmdConverter(remapArray);
-                    visitor.Accept(mesh);
-                    return visitor.ToTmd();
-                }
+                    {
+                        var visitor = new TmdConverter(remapArray);
+                        visitor.Accept(mesh);
+                        return visitor.ToTmd();
+                    }
                 case BioVersion.Biohazard2:
-                {
-                    var visitor = new Md1Converter(remapArray);
-                    visitor.Accept(mesh);
-                    return visitor.ToTmd();
-                }
+                    {
+                        var visitor = new Md1Converter(remapArray);
+                        visitor.Accept(mesh);
+                        return visitor.ToTmd();
+                    }
                 case BioVersion.Biohazard3:
-                {
-                    var visitor = new Md2Converter(remapArray);
-                    visitor.Accept(mesh);
-                    return visitor.ToTmd();
-                }
+                    {
+                        var visitor = new Md2Converter(remapArray);
+                        visitor.Accept(mesh);
+                        return visitor.ToTmd();
+                    }
                 default:
                     throw new NotSupportedException();
             }

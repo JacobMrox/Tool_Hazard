@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace IntelOrca.Biohazard.Script.Compilation
+﻿namespace IntelOrca.Biohazard.Script.Compilation
 {
     internal abstract class LexerBase
     {

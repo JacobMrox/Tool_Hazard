@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace IntelOrca.Biohazard.Script
+﻿namespace IntelOrca.Biohazard.Script
 {
     internal static class ConstantTable
     {

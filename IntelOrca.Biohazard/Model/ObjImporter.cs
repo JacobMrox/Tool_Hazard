@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using static IntelOrca.Biohazard.Model.Md2;
+﻿using static IntelOrca.Biohazard.Model.Md2;
 
 namespace IntelOrca.Biohazard.Model
 {

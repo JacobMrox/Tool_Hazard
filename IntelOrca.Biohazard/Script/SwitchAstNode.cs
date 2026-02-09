@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace IntelOrca.Biohazard.Script
+﻿namespace IntelOrca.Biohazard.Script
 {
     public class SwitchAstNode : IScriptAstNode
     {

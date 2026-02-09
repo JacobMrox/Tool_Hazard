@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-
-namespace IntelOrca.Biohazard.Model
+﻿namespace IntelOrca.Biohazard.Model
 {
     public abstract class ModelFile
     {

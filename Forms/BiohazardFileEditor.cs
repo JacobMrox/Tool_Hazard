@@ -1,10 +1,5 @@
 ﻿// Tool_Hazard/Forms/BiohazardFileEditor.cs
 #nullable enable
-using System;
-using System.Drawing;
-using System.IO;
-using System.Linq;
-using System.Windows.Forms;
 using Tool_Hazard.Biohazard.FileEditor;
 
 namespace Tool_Hazard.Forms

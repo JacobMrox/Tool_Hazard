@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static Tool_Hazard.Main;
+﻿using System.Text;
 
 namespace Tool_Hazard.White_Day
 {

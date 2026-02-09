@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.IO;
-using System.Windows.Forms;
-using White_Day_Mod_Tool;
+﻿using White_Day_Mod_Tool;
 
 namespace Tool_Hazard
 {

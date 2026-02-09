@@ -1,7 +1,4 @@
-﻿using System.Drawing;
-using System.Drawing.Imaging;
-
-namespace White_Day_Mod_Tool
+﻿namespace White_Day_Mod_Tool
 {
     public static class BitmapExtensions
     {

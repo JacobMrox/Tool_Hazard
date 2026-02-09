@@ -5,10 +5,7 @@
 // Credits to the original C++ tool for the rendering logic, including handling of tags and spacing.
 // Biohazard/FileEditor/FileFontRenderer.cs
 #nullable enable
-using System;
-using System.Drawing;
 using System.Drawing.Imaging;
-using System.IO;
 
 namespace Tool_Hazard.Biohazard.FileEditor
 {

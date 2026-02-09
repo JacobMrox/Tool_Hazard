@@ -1,5 +1,4 @@
-﻿using System;
-using IntelOrca.Biohazard.Room;
+﻿using IntelOrca.Biohazard.Room;
 
 namespace IntelOrca.Biohazard.Extensions
 {

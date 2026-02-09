@@ -1,5 +1,5 @@
-﻿using System.Diagnostics;
-using IntelOrca.Biohazard.Script.Opcodes;
+﻿using IntelOrca.Biohazard.Script.Opcodes;
+using System.Diagnostics;
 
 namespace IntelOrca.Biohazard.Script
 {

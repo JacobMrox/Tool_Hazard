@@ -1,13 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using Tool_Hazard.Biohazard.MSG;
+﻿using Tool_Hazard.Biohazard.MSG;
 
 namespace Tool_Hazard.Forms
 {
@@ -22,7 +13,7 @@ namespace Tool_Hazard.Forms
 
         // Change this to wherever you ship the default encoding.xml
         private static string DefaultEncodingPath =>
-            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources","Biohazard", "encoding.xml");
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "Biohazard", "encoding.xml");
 
         public ClassicREmsgTool()
         {
@@ -184,7 +175,7 @@ namespace Tool_Hazard.Forms
 
             if (result == DialogResult.Cancel)
                 return false;
-                Close();
+            Close();
 
             if (result == DialogResult.Yes)
                 SaveMsg(overwrite: true);

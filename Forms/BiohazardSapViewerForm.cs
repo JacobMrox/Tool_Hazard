@@ -1,12 +1,7 @@
 ﻿#nullable enable
-using System;
-using System.IO;
-using System.Linq;
-using System.Windows.Forms;
-using Tool_Hazard.Biohazard.SAP;
-
 using NAudio.Wave;
 using NVorbis;
+using Tool_Hazard.Biohazard.SAP;
 
 namespace Tool_Hazard.Forms
 {

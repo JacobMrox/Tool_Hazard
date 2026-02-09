@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using EmrFrame = IntelOrca.Biohazard.Model.Emr.Builder.Keyframe;
+﻿using EmrFrame = IntelOrca.Biohazard.Model.Emr.Builder.Keyframe;
 
 namespace IntelOrca.Biohazard.Model
 {

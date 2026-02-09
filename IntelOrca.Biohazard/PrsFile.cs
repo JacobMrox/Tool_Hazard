@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace IntelOrca.Biohazard
+﻿namespace IntelOrca.Biohazard
 {
     /// <summary>
     /// Wraps or compresses a buffer to a PRS-compressed buffer with capability to decompress it back.

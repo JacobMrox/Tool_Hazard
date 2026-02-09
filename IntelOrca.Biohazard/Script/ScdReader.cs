@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using IntelOrca.Biohazard.Room;
+﻿using IntelOrca.Biohazard.Room;
 
 namespace IntelOrca.Biohazard.Script
 {
@@ -111,71 +108,71 @@ namespace IntelOrca.Biohazard.Script
                             ReadSingleEventOpcode(br.BaseStream, visitor, eventOpcodeLength);
                             break;
                         case Re1EventOpcode.Block:
-                        {
-                            var len = br.ReadByte();
-                            br.BaseStream.Position -= 2;
-                            visitor.VisitBeginEventOpcode((int)(BaseOffset + br.BaseStream.Position), br.ReadBytes(2));
-                            if (len > 1)
                             {
-                                var baseOffset = (int)(BaseOffset + br.BaseStream.Position);
-                                var blockBytes = br.ReadBytes(len - 1);
-                                var blockStream = new SpanStream(blockBytes);
-                                ReadRe1OpcodeBlock(blockStream, constantTable, visitor, baseOffset);
+                                var len = br.ReadByte();
+                                br.BaseStream.Position -= 2;
+                                visitor.VisitBeginEventOpcode((int)(BaseOffset + br.BaseStream.Position), br.ReadBytes(2));
+                                if (len > 1)
+                                {
+                                    var baseOffset = (int)(BaseOffset + br.BaseStream.Position);
+                                    var blockBytes = br.ReadBytes(len - 1);
+                                    var blockStream = new SpanStream(blockBytes);
+                                    ReadRe1OpcodeBlock(blockStream, constantTable, visitor, baseOffset);
+                                }
+                                visitor.VisitEndEventOpcode();
+                                break;
                             }
-                            visitor.VisitEndEventOpcode();
-                            break;
-                        }
                         case Re1EventOpcode.Single:
-                        {
-                            var opcodeLen = br.ReadByte();
-                            br.BaseStream.Position -= 2;
-                            visitor.VisitBeginEventOpcode((int)(BaseOffset + br.BaseStream.Position), br.ReadBytes(2));
-                            if (opcodeLen >= 2)
                             {
-                                var baseOffset = (int)(BaseOffset + br.BaseStream.Position);
-                                var opcodeBytes = br.ReadBytes(opcodeLen - 2);
-                                var blockStream = new SpanStream(opcodeBytes);
-                                ReadRe1Opcode(blockStream, constantTable, visitor, baseOffset);
+                                var opcodeLen = br.ReadByte();
+                                br.BaseStream.Position -= 2;
+                                visitor.VisitBeginEventOpcode((int)(BaseOffset + br.BaseStream.Position), br.ReadBytes(2));
+                                if (opcodeLen >= 2)
+                                {
+                                    var baseOffset = (int)(BaseOffset + br.BaseStream.Position);
+                                    var opcodeBytes = br.ReadBytes(opcodeLen - 2);
+                                    var blockStream = new SpanStream(opcodeBytes);
+                                    ReadRe1Opcode(blockStream, constantTable, visitor, baseOffset);
+                                }
+                                visitor.VisitEndEventOpcode();
+                                break;
                             }
-                            visitor.VisitEndEventOpcode();
-                            break;
-                        }
                         case Re1EventOpcode.Disable:
                             br.BaseStream.Position--;
                             visitor.VisitBeginEventOpcode((int)(BaseOffset + br.BaseStream.Position), br.ReadBytes(2));
                             visitor.VisitEndEventOpcode();
                             break;
                         case Re1EventOpcode.Unk81:
-                        {
-                            var len = 2;
-                            var param = br.ReadByte();
-                            if ((param & 0x0F) != 0)
                             {
-                                len += 8;
-                            }
-                            br.BaseStream.Position -= 2;
-                            visitor.VisitBeginEventOpcode((int)(BaseOffset + br.BaseStream.Position), br.ReadBytes(len));
-                            visitor.VisitEndEventOpcode();
-                            break;
-                        }
-                        case Re1EventOpcode.Do:
-                        {
-                            var opcodeLen = br.ReadByte();
-                            br.BaseStream.Position -= 2;
-
-                            visitor.VisitBeginEventOpcode((int)(BaseOffset + br.BaseStream.Position), br.ReadBytes(2));
-                            if (opcodeLen >= 2)
-                            {
-                                var baseOffset = (int)(BaseOffset + br.BaseStream.Position);
-                                var opcodes = br.ReadBytes(opcodeLen - 2);
-                                var opcodeStream = new SpanStream(opcodes);
-                                while (ReadRe1Opcode(opcodeStream, constantTable, visitor, baseOffset))
+                                var len = 2;
+                                var param = br.ReadByte();
+                                if ((param & 0x0F) != 0)
                                 {
+                                    len += 8;
                                 }
+                                br.BaseStream.Position -= 2;
+                                visitor.VisitBeginEventOpcode((int)(BaseOffset + br.BaseStream.Position), br.ReadBytes(len));
+                                visitor.VisitEndEventOpcode();
+                                break;
                             }
-                            visitor.VisitEndEventOpcode();
-                            break;
-                        }
+                        case Re1EventOpcode.Do:
+                            {
+                                var opcodeLen = br.ReadByte();
+                                br.BaseStream.Position -= 2;
+
+                                visitor.VisitBeginEventOpcode((int)(BaseOffset + br.BaseStream.Position), br.ReadBytes(2));
+                                if (opcodeLen >= 2)
+                                {
+                                    var baseOffset = (int)(BaseOffset + br.BaseStream.Position);
+                                    var opcodes = br.ReadBytes(opcodeLen - 2);
+                                    var opcodeStream = new SpanStream(opcodes);
+                                    while (ReadRe1Opcode(opcodeStream, constantTable, visitor, baseOffset))
+                                    {
+                                    }
+                                }
+                                visitor.VisitEndEventOpcode();
+                                break;
+                            }
                     }
                 }
             }

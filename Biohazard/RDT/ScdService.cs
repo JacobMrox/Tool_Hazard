@@ -4,10 +4,6 @@ using IntelOrca.Biohazard;
 using IntelOrca.Biohazard.Extensions;
 using IntelOrca.Biohazard.Room;
 using IntelOrca.Biohazard.Script;
-using IntelOrca.Biohazard.Script.Compilation;
-using System.IO;
-using System.Reflection;
-using Tool_Hazard;
 //using Biohazard.Script;
 
 public static class ScdService
@@ -146,7 +142,7 @@ public static class ScdService
             var SCDSuccessMSG = $"Successfully decompiled to:\n\n{sPath}\n\n{lstPath}";
             MessageBox.Show(
                 SCDSuccessMSG, "Success!", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-            
+
             //call update status from Main.cs?
             //Main.Instance?.UpdateStatus(SCDSuccessMSG);
 
@@ -156,7 +152,7 @@ public static class ScdService
             //Show error diaogue box
             var errorMSG = $"SCD Service Error {ex}";
             MessageBox.Show(errorMSG, "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            
+
             //call update status from Main.cs?
             //Main.Instance?.UpdateStatus(errorMSG);
 

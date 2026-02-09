@@ -1,6 +1,4 @@
-﻿using System.IO;
-
-namespace IntelOrca.Biohazard
+﻿namespace IntelOrca.Biohazard
 {
     public class PixFile
     {
@@ -12,7 +10,7 @@ namespace IntelOrca.Biohazard
         public PixFile(string path, int width, int height)
         {
             Width = width;
-            Height= height;
+            Height = height;
             using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read))
             {
                 _imageData = new byte[width * height * 2];

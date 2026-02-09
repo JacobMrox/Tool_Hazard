@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-
-namespace IntelOrca.Biohazard.Script.Compilation
+﻿namespace IntelOrca.Biohazard.Script.Compilation
 {
     public interface IFileIncluder
     {

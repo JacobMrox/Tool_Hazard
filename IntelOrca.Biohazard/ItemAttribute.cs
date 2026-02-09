@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace IntelOrca.Biohazard
+﻿namespace IntelOrca.Biohazard
 {
     [Flags]
     public enum ItemAttribute

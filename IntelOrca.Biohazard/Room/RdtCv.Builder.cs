@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.IO;
-
-namespace IntelOrca.Biohazard.Room
+﻿namespace IntelOrca.Biohazard.Room
 {
     public partial class RdtCv
     {

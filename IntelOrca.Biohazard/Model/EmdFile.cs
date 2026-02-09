@@ -1,7 +1,4 @@
-﻿using System;
-using System.IO;
-
-namespace IntelOrca.Biohazard.Model
+﻿namespace IntelOrca.Biohazard.Model
 {
     public class EmdFile : ModelFile
     {

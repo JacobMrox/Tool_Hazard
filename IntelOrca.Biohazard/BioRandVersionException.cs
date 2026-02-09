@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace IntelOrca.Biohazard
+﻿namespace IntelOrca.Biohazard
 {
     public class BioRandVersionException : Exception
     {

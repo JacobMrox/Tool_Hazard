@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace IntelOrca.Biohazard.Model
+﻿namespace IntelOrca.Biohazard.Model
 {
     [Flags]
     public enum EmrFlags

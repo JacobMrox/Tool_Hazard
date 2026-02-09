@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using IntelOrca.Biohazard.Model;
+﻿using IntelOrca.Biohazard.Model;
 using IntelOrca.Biohazard.Room;
+using System.Diagnostics;
 
 namespace IntelOrca.Biohazard.Script.Compilation
 {

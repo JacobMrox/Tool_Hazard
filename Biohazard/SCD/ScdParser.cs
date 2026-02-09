@@ -1,5 +1,4 @@
-﻿using IntelOrca.Biohazard.Script.Opcodes;
-using Tool_Hazard.Biohazard.SCD;
+﻿using Tool_Hazard.Biohazard.SCD;
 using Tool_Hazard.Biohazard.SCD.Opcodes;
 
 public class ScdParser

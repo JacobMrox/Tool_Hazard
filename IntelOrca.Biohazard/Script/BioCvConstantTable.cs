@@ -1,7 +1,4 @@
-﻿using System;
-using System.IO;
-
-namespace IntelOrca.Biohazard.Script
+﻿namespace IntelOrca.Biohazard.Script
 {
     internal class BioCvConstantTable : IConstantTable
     {

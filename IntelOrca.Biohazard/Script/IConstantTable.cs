@@ -1,6 +1,4 @@
-﻿using System.IO;
-
-namespace IntelOrca.Biohazard.Script
+﻿namespace IntelOrca.Biohazard.Script
 {
     internal interface IConstantTable
     {

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-
-namespace IntelOrca.Biohazard
+﻿namespace IntelOrca.Biohazard
 {
     public class TimCollectionFile
     {
@@ -285,31 +280,31 @@ namespace IntelOrca.Biohazard
             switch (_pixelFormat)
             {
                 case PaletteFormat4bpp:
-                {
-                    var offset = (y * _imageWidth * 2) + (x / 2);
-                    if (offset >= _imageData.Length)
-                        return 0;
-                    var b = _imageData[offset];
-                    var p = (byte)((x & 1) == 0 ? b & 0x0F : b >> 4);
-                    return p;
-                }
+                    {
+                        var offset = (y * _imageWidth * 2) + (x / 2);
+                        if (offset >= _imageData.Length)
+                            return 0;
+                        var b = _imageData[offset];
+                        var p = (byte)((x & 1) == 0 ? b & 0x0F : b >> 4);
+                        return p;
+                    }
                 case PaletteFormat8bpp:
-                {
-                    var offset = (y * Width) + x;
-                    var p = _imageData.Length > offset ? _imageData[offset] : 0;
-                    return (ushort)p;
-                }
+                    {
+                        var offset = (y * Width) + x;
+                        var p = _imageData.Length > offset ? _imageData[offset] : 0;
+                        return (ushort)p;
+                    }
                 case PaletteFormat16bpp:
-                {
-                    var offset = (y * Width * 2) + (x * 2);
-                    if (offset + 1 >= _imageData.Length)
-                        return 0;
+                    {
+                        var offset = (y * Width * 2) + (x * 2);
+                        if (offset + 1 >= _imageData.Length)
+                            return 0;
 
-                    var p0 = _imageData[offset + 0];
-                    var p1 = _imageData[offset + 1];
-                    var c16 = (ushort)(p0 | (p1 << 8));
-                    return c16;
-                }
+                        var p0 = _imageData[offset + 0];
+                        var p1 = _imageData[offset + 1];
+                        var c16 = (ushort)(p0 | (p1 << 8));
+                        return c16;
+                    }
                 default:
                     throw new InvalidOperationException();
             }
@@ -336,29 +331,29 @@ namespace IntelOrca.Biohazard
             switch (_pixelFormat)
             {
                 case PaletteFormat4bpp:
-                {
-                    var offset = (y * _imageWidth * 2) + (x / 2);
-                    var b = _imageData[offset];
-                    if ((x & 1) == 0)
-                        b = (byte)((b & 0xF0) | (value & 0x0F));
-                    else
-                        b = (byte)((b & 0x0F) | ((value & 0x0F) << 4));
-                    _imageData[offset] = b;
-                    break;
-                }
+                    {
+                        var offset = (y * _imageWidth * 2) + (x / 2);
+                        var b = _imageData[offset];
+                        if ((x & 1) == 0)
+                            b = (byte)((b & 0xF0) | (value & 0x0F));
+                        else
+                            b = (byte)((b & 0x0F) | ((value & 0x0F) << 4));
+                        _imageData[offset] = b;
+                        break;
+                    }
                 case PaletteFormat8bpp:
-                {
-                    var offset = (y * Width) + x;
-                    _imageData[offset] = (byte)(value & 0xFF);
-                    break;
-                }
+                    {
+                        var offset = (y * Width) + x;
+                        _imageData[offset] = (byte)(value & 0xFF);
+                        break;
+                    }
                 case PaletteFormat16bpp:
-                {
-                    var offset = ((y * Width) + x) * 2;
-                    _imageData[offset + 0] = (byte)(value & 0xFF);
-                    _imageData[offset + 1] = (byte)(value >> 8);
-                    break;
-                }
+                    {
+                        var offset = ((y * Width) + x) * 2;
+                        _imageData[offset + 0] = (byte)(value & 0xFF);
+                        _imageData[offset + 1] = (byte)(value >> 8);
+                        break;
+                    }
                 default:
                     throw new InvalidOperationException();
             }

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
-
-namespace White_Day_Mod_Tool
+﻿namespace White_Day_Mod_Tool
 {
     public class FontParameters
     {

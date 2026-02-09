@@ -1,7 +1,5 @@
-﻿using System;
-using System.IO;
+﻿using IntelOrca.Biohazard.Extensions;
 using System.Runtime.InteropServices;
-using IntelOrca.Biohazard.Extensions;
 
 namespace IntelOrca.Biohazard.Room
 {

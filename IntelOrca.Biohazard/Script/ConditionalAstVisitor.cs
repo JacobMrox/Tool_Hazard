@@ -1,6 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using IntelOrca.Biohazard.Script.Opcodes;
 using System.Text;
-using IntelOrca.Biohazard.Script.Opcodes;
 
 namespace IntelOrca.Biohazard.Script
 {

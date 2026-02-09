@@ -1,15 +1,19 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
-    <RootNamespace>Tool_Hazard</RootNamespace>
-    <Nullable>enable</Nullable>
-    <UseWindowsForms>true</UseWindowsForms>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <ApplicationIcon>icon.ico</ApplicationIcon>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
+<PropertyGroup>
+  <OutputType>WinExe</OutputType>
+  <TargetFramework>net8.0-windows</TargetFramework>
+  <RootNamespace>Tool_Hazard</RootNamespace>
+  <Nullable>enable</Nullable>
+  <UseWindowsForms>true</UseWindowsForms>
+  <ImplicitUsings>enable</ImplicitUsings>
+  <ApplicationIcon>umbrella (1).ico</ApplicationIcon>
+  <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  <StartupObject>Tool_Hazard.Program</StartupObject>
+
+  <!-- Fix duplicate TargetFrameworkAttribute -->
+  <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+</PropertyGroup>
 
   <ItemGroup>
     <None Remove="Biohazard\PIX\Res.res" />
@@ -50,6 +54,7 @@
     <Content Include="Resources\Biohazard\Opcodes\re3_opcodes.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="umbrella (1).ico" />
   </ItemGroup>
 
   <ItemGroup>

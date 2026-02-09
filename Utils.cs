@@ -1,6 +1,4 @@
-﻿using System.IO;
-
-namespace White_Day_Mod_Tool
+﻿namespace White_Day_Mod_Tool
 {
     public static class Utils
     {
