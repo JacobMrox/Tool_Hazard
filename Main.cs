@@ -321,8 +321,7 @@ namespace Tool_Hazard
             }
         }
 
-        //Bio 1, 2, 3 RDT Tool Menu Hooks
-
+        // ------------------ Biohazard 1-3 RDT Unpack/Repack Menu Hooks -----------------
         private void unpackToolStripMenuItem4_Click(object sender, EventArgs e)
         {
             //Bio1 RDT Unpack (RdtUnpacker.cs)
@@ -347,15 +346,22 @@ namespace Tool_Hazard
         }
         private void repackToolStripMenuItem5_Click(object sender, EventArgs e)
         {
-            //Bio1 RDT Repack (RdtPacker.cs)
+            // Bio1 RDT Repack (RdtPacker.cs)
             using var ofd = new OpenFileDialog
             {
-                Filter = "HDR Files (*.hdr)|*.hdr",
-                Title = "Select Bio1 .hdr to Repack"
+                Filter = "INI Files (*.ini)|*.ini",
+                Title = "Select Bio1 header.ini to Repack"
             };
             if (ofd.ShowDialog() != DialogResult.OK) return;
 
-            var packer = new RdtPacker(BioVersion.Biohazard1, ofd.FileName);
+            string? folder = Path.GetDirectoryName(ofd.FileName);
+            if (string.IsNullOrEmpty(folder))
+            {
+                MessageBox.Show("Could not determine the folder of the selected INI.", "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            var packer = new RdtPacker(BioVersion.Biohazard1, folder);
             packer.Pack();
             UpdateStatus("Bio1 RDT repacked successfully!");
         }
@@ -384,17 +390,23 @@ namespace Tool_Hazard
 
         private void Bio2RDTrepackToolStripMenuItem_Click_1(object sender, EventArgs e)
         {
-            //Bio2 RDT Repack (RdtPacker.cs)
+            // Bio2 RDT Repack (RdtPacker.cs)
             using var ofd = new OpenFileDialog
             {
-                Filter = "HDR Files (*.hdr)|*.hdr",
-                Title = "Select Bio2 .hdr to Repack"
+                Filter = "INI Files (*.ini)|*.ini",
+                Title = "Select Bio2 header.ini to Repack"
             };
             if (ofd.ShowDialog() != DialogResult.OK) return;
 
-            var packer = new RdtPacker(BioVersion.Biohazard2, ofd.FileName);
+            string? folder = Path.GetDirectoryName(ofd.FileName);
+            if (string.IsNullOrEmpty(folder))
+            {
+                MessageBox.Show("Could not determine the folder of the selected INI.", "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            var packer = new RdtPacker(BioVersion.Biohazard2, folder);
             packer.Pack();
-            //MessageBox.Show("Bio2 RDT repacked successfully!", "Success!", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
             UpdateStatus("Bio2 RDT repacked successfully!");
         }
 
@@ -420,22 +432,28 @@ namespace Tool_Hazard
             unpacker.Unpack();
             UpdateStatus("Bio3 RDT unpacked successfully!");
         }
+
         private void Bio3RDTrepackToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            //Bio3 RDT Repack (RdtPacker.cs)
+            // Bio3 RDT Repack (RdtPacker.cs)
             using var ofd = new OpenFileDialog
             {
-                Filter = "HDR Files (*.hdr)|*.hdr",
-                Title = "Select Bio3 .hdr to Repack"
+                Filter = "INI Files (*.ini)|*.ini",
+                Title = "Select Bio3 header.ini to Repack"
             };
             if (ofd.ShowDialog() != DialogResult.OK) return;
 
-            var packer = new RdtPacker(BioVersion.Biohazard3, ofd.FileName);
+            string? folder = Path.GetDirectoryName(ofd.FileName);
+            if (string.IsNullOrEmpty(folder))
+            {
+                MessageBox.Show("Could not determine the folder of the selected INI.", "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            var packer = new RdtPacker(BioVersion.Biohazard3, folder);
             packer.Pack();
-            //MessageBox.Show("Bio3 RDT repacked successfully!", "Success!", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
             UpdateStatus("Bio3 RDT repacked successfully!");
         }
-
 
         //RDT Conversion menu hooks
 
@@ -652,17 +670,17 @@ namespace Tool_Hazard
         //Load SCD Editor with selected game version
         private void sCDOpCodeEditorToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            var editor = new OpcodeEditorForm(BioVersion.Biohazard3);
+            var editor = new BiohazardOpcodeEditorForm(BioVersion.Biohazard3);
             editor.Show(this);
         }
         private void sCDOpCodeEditorToolStripMenuItem1_Click(object sender, EventArgs e)
         {
-            var editor = new OpcodeEditorForm(BioVersion.Biohazard2);
+            var editor = new BiohazardOpcodeEditorForm(BioVersion.Biohazard2);
             editor.Show(this);
         }
         private void toolStripMenuItem3_Click(object sender, EventArgs e)
         {
-            var editor = new OpcodeEditorForm(BioVersion.Biohazard1);
+            var editor = new BiohazardOpcodeEditorForm(BioVersion.Biohazard1);
             editor.Show(this);
         }
 

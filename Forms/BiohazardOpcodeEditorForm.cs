@@ -5,7 +5,7 @@ using Tool_Hazard.Biohazard.SCD.Opcodes;
 
 namespace Tool_Hazard.Forms
 {
-    public partial class OpcodeEditorForm : Form
+    public partial class BiohazardOpcodeEditorForm : Form
     {
         private readonly BioVersion _version;
         private string? _currentScdPath;
@@ -30,22 +30,29 @@ namespace Tool_Hazard.Forms
 
         private NumberViewMode _numberViewMode = NumberViewMode.Hex;
 
-        public OpcodeEditorForm(BioVersion version)
+        public BiohazardOpcodeEditorForm(BioVersion version)
         {
             InitializeComponent();
 
-            //Update checkboxes
+            //Update view checkboxes
             hexidecimalToolStripMenuItem.Checked = _numberViewMode == NumberViewMode.Hex;
             decimalToolStripMenuItem.Checked = _numberViewMode == NumberViewMode.Decimal;
 
+            //Set version
             _version = version;
 
+            //Update version menu checks and load opcode database for the selected version
+            UpdateVersionMenuChecks();   // ← highlight correct one immediately
             OpcodeDatabase.LoadForVersion(_version);
             SetupGrid();
         }
-        //Move these where they can be accessed by other forms
-        //Should move them to ScdParaText.cs or some other file
-        //Keep only open, save, save as in this form
+        private void SetStatus(string text)
+        {
+            Text = $"Biohazard OpCode Editor - {text}";
+            lblStatus.Text = $"Biohazard OpCode Editor - {text}";
+        }
+
+        //Helper methods
         private void GridOpcodes_SelectionChanged(object? sender, EventArgs e)
         {
             if (gridOpcodes.CurrentRow?.DataBoundItem is not ScdInstructionRow row)
@@ -54,7 +61,15 @@ namespace Tool_Hazard.Forms
             // show the raw instruction object in property grid
             //propDetails.SelectedObject = row.Tag;
         }
+        private void UpdateVersionMenuChecks()
+        {
+            bIO1RE1ToolStripMenuItem.Checked = _version == BioVersion.Biohazard1;
+            bIO15RE15ToolStripMenuItem.Checked = _version == BioVersion.Biohazard1_5;
+            bIO2RE2ToolStripMenuItem.Checked = _version == BioVersion.Biohazard2;
+            bIO3RE3ToolStripMenuItem.Checked = _version == BioVersion.Biohazard3;
+        }
 
+        // When user edits the Params cell and finishes editing, try to parse the text and apply it to the instruction object
         private void GridOpcodes_CellEndEdit(object? sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex < 0) return;
@@ -416,6 +431,7 @@ namespace Tool_Hazard.Forms
                 File.OpenRead(_currentScdPath));
 
             RefreshGrid();
+            SetStatus($"Loaded {_currentScdPath}");
         }
         //SAVE SCD
         private void saveToolStripMenuItem_Click(object sender, EventArgs e)

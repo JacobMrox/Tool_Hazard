@@ -1,229 +1,299 @@
-﻿using IntelOrca.Biohazard;
+﻿// Tool_Hazard/Biohazard/RDT/RdtUnpacker.cs
+#nullable enable
+using IntelOrca.Biohazard;
 using IntelOrca.Biohazard.Room;
+using System.Text;
 
 namespace Tool_Hazard.Biohazard.RDT
 {
-    public class RdtUnpacker(BioVersion version, string inputPath, string outputPath)
+    public sealed class RdtUnpacker
     {
-        public string BasePath { get; } = outputPath;
-        public string FileName { get; } = Path.GetFileName(inputPath);
-        public void UnpackBio1()
+        private readonly BioVersion _version;
+        private readonly string _inputPath;
+        private readonly string _outputPath;
+
+        public string BasePath => _outputPath;
+        public string FileName => Path.GetFileName(_inputPath);
+
+        public RdtUnpacker(BioVersion version, string inputPath, string outputPath)
         {
-            var rdt1 = new Rdt1(inputPath);
-            var rdt1b = rdt1.ToBuilder();
-            WriteHeaderRdt1(rdt1b.Header);
-            //WriteFile("Animation/anim.rbj", rdt1b.RBJ.Data);
-            WriteFile("Animation/anim.edd", rdt1b.EDD.Data);
-            WriteFile("Animation/anim.emr", rdt1b.EMR.Data);
-            WriteEffs(rdt1b.EmbeddedEffects);
-            //WriteFile("Effect/effect.etd", rdt1b.ETD.Data);
-            WriteFile("Effects/effects.etd", rdt1b.EDT);
-            //WriteFile("Effect/effect.tbl", rdt1b.EspTable.Data);
-            //WriteMessages(rdt1b.MSGJA, rdt1b.MSGEN);
-            WriteFile("Message/main[i].msg", rdt1b.MSG);
-            //WriteObjects(rdt1b);
-            //WriteScds(rdt1b.SCDINIT, rdt1b.SCDMAIN);
-            //WriteScds(rdt1b.InitSCD, rdt1b.MainSCD);
-            WriteFile("Sound/snd0.edt", rdt1b.EDT);
-            WriteFile("Sound/snd0.vh", rdt1b.VH);
-            WriteFile("Sound/snd0.vb", rdt1b.VB);
-            //if (rdt1b.VBOFFSET is int vboffset)
-            //WriteFile("Sound/snd0.vbx", BitConverter.GetBytes(vboffset));
-            WriteFile("block.blk", rdt1b.BLK);
-            WriteFile("camera.rid", rdt1b.RID);
-            WriteFile("collision.sca", rdt1b.SCA);
-            WriteFile("floor.flr", rdt1b.FLR);
-            //WriteFile("floor.flt", rdt1b.FLRTerminator == null ? [] : BitConverter.GetBytes(rdt1b.FLRTerminator.Value));
-            WriteFile("light.lit", rdt1b.LIT);
-            //WriteFile("scroll.tim", rdt1b.TIMSCROLL.Data);
-            WriteFile("sprite.pri", rdt1b.PRI);
-            WriteFile("zone.rvd", rdt1b.RVD);
-            //Print success message
-            MessageBox.Show($"{version} RDT unpacked successfully!", "Success!", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+            _version = version;
+            _inputPath = inputPath;
+            _outputPath = outputPath;
         }
+
         public void Unpack()
         {
-            if (version == BioVersion.Biohazard1)
+            try
             {
-                MessageBox.Show(
-                    "RE1 RDT format is not compatible with the RDT2 unpacker.\n" +
-                    "Therefore RE1 RDT Unpacker is experimental.",
-                    "Experimental",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning
-                );
+                Directory.CreateDirectory(BasePath);
 
-                var rdt1 = new Rdt1(inputPath);
-                var rdt1b = rdt1.ToBuilder();
-                WriteHeaderRdt1(rdt1b.Header);
-                //WriteFile("Animation/anim.rbj", rdt1b.RBJ.Data);
-                WriteFile("Animation/anim.edd", rdt1b.EDD.Data);
-                WriteFile("Animation/anim.emr", rdt1b.EMR.Data);
-                WriteEffs(rdt1b.EmbeddedEffects);
-                //WriteFile("Effect/effect.etd", rdt1b.ETD.Data);
-                WriteFile("Effects/effects.etd", rdt1b.EDT);
-                //WriteFile("Effect/effect.tbl", rdt1b.EspTable.Data);
-                //WriteMessages(rdt1b.MSGJA, rdt1b.MSGEN);
-                //WriteMessage(rdt1b.MSG);
-                WriteFile("Message/main.msg", rdt1b.MSG);
-                //WriteObjects(rdt1b);
-                //WriteScds(rdt1b.SCDINIT, rdt1b.SCDMAIN);
-                //WriteScds(rdt1b.InitSCD, rdt1b.MainSCD);
-                WriteFile("Sound/snd0.edt", rdt1b.EDT);
-                WriteFile("Sound/snd0.vh", rdt1b.VH);
-                WriteFile("Sound/snd0.vb", rdt1b.VB);
-                //if (rdt1b.VBOFFSET is int vboffset)
-                //WriteFile("Sound/snd0.vbx", BitConverter.GetBytes(vboffset));
-                WriteFile("block.blk", rdt1b.BLK);
-                WriteFile("camera.rid", rdt1b.RID);
-                WriteFile("collision.sca", rdt1b.SCA);
-                WriteFile("floor.flr", rdt1b.FLR);
-                //WriteFile("floor.flt", rdt1b.FLRTerminator == null ? [] : BitConverter.GetBytes(rdt1b.FLRTerminator.Value));
-                WriteFile("light.lit", rdt1b.LIT);
-                //WriteFile("scroll.tim", rdt1b.TIMSCROLL.Data);
-                WriteFile("sprite.pri", rdt1b.PRI);
-                WriteFile("zone.rvd", rdt1b.RVD);
-                //Print success message
-                MessageBox.Show($"{version} RDT unpacked successfully!", "Success!", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                if (_version == BioVersion.Biohazard1)
+                {
+                    var rdt = new Rdt1(_inputPath);
+                    var b = rdt.ToBuilder();
+
+                    WriteHeaderIni_Rdt1(b.Header);
+
+                    // Core blocks
+                    WriteFile("light.lit", b.LIT);
+                    WriteFile("camera.rid", b.RID);
+                    WriteFile("zone.rvd", b.RVD);
+                    WriteFile("sprite.pri", b.PRI);
+                    WriteFile("collision.sca", b.SCA);
+                    WriteFile("collision.sca.term", b.SCATerminator is int t ? BitConverter.GetBytes(t) : Array.Empty<byte>());
+                    WriteFile("block.blk", b.BLK);
+                    WriteFile("floor.flr", b.FLR);
+
+                    // Scripts (containers)
+                    WriteFile("Script/init.scd", b.InitSCD.Data.ToArray());
+                    WriteFile("Script/main.scd", b.MainSCD.Data.ToArray());
+                    WriteFile("Script/event.scd", b.EventSCD.Data.ToArray());
+
+                    // Anim
+                    if (b.EMR is not null) WriteFile("Animation/anim.emr", b.EMR.Data);
+                    if (b.EDD is not null) WriteFile("Animation/anim.edd", b.EDD.Data);
+
+                    // Message
+                    WriteFile("Message/main.msg", b.MSG);
+
+                    // Item icons
+                    if (b.EmbeddedItemIcons.Data.Length != 0)
+                        WriteFile("Item/icons.bin", b.EmbeddedItemIcons.Data.ToArray());
+
+                    // Effects
+                    WriteEffs(b.EmbeddedEffects);
+
+                    // Embedded camera textures (TIMs)
+                    for (int i = 0; i < b.CameraTextures.Count; i++)
+                        WriteFile($"Camera/cam{i:00}.tim", b.CameraTextures[i].Data);
+
+                    // Embedded object models (TMD/TIM) + table
+                    WriteModelTextureIndexTable("Tables/object_table.bin", b.EmbeddedObjectModelTable);
+                    for (int i = 0; i < b.EmbeddedObjectTmd.Count; i++)
+                        WriteFile($"Object/obj_tmd{i:00}.tmd", b.EmbeddedObjectTmd[i].Data.ToArray());
+                    for (int i = 0; i < b.EmbeddedObjectTim.Count; i++)
+                        WriteFile($"Object/obj_tim{i:00}.tim", b.EmbeddedObjectTim[i].Data);
+
+                    // Embedded item models (TMD/TIM) + table
+                    WriteModelTextureIndexTable("Tables/item_table.bin", b.EmbeddedItemModelTable);
+                    for (int i = 0; i < b.EmbeddedItemTmd.Count; i++)
+                        WriteFile($"Item/item_tmd{i:00}.tmd", b.EmbeddedItemTmd[i].Data.ToArray());
+                    for (int i = 0; i < b.EmbeddedItemTim.Count; i++)
+                        WriteFile($"Item/item_tim{i:00}.tim", b.EmbeddedItemTim[i].Data);
+
+                    // Sound
+                    WriteFile("Sound/snd0.edt", b.EDT);
+                    WriteFile("Sound/snd0.vh", b.VH);
+                    WriteFile("Sound/snd0.vb", b.VB);
+                }
+                else
+                {
+                    var rdt = new Rdt2(_version, _inputPath);
+                    var b = rdt.ToBuilder();
+
+                    WriteHeaderIni_Rdt2(b.Header);
+
+                    // Standard blocks
+                    WriteFile("block.blk", b.BLK);
+                    WriteFile("camera.rid", b.RID.Data.ToArray());
+                    WriteFile("collision.sca", b.SCA);
+                    WriteFile("floor.flr", b.FLR);
+                    WriteFile("floor.flt", b.FLRTerminator is ushort ft ? BitConverter.GetBytes(ft) : Array.Empty<byte>());
+                    WriteFile("light.lit", b.LIT);
+                    WriteFile("sprite.pri", b.PRI);
+                    WriteFile("zone.rvd", b.RVD);
+
+                    // Scripts (procedure lists)
+                    WriteScds("Script/init{0:00}.scd", b.SCDINIT);
+                    if (_version == BioVersion.Biohazard2)
+                        WriteScds("Script/main{0:00}.scd", b.SCDMAIN);
+
+                    // Messages
+                    WriteMsgs(MsgLanguage.Japanese, "Message/ja{0:00}.msg", b.MSGJA);
+                    WriteMsgs(MsgLanguage.English, "Message/en{0:00}.msg", b.MSGEN);
+
+                    // Scroll TIM
+                    if (!b.TIMSCROLL.Data.IsEmpty) WriteFile("scroll.tim", b.TIMSCROLL.Data.ToArray());
+
+                    // Objects (MD1/TIM) via embedded table
+                    WriteObjects(b);
+
+                    // Effects
+                    // RE2/RE3: both can be embedded effects; RE3 often preserves EspTable too
+                    WriteFile("Effect/effect.tbl", b.EspTable.Data.ToArray());
+                    WriteEffs(b.EmbeddedEffects);
+
+                    // RBJ (RE2 only in builder writer; RE3 typically absent)
+                    if (_version != BioVersion.Biohazard3 && !b.RBJ.Data.IsEmpty)
+                        WriteFile("Animation/anim.rbj", b.RBJ.Data.ToArray());
+
+                    // ETD (RE3)
+                    if (_version == BioVersion.Biohazard3 && !b.ETD.Data.IsEmpty)
+                        WriteFile("Effect/effect.etd", b.ETD.Data.ToArray());
+
+                    // Sound
+                    WriteFile("Sound/snd0.edt", b.EDT);
+                    WriteFile("Sound/snd0.vh", b.VH);
+                    WriteFile("Sound/snd0.vb", b.VB);
+                    if (b.VBOFFSET is int vboff)
+                        WriteFile("Sound/snd0.vbx", BitConverter.GetBytes(vboff));
+                }
+
+                MessageBox.Show($"{_version} RDT unpacked successfully!", "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
-            else try
-                {
-                    var rdt2 = new Rdt2(version, inputPath);
-                    var rdt2b = rdt2.ToBuilder();
-                    WriteHeader(rdt2b.Header);
-                    WriteFile("Animation/anim.rbj", rdt2b.RBJ.Data);
-                    WriteEffs(rdt2b.EmbeddedEffects);
-                    WriteFile("Effect/effect.etd", rdt2b.ETD.Data);
-                    WriteFile("Effect/effect.tbl", rdt2b.EspTable.Data);
-                    WriteMessages(rdt2b.MSGJA, rdt2b.MSGEN);
-                    WriteObjects(rdt2b);
-                    WriteScds(rdt2b.SCDINIT, rdt2b.SCDMAIN);
-                    WriteFile("Sound/snd0.edt", rdt2b.EDT);
-                    WriteFile("Sound/snd0.vh", rdt2b.VH);
-                    WriteFile("Sound/snd0.vb", rdt2b.VB);
-                    if (rdt2b.VBOFFSET is int vboffset)
-                        WriteFile("Sound/snd0.vbx", BitConverter.GetBytes(vboffset));
-                    WriteFile("block.blk", rdt2b.BLK);
-                    WriteFile("camera.rid", rdt2b.RID.Data);
-                    WriteFile("collision.sca", rdt2b.SCA);
-                    WriteFile("floor.flr", rdt2b.FLR);
-                    WriteFile("floor.flt", rdt2b.FLRTerminator == null ? [] : BitConverter.GetBytes(rdt2b.FLRTerminator.Value));
-                    WriteFile("light.lit", rdt2b.LIT);
-                    WriteFile("scroll.tim", rdt2b.TIMSCROLL.Data);
-                    WriteFile("sprite.pri", rdt2b.PRI);
-                    WriteFile("zone.rvd", rdt2b.RVD);
-                    //Print success message
-                    MessageBox.Show($"{version} RDT unpacked successfully!", "Success!", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-                }
-                //"You look like you've got somethin to say?" - Output any errors through a dialogue box
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Error: {ex}", "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Unpack error:\n\n{ex}", "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
-        private void WriteHeader(Rdt2.Rdt2Header header)
+        // ---------------- INI (Header) ----------------
+
+        private void WriteHeaderIni_Rdt1(Rdt1.Rdt1Header h)
         {
-            using var ms = new MemoryStream();
-            var bw = new BinaryWriter(ms);
-            bw.Write(header);
-            var data = ms.ToArray();
-            WriteFile(Path.ChangeExtension(FileName, ".hdr"), data);
+            var ini = new IniFile();
+            ini.Set("Header", "nSprite", h.nSprite.ToString());
+            ini.Set("Header", "nCut", h.nCut.ToString());
+            ini.Set("Header", "nOmodel", h.nOmodel.ToString());
+            ini.Set("Header", "nItem", h.nItem.ToString());
+            ini.Set("Header", "nDoor", h.nDoor.ToString());
+            ini.Set("Header", "nRoom_at", h.nRoom_at.ToString());
+            WriteText("header.ini", ini.ToString());
         }
 
-        private void WriteHeaderRdt1(Rdt1.Rdt1Header header)
+        private void WriteHeaderIni_Rdt2(Rdt2.Rdt2Header h)
         {
-            using var ms = new MemoryStream();
-            var bw = new BinaryWriter(ms);
-            bw.Write(header);
-            var data = ms.ToArray();
-            WriteFile(Path.ChangeExtension(FileName, ".hdr"), data);
+            var ini = new IniFile();
+            ini.Set("Header", "nSprite", h.nSprite.ToString());
+            ini.Set("Header", "nCut", h.nCut.ToString());
+            ini.Set("Header", "nOmodel", h.nOmodel.ToString());
+            ini.Set("Header", "nItem", h.nItem.ToString());
+            ini.Set("Header", "nDoor", h.nDoor.ToString());
+            ini.Set("Header", "nRoom_at", h.nRoom_at.ToString());
+            ini.Set("Header", "Reverb_lv", h.Reverb_lv.ToString());
+            ini.Set("Header", "unknown7", h.unknown7.ToString());
+            WriteText("header.ini", ini.ToString());
         }
+
+        // ---------------- Writers ----------------
 
         private void WriteEffs(EmbeddedEffectList effects)
         {
-            for (var i = 0; i < effects.Count; i++)
+            for (int i = 0; i < effects.Count; i++)
             {
                 var id = effects[i].Id;
-                WriteFile($"Effect/esp{id:X2}.eff", effects[i].Eff.Data);
-                WriteFile($"Effect/esp{id:X2}.tim", effects[i].Tim.Data);
+                if (!effects[i].Eff.Data.IsEmpty)
+                    WriteFile($"Effect/esp{id:X2}.eff", effects[i].Eff.Data.ToArray());
+                if (!effects[i].Tim.Data.IsEmpty)
+                    WriteFile($"Effect/esp{id:X2}.tim", effects[i].Tim.Data.ToArray());
             }
         }
 
-        //For RE1/BIO1
-        private void WriteMessage(MsgList msglist)
+        private void WriteObjects(Rdt2.Builder b)
         {
-            for (var i = 0; i < msglist.Count; i++)
+            // Export per embedded table index, stable naming object00.md1/tim
+            var table = b.EmbeddedObjectModelTable;
+            for (int i = 0; i < table.Count; i++)
             {
-                WriteFile($"Message/sub{i:00}.msg", msglist[i].Data);
+                var md1Index = table[i].Model;
+                var timIndex = table[i].Texture;
+
+                if (md1Index != -1 && md1Index < b.EmbeddedObjectMd1.Count)
+                    WriteFile($"Object/object{i:00}.md1", b.EmbeddedObjectMd1[md1Index].Data.ToArray());
+
+                if (timIndex != -1 && timIndex < b.EmbeddedObjectTim.Count)
+                    WriteFile($"Object/object{i:00}.tim", b.EmbeddedObjectTim[timIndex].Data.ToArray());
             }
         }
 
-        //For multilingual RDTS (RE2/3)
-        private void WriteMessages(MsgList ja, MsgList en)
+        private void WriteMsgs(MsgLanguage lng, string fmt, MsgList list)
         {
-            for (var i = 0; i < ja.Count; i++)
-            {
-                WriteFile($"Message/main{i:00}.msg", ja[i].Data);
-            }
-            for (var i = 0; i < en.Count; i++)
-            {
-                WriteFile($"Message/sub{i:00}.msg", en[i].Data);
-            }
+            for (int i = 0; i < list.Count; i++)
+                WriteFile(string.Format(fmt, i), list[i].Data);
         }
 
-        private void WriteObjects(Rdt2.Builder rdt)
+        private void WriteScds(string fmt, ScdProcedureList list)
         {
-            var table = rdt.EmbeddedObjectModelTable;
-            for (var i = 0; i < table.Count; i++)
-            {
-                var modelIndex = table[i].Model;
-                var textureIndex = table[i].Texture;
-                if (modelIndex != -1)
-                {
-                    var md1 = rdt.EmbeddedObjectMd1[modelIndex];
-                    WriteFile($"Object/object{i:00}.md1", md1.Data);
-                }
-                if (textureIndex != -1)
-                {
-                    var tim = rdt.EmbeddedObjectTim[textureIndex];
-                    WriteFile($"Object/object{i:00}.tim", tim.Data);
-                }
-            }
+            for (int i = 0; i < list.Count; i++)
+                WriteFile(string.Format(fmt, i), list[i].Data.Span.ToArray());
         }
 
-        private void WriteScds(ScdProcedureList init, ScdProcedureList main)
+        private void WriteModelTextureIndexTable(string relativePath, List<ModelTextureIndex> list)
         {
-            for (var i = 0; i < init.Count; i++)
+            using var ms = new MemoryStream();
+            using var bw = new BinaryWriter(ms);
+            bw.Write(list.Count);
+            foreach (var mt in list)
             {
-                WriteFile($"Script/main{i:00}.scd", init[i].Data.Span);
+                bw.Write(mt.Model);
+                bw.Write(mt.Texture);
             }
-            for (var i = 0; i < main.Count; i++)
-            {
-                WriteFile($"Script/sub{i:00}.scd", main[i].Data.Span);
-            }
+            WriteFile(relativePath, ms.ToArray());
         }
 
-        private void WriteFileExt(string extension, ReadOnlyMemory<byte> data) => WriteFile(extension, data.Span);
-        private void WriteFileExt(string extension, ReadOnlySpan<byte> data)
+        // ---------------- File helpers ----------------
+
+        private void WriteText(string relativePath, string text)
         {
-            if (data.Length == 0)
-                return;
-
-            WriteFile(Path.ChangeExtension(FileName, extension), data);
+            var destPath = Path.Combine(BasePath, relativePath);
+            var dir = Path.GetDirectoryName(destPath);
+            if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+            File.WriteAllText(destPath, text, new UTF8Encoding(false));
         }
 
-        private void WriteFile(string relativePath, byte[] data) => WriteFile(relativePath, new ReadOnlySpan<byte>(data));
-        private void WriteFile(string relativePath, ReadOnlyMemory<byte> data) => WriteFile(relativePath, data.Span);
+        private void WriteFile(string relativePath, byte[] data)
+        {
+            if (data.Length == 0) return;
+            WriteFile(relativePath, (ReadOnlySpan<byte>)data);
+        }
+
+        private void WriteFile(string relativePath, ReadOnlyMemory<byte> data)
+        {
+            if (data.Length == 0) return;
+            WriteFile(relativePath, data.Span);
+        }
+
         private void WriteFile(string relativePath, ReadOnlySpan<byte> data)
         {
-            if (data.Length == 0)
-                return;
+            if (data.Length == 0) return;
 
             var destPath = Path.Combine(BasePath, relativePath);
             var dir = Path.GetDirectoryName(destPath);
-            Directory.CreateDirectory(dir);
+            if (!string.IsNullOrEmpty(dir))
+                Directory.CreateDirectory(dir);
+
             File.WriteAllBytes(destPath, data.ToArray());
+        }
+
+        // ---------------- Minimal INI ----------------
+
+        private sealed class IniFile
+        {
+            private readonly Dictionary<string, Dictionary<string, string>> _data = new(StringComparer.OrdinalIgnoreCase);
+
+            public void Set(string section, string key, string value)
+            {
+                if (!_data.TryGetValue(section, out var sec))
+                {
+                    sec = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                    _data[section] = sec;
+                }
+                sec[key] = value;
+            }
+
+            public override string ToString()
+            {
+                var sb = new StringBuilder();
+                foreach (var sec in _data)
+                {
+                    sb.Append('[').Append(sec.Key).AppendLine("]");
+                    foreach (var kv in sec.Value)
+                        sb.Append(kv.Key).Append('=').AppendLine(kv.Value);
+                    sb.AppendLine();
+                }
+                return sb.ToString();
+            }
         }
     }
 }

@@ -1,7 +1,6 @@
 // Alias the form type so it doesn't conflict with Program.Main()
-using MainForm = Tool_Hazard.Main;
 using System.Globalization;
-using System.Threading;
+using MainForm = Tool_Hazard.Main;
 
 namespace Tool_Hazard
 {
