@@ -3520,5 +3520,165 @@
         "Description": "ID of the enemy to reset"
       }
     }
+  },
+"D0": {
+  "Opcode Name": "Else",
+  "Opcode Number": "D0",
+  "Opcode Length": "04 Bytes",
+  "Opcode Description": "Directs the script to jump if the previous IF condition was already met. Effectively marks the start of the 'Else' logic block.",
+  "Bytes": {
+    "Opcode": {
+      "Type": "UCHAR",
+      "Description": "0xD0"
+    },
+    "zAlign": {
+      "Type": "UCHAR",
+      "Description": "Alignment byte (Always 0x00)"
+    },
+    "else_ck": {
+      "Type": "USHORT",
+      "Description": "Relative offset (in bytes) to jump to the end of the Else block."
+    }
   }
+},
+"B6": {
+  "Opcode Name": "Check_Stuck",
+  "Opcode Number": "B6",
+  "Opcode Length": "02 Bytes",
+  "Opcode Description": "Checks if the player is stuck/colliding with an object. Used for pushable object logic.",
+  "Bytes": {
+    "Opcode": {
+      "Type": "UCHAR",
+      "Description": "0xB6"
+    },
+    "Dummy": {
+      "Type": "UCHAR",
+      "Description": "Alignment/Padding (Usually 0x00)"
+    }
+  }
+},
+"C8": {
+  "Opcode Name": "Check_Item",
+  "Opcode Number": "C8",
+  "Opcode Length": "04 Bytes",
+  "Opcode Description": "Checks if the player currently possesses a specific item. Sets the condition flag for subsequent IF statements.",
+  "Bytes": {
+    "Opcode": {
+      "Type": "UCHAR",
+      "Description": "0xC8"
+    },
+    "zAlign": {
+      "Type": "UCHAR",
+      "Description": "Always 0x00"
+    },
+    "ItemID": {
+      "Type": "UCHAR",
+      "Description": "The ID of the item to check (e.g., 0x40 for the Wrench)."
+    },
+    "Quantity": {
+      "Type": "UCHAR",
+      "Description": "Usually 0x00, but can specify a required amount for stackable items (like Ink Ribbons)."
+    }
+  }
+},
+"AC": {
+  "Opcode Name": "Om_Sync",
+  "Opcode Number": "AC",
+  "Opcode Length": "02 Bytes",
+  "Opcode Description": "Synchronizes object work data. Ensures script-side changes to entities are applied to the game engine.",
+  "Bytes": {
+    "Opcode": {
+      "Type": "UCHAR",
+      "Description": "0xAC"
+    },
+    "Work_ID": {
+      "Type": "UCHAR",
+      "Description": "The index of the work/entity buffer to sync (e.g., 0x00 for the current room object)."
+    }
+  }
+},
+"F4": {
+  "Opcode Name": "OBJ_STATE_SET",
+  "Opcode Number": "F4",
+  "Opcode Length": "04 Bytes",
+  "Opcode Description": "Sets the status/state of a room object or item. Commonly used to 'remove' an item from the floor after it is picked up.",
+  "Bytes": {
+    "Opcode": {
+      "Type": "UCHAR",
+      "Description": "0xF4"
+    },
+    "Entity_ID": {
+      "Type": "UCHAR",
+      "Description": "The index of the object in the RDT's OBJ table."
+    },
+    "State_Type": {
+      "Type": "UCHAR",
+      "Description": "The type of state to change (e.g., 0x01 for visibility/existence)."
+    },
+    "Value": {
+      "Type": "UCHAR",
+      "Description": "The new value for the state (e.g., 0x00 to make it disappear)."
+    }
+  }
+},
+"C6": {
+  "Opcode Name": "Check_Player_State",
+  "Opcode Number": "C6",
+  "Opcode Length": "04 Bytes",
+  "Opcode Description": "Checks if the player is in a specific animation or action state. Often used to pause script execution until an animation finishes.",
+  "Bytes": {
+    "Opcode": {
+      "Type": "UCHAR",
+      "Description": "0xC6"
+    },
+    "zAlign": {
+      "Type": "UCHAR",
+      "Description": "Always 0x00"
+    },
+    "State_ID": {
+      "Type": "UCHAR",
+      "Description": "The specific state/animation index to check for."
+    },
+    "Condition": {
+      "Type": "UCHAR",
+      "Description": "Flag for the check (e.g., 0x01 to check if state IS active, 0x00 for IS NOT)."
+    }
+  }
+},
+"CC": {
+  "Opcode Name": "Check_Bit_Test",
+  "Opcode Number": "CC",
+  "Opcode Length": "04 Bytes",
+  "Opcode Description": "Checks if a specific flag/bit is set. Used to track story progress and persistent world changes.",
+  "Bytes": {
+    "Opcode": {
+      "Type": "UCHAR",
+      "Description": "0xCC"
+    },
+    "Bit_Group": {
+      "Type": "UCHAR",
+      "Description": "The group/index of the bitmask (often relates to room or global flags)."
+    },
+    "Bit_Number": {
+      "Type": "UCHAR",
+      "Description": "The specific bit within the group to check (0-7)."
+    },
+    "Condition": {
+      "Type": "UCHAR",
+      "Description": "The value to check for (e.g., 0x01 for Set/True, 0x00 for Unset/False)."
+    }
+  }
+},
+"90": {
+  "Opcode Name": "Plc_Dest",
+  "Opcode Number": "90",
+  "Opcode Length": "06 Bytes",
+  "Opcode Description": "Forcibly moves the player to a specific coordinate and direction.",
+  "Bytes": {
+    "Opcode": { "Type": "UCHAR", "Description": "0x90" },
+    "zAlign": { "Type": "UCHAR", "Description": "Always 0x00" },
+    "X_Coord": { "Type": "SHORT", "Description": "The X-axis destination coordinate." },
+    "Z_Coord": { "Type": "SHORT", "Description": "The Z-axis destination coordinate." }
+  }
+}
 }

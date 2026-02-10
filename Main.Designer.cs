@@ -204,6 +204,7 @@
             statusStrip1 = new StatusStrip();
             toolStripStatusLabel1 = new ToolStripStatusLabel();
             dATToolStripMenuItem = new ToolStripMenuItem();
+            modelViewerToolStripMenuItem = new ToolStripMenuItem();
             menuStrip1.SuspendLayout();
             statusStrip1.SuspendLayout();
             SuspendLayout();
@@ -1265,7 +1266,7 @@
             // 
             // nintendoToolStripMenuItem
             // 
-            nintendoToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { lZ770x100x11ToolStripMenuItem, containerScannerToolStripMenuItem });
+            nintendoToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { lZ770x100x11ToolStripMenuItem, containerScannerToolStripMenuItem, modelViewerToolStripMenuItem });
             nintendoToolStripMenuItem.Name = "nintendoToolStripMenuItem";
             nintendoToolStripMenuItem.Size = new Size(203, 22);
             nintendoToolStripMenuItem.Text = "Nintendo DS";
@@ -1274,7 +1275,7 @@
             // 
             lZ770x100x11ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { decompressToolStripMenuItem });
             lZ770x100x11ToolStripMenuItem.Name = "lZ770x100x11ToolStripMenuItem";
-            lZ770x100x11ToolStripMenuItem.Size = new Size(171, 22);
+            lZ770x100x11ToolStripMenuItem.Size = new Size(180, 22);
             lZ770x100x11ToolStripMenuItem.Text = "LZ77 (0x10/0x11)";
             // 
             // decompressToolStripMenuItem
@@ -1287,7 +1288,7 @@
             // containerScannerToolStripMenuItem
             // 
             containerScannerToolStripMenuItem.Name = "containerScannerToolStripMenuItem";
-            containerScannerToolStripMenuItem.Size = new Size(171, 22);
+            containerScannerToolStripMenuItem.Size = new Size(180, 22);
             containerScannerToolStripMenuItem.Text = "Container Scanner";
             containerScannerToolStripMenuItem.Click += containerScannerToolStripMenuItem_Click;
             // 
@@ -1350,14 +1351,14 @@
             // versionToolStripMenuItem
             // 
             versionToolStripMenuItem.Name = "versionToolStripMenuItem";
-            versionToolStripMenuItem.Size = new Size(174, 22);
+            versionToolStripMenuItem.Size = new Size(180, 22);
             versionToolStripMenuItem.Text = "About";
             versionToolStripMenuItem.Click += versionToolStripMenuItem_Click;
             // 
             // documentationToolStripMenuItem
             // 
             documentationToolStripMenuItem.Name = "documentationToolStripMenuItem";
-            documentationToolStripMenuItem.Size = new Size(174, 22);
+            documentationToolStripMenuItem.Size = new Size(180, 22);
             documentationToolStripMenuItem.Text = "Documentation";
             documentationToolStripMenuItem.Click += documentationToolStripMenuItem_Click;
             // 
@@ -1365,7 +1366,7 @@
             // 
             checkForUpdatesToolStripMenuItem.Enabled = false;
             checkForUpdatesToolStripMenuItem.Name = "checkForUpdatesToolStripMenuItem";
-            checkForUpdatesToolStripMenuItem.Size = new Size(174, 22);
+            checkForUpdatesToolStripMenuItem.Size = new Size(180, 22);
             checkForUpdatesToolStripMenuItem.Text = "Check for Updates";
             // 
             // playStartupSoundToolStripMenuItem
@@ -1374,7 +1375,7 @@
             playStartupSoundToolStripMenuItem.CheckOnClick = true;
             playStartupSoundToolStripMenuItem.CheckState = CheckState.Checked;
             playStartupSoundToolStripMenuItem.Name = "playStartupSoundToolStripMenuItem";
-            playStartupSoundToolStripMenuItem.Size = new Size(174, 22);
+            playStartupSoundToolStripMenuItem.Size = new Size(180, 22);
             playStartupSoundToolStripMenuItem.Text = "Play Startup Sound";
             // 
             // notifyIcon1
@@ -1405,6 +1406,13 @@
             dATToolStripMenuItem.Name = "dATToolStripMenuItem";
             dATToolStripMenuItem.Size = new Size(180, 22);
             dATToolStripMenuItem.Text = "DAT (NGC/nWii)";
+            // 
+            // modelViewerToolStripMenuItem
+            // 
+            modelViewerToolStripMenuItem.Enabled = false;
+            modelViewerToolStripMenuItem.Name = "modelViewerToolStripMenuItem";
+            modelViewerToolStripMenuItem.Size = new Size(180, 22);
+            modelViewerToolStripMenuItem.Text = "Model Viewer";
             // 
             // Main
             // 
@@ -1608,5 +1616,6 @@
         private ToolStripMenuItem rEmake2002ToolStripMenuItem;
         private ToolStripMenuItem bGZNGCnWiiToolStripMenuItem;
         private ToolStripMenuItem dATToolStripMenuItem;
+        private ToolStripMenuItem modelViewerToolStripMenuItem;
     }
 }
