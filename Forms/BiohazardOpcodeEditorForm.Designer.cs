@@ -160,7 +160,7 @@
             // 
             bIO1RE1ToolStripMenuItem.CheckOnClick = true;
             bIO1RE1ToolStripMenuItem.Name = "bIO1RE1ToolStripMenuItem";
-            bIO1RE1ToolStripMenuItem.Size = new Size(141, 22);
+            bIO1RE1ToolStripMenuItem.Size = new Size(180, 22);
             bIO1RE1ToolStripMenuItem.Text = "BIO1/RE1";
             bIO1RE1ToolStripMenuItem.Click += bIO1RE1ToolStripMenuItem_Click;
             // 
@@ -168,7 +168,7 @@
             // 
             bIO15RE15ToolStripMenuItem.CheckOnClick = true;
             bIO15RE15ToolStripMenuItem.Name = "bIO15RE15ToolStripMenuItem";
-            bIO15RE15ToolStripMenuItem.Size = new Size(141, 22);
+            bIO15RE15ToolStripMenuItem.Size = new Size(180, 22);
             bIO15RE15ToolStripMenuItem.Text = "BIO1.5/RE1.5";
             bIO15RE15ToolStripMenuItem.Click += bIO15RE15ToolStripMenuItem_Click;
             // 
@@ -176,7 +176,7 @@
             // 
             bIO2RE2ToolStripMenuItem.CheckOnClick = true;
             bIO2RE2ToolStripMenuItem.Name = "bIO2RE2ToolStripMenuItem";
-            bIO2RE2ToolStripMenuItem.Size = new Size(141, 22);
+            bIO2RE2ToolStripMenuItem.Size = new Size(180, 22);
             bIO2RE2ToolStripMenuItem.Text = "BIO2/RE2";
             bIO2RE2ToolStripMenuItem.Click += bIO2RE2ToolStripMenuItem_Click;
             // 
@@ -184,7 +184,7 @@
             // 
             bIO3RE3ToolStripMenuItem.CheckOnClick = true;
             bIO3RE3ToolStripMenuItem.Name = "bIO3RE3ToolStripMenuItem";
-            bIO3RE3ToolStripMenuItem.Size = new Size(141, 22);
+            bIO3RE3ToolStripMenuItem.Size = new Size(180, 22);
             bIO3RE3ToolStripMenuItem.Text = "BIO3/RE3";
             bIO3RE3ToolStripMenuItem.Click += bIO3RE3ToolStripMenuItem_Click;
             // 
@@ -211,8 +211,8 @@
             // lblStatus
             // 
             lblStatus.Name = "lblStatus";
-            lblStatus.Size = new Size(118, 17);
-            lblStatus.Text = "toolStripStatusLabel1";
+            lblStatus.Size = new Size(286, 17);
+            lblStatus.Text = "Click File -> Open and choose your SCD (Script Data)";
             // 
             // BiohazardOpcodeEditorForm
             // 
