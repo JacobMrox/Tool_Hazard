@@ -175,6 +175,8 @@
             saveEditorToolStripMenuItem1 = new ToolStripMenuItem();
             toolStripSeparator8 = new ToolStripSeparator();
             installEnglishCompatibilityPatchToolStripMenuItem = new ToolStripMenuItem();
+            rEmake2002ToolStripMenuItem = new ToolStripMenuItem();
+            bGZNGCnWiiToolStripMenuItem = new ToolStripMenuItem();
             toolStripMenuItem2 = new ToolStripMenuItem();
             residentEvilBiohazardToolStripMenuItem = new ToolStripMenuItem();
             enableRE123LiveHUDToolStripMenuItem = new ToolStripMenuItem();
@@ -201,8 +203,7 @@
             notifyIcon1 = new NotifyIcon(components);
             statusStrip1 = new StatusStrip();
             toolStripStatusLabel1 = new ToolStripStatusLabel();
-            rEmake2002ToolStripMenuItem = new ToolStripMenuItem();
-            bGZNGCnWiiToolStripMenuItem = new ToolStripMenuItem();
+            dATToolStripMenuItem = new ToolStripMenuItem();
             menuStrip1.SuspendLayout();
             statusStrip1.SuspendLayout();
             SuspendLayout();
@@ -232,7 +233,7 @@
             // exitToolStripMenuItem
             // 
             exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            exitToolStripMenuItem.Size = new Size(92, 22);
+            exitToolStripMenuItem.Size = new Size(180, 22);
             exitToolStripMenuItem.Text = "Exit";
             exitToolStripMenuItem.Click += exitToolStripMenuItem_Click;
             // 
@@ -456,42 +457,42 @@
             // 
             bSSToolStripMenuItem3.Enabled = false;
             bSSToolStripMenuItem3.Name = "bSSToolStripMenuItem3";
-            bSSToolStripMenuItem3.Size = new Size(109, 22);
+            bSSToolStripMenuItem3.Size = new Size(180, 22);
             bSSToolStripMenuItem3.Text = "BSS";
             // 
             // rDTToolStripMenuItem3
             // 
             rDTToolStripMenuItem3.Enabled = false;
             rDTToolStripMenuItem3.Name = "rDTToolStripMenuItem3";
-            rDTToolStripMenuItem3.Size = new Size(109, 22);
+            rDTToolStripMenuItem3.Size = new Size(180, 22);
             rDTToolStripMenuItem3.Text = "RDT";
             // 
             // eMDToolStripMenuItem3
             // 
             eMDToolStripMenuItem3.Enabled = false;
             eMDToolStripMenuItem3.Name = "eMDToolStripMenuItem3";
-            eMDToolStripMenuItem3.Size = new Size(109, 22);
+            eMDToolStripMenuItem3.Size = new Size(180, 22);
             eMDToolStripMenuItem3.Text = "EMD";
             // 
             // pLDToolStripMenuItem2
             // 
             pLDToolStripMenuItem2.Enabled = false;
             pLDToolStripMenuItem2.Name = "pLDToolStripMenuItem2";
-            pLDToolStripMenuItem2.Size = new Size(109, 22);
+            pLDToolStripMenuItem2.Size = new Size(180, 22);
             pLDToolStripMenuItem2.Text = "PLD";
             // 
             // pLWToolStripMenuItem3
             // 
             pLWToolStripMenuItem3.Enabled = false;
             pLWToolStripMenuItem3.Name = "pLWToolStripMenuItem3";
-            pLWToolStripMenuItem3.Size = new Size(109, 22);
+            pLWToolStripMenuItem3.Size = new Size(180, 22);
             pLWToolStripMenuItem3.Text = "PLW";
             // 
             // vHVBToolStripMenuItem1
             // 
             vHVBToolStripMenuItem1.Enabled = false;
             vHVBToolStripMenuItem1.Name = "vHVBToolStripMenuItem1";
-            vHVBToolStripMenuItem1.Size = new Size(109, 22);
+            vHVBToolStripMenuItem1.Size = new Size(180, 22);
             vHVBToolStripMenuItem1.Text = "VH/VB";
             // 
             // bIO2RE21998ToolStripMenuItem
@@ -782,20 +783,20 @@
             // 
             bINPS1ToolStripMenuItem.Enabled = false;
             bINPS1ToolStripMenuItem.Name = "bINPS1ToolStripMenuItem";
-            bINPS1ToolStripMenuItem.Size = new Size(128, 22);
+            bINPS1ToolStripMenuItem.Size = new Size(180, 22);
             bINPS1ToolStripMenuItem.Text = "BIN";
             // 
             // nACNABPCToolStripMenuItem
             // 
             nACNABPCToolStripMenuItem.Enabled = false;
             nACNABPCToolStripMenuItem.Name = "nACNABPCToolStripMenuItem";
-            nACNABPCToolStripMenuItem.Size = new Size(128, 22);
+            nACNABPCToolStripMenuItem.Size = new Size(180, 22);
             nACNABPCToolStripMenuItem.Text = "NAC/NAB";
             // 
             // tIMToolStripMenuItem4
             // 
             tIMToolStripMenuItem4.Name = "tIMToolStripMenuItem4";
-            tIMToolStripMenuItem4.Size = new Size(128, 22);
+            tIMToolStripMenuItem4.Size = new Size(180, 22);
             tIMToolStripMenuItem4.Text = "TIM";
             tIMToolStripMenuItem4.Click += tIMToolStripMenuItem4_Click;
             // 
@@ -803,7 +804,7 @@
             // 
             hMDToolStripMenuItem.Enabled = false;
             hMDToolStripMenuItem.Name = "hMDToolStripMenuItem";
-            hMDToolStripMenuItem.Size = new Size(128, 22);
+            hMDToolStripMenuItem.Size = new Size(180, 22);
             hMDToolStripMenuItem.Text = "HMD";
             // 
             // rECVBIOCV2000ToolStripMenuItem
@@ -818,14 +819,14 @@
             // 
             aFSPS2DCToolStripMenuItem.Enabled = false;
             aFSPS2DCToolStripMenuItem.Name = "aFSPS2DCToolStripMenuItem";
-            aFSPS2DCToolStripMenuItem.Size = new Size(148, 22);
+            aFSPS2DCToolStripMenuItem.Size = new Size(180, 22);
             aFSPS2DCToolStripMenuItem.Text = "AFS (PS2/DC)";
             // 
             // aRCHDMTToolStripMenuItem
             // 
             aRCHDMTToolStripMenuItem.Enabled = false;
             aRCHDMTToolStripMenuItem.Name = "aRCHDMTToolStripMenuItem";
-            aRCHDMTToolStripMenuItem.Size = new Size(148, 22);
+            aRCHDMTToolStripMenuItem.Size = new Size(180, 22);
             aRCHDMTToolStripMenuItem.Text = "ARC (HD/MT)";
             // 
             // bIORE31999ToolStripMenuItem
@@ -1199,6 +1200,20 @@
             installEnglishCompatibilityPatchToolStripMenuItem.Size = new Size(265, 22);
             installEnglishCompatibilityPatchToolStripMenuItem.Text = "Install English + Compatibility patch";
             // 
+            // rEmake2002ToolStripMenuItem
+            // 
+            rEmake2002ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { bGZNGCnWiiToolStripMenuItem, dATToolStripMenuItem });
+            rEmake2002ToolStripMenuItem.Name = "rEmake2002ToolStripMenuItem";
+            rEmake2002ToolStripMenuItem.Size = new Size(96, 19);
+            rEmake2002ToolStripMenuItem.Text = "REmake (2002)";
+            // 
+            // bGZNGCnWiiToolStripMenuItem
+            // 
+            bGZNGCnWiiToolStripMenuItem.Enabled = false;
+            bGZNGCnWiiToolStripMenuItem.Name = "bGZNGCnWiiToolStripMenuItem";
+            bGZNGCnWiiToolStripMenuItem.Size = new Size(180, 22);
+            bGZNGCnWiiToolStripMenuItem.Text = "BGZ (NGC/nWii)";
+            // 
             // toolStripMenuItem2
             // 
             toolStripMenuItem2.DropDownItems.AddRange(new ToolStripItem[] { residentEvilBiohazardToolStripMenuItem, nintendoToolStripMenuItem, sonyToolStripMenuItem });
@@ -1335,14 +1350,14 @@
             // versionToolStripMenuItem
             // 
             versionToolStripMenuItem.Name = "versionToolStripMenuItem";
-            versionToolStripMenuItem.Size = new Size(180, 22);
+            versionToolStripMenuItem.Size = new Size(174, 22);
             versionToolStripMenuItem.Text = "About";
             versionToolStripMenuItem.Click += versionToolStripMenuItem_Click;
             // 
             // documentationToolStripMenuItem
             // 
             documentationToolStripMenuItem.Name = "documentationToolStripMenuItem";
-            documentationToolStripMenuItem.Size = new Size(180, 22);
+            documentationToolStripMenuItem.Size = new Size(174, 22);
             documentationToolStripMenuItem.Text = "Documentation";
             documentationToolStripMenuItem.Click += documentationToolStripMenuItem_Click;
             // 
@@ -1350,7 +1365,7 @@
             // 
             checkForUpdatesToolStripMenuItem.Enabled = false;
             checkForUpdatesToolStripMenuItem.Name = "checkForUpdatesToolStripMenuItem";
-            checkForUpdatesToolStripMenuItem.Size = new Size(180, 22);
+            checkForUpdatesToolStripMenuItem.Size = new Size(174, 22);
             checkForUpdatesToolStripMenuItem.Text = "Check for Updates";
             // 
             // playStartupSoundToolStripMenuItem
@@ -1359,7 +1374,7 @@
             playStartupSoundToolStripMenuItem.CheckOnClick = true;
             playStartupSoundToolStripMenuItem.CheckState = CheckState.Checked;
             playStartupSoundToolStripMenuItem.Name = "playStartupSoundToolStripMenuItem";
-            playStartupSoundToolStripMenuItem.Size = new Size(180, 22);
+            playStartupSoundToolStripMenuItem.Size = new Size(174, 22);
             playStartupSoundToolStripMenuItem.Text = "Play Startup Sound";
             // 
             // notifyIcon1
@@ -1384,19 +1399,12 @@
             toolStripStatusLabel1.Size = new Size(124, 17);
             toolStripStatusLabel1.Text = "Ready for Experiments";
             // 
-            // rEmake2002ToolStripMenuItem
+            // dATToolStripMenuItem
             // 
-            rEmake2002ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { bGZNGCnWiiToolStripMenuItem });
-            rEmake2002ToolStripMenuItem.Name = "rEmake2002ToolStripMenuItem";
-            rEmake2002ToolStripMenuItem.Size = new Size(96, 19);
-            rEmake2002ToolStripMenuItem.Text = "REmake (2002)";
-            // 
-            // bGZNGCnWiiToolStripMenuItem
-            // 
-            bGZNGCnWiiToolStripMenuItem.Enabled = false;
-            bGZNGCnWiiToolStripMenuItem.Name = "bGZNGCnWiiToolStripMenuItem";
-            bGZNGCnWiiToolStripMenuItem.Size = new Size(180, 22);
-            bGZNGCnWiiToolStripMenuItem.Text = "BGZ (NGC/nWii)";
+            dATToolStripMenuItem.Enabled = false;
+            dATToolStripMenuItem.Name = "dATToolStripMenuItem";
+            dATToolStripMenuItem.Size = new Size(180, 22);
+            dATToolStripMenuItem.Text = "DAT (NGC/nWii)";
             // 
             // Main
             // 
@@ -1599,5 +1607,6 @@
         private ToolStripMenuItem hMDToolStripMenuItem;
         private ToolStripMenuItem rEmake2002ToolStripMenuItem;
         private ToolStripMenuItem bGZNGCnWiiToolStripMenuItem;
+        private ToolStripMenuItem dATToolStripMenuItem;
     }
 }
