@@ -1,4 +1,4 @@
-﻿namespace White_Day_Mod_Tool
+﻿namespace Tool_Hazard
 {
     public static class Utils
     {

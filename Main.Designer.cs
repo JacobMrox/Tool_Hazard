@@ -201,6 +201,8 @@
             notifyIcon1 = new NotifyIcon(components);
             statusStrip1 = new StatusStrip();
             toolStripStatusLabel1 = new ToolStripStatusLabel();
+            rEmake2002ToolStripMenuItem = new ToolStripMenuItem();
+            bGZNGCnWiiToolStripMenuItem = new ToolStripMenuItem();
             menuStrip1.SuspendLayout();
             statusStrip1.SuspendLayout();
             SuspendLayout();
@@ -210,7 +212,7 @@
             menuStrip1.BackColor = SystemColors.Control;
             menuStrip1.Font = new Font("Segoe UI", 9F);
             menuStrip1.GripMargin = new Padding(2);
-            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, toolStripMenuItem1, bIO151997ToolStripMenuItem, bIO2RE21998ToolStripMenuItem, rESURVVBIOGUNSURVToolStripMenuItem, rECVBIOCV2000ToolStripMenuItem, bIORE31999ToolStripMenuItem, whiteDayToolStripMenuItem, toolStripMenuItem2, helpToolStripMenuItem });
+            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, toolStripMenuItem1, bIO151997ToolStripMenuItem, bIO2RE21998ToolStripMenuItem, rESURVVBIOGUNSURVToolStripMenuItem, rECVBIOCV2000ToolStripMenuItem, bIORE31999ToolStripMenuItem, whiteDayToolStripMenuItem, rEmake2002ToolStripMenuItem, toolStripMenuItem2, helpToolStripMenuItem });
             menuStrip1.LayoutStyle = ToolStripLayoutStyle.Flow;
             menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
@@ -780,20 +782,20 @@
             // 
             bINPS1ToolStripMenuItem.Enabled = false;
             bINPS1ToolStripMenuItem.Name = "bINPS1ToolStripMenuItem";
-            bINPS1ToolStripMenuItem.Size = new Size(180, 22);
+            bINPS1ToolStripMenuItem.Size = new Size(128, 22);
             bINPS1ToolStripMenuItem.Text = "BIN";
             // 
             // nACNABPCToolStripMenuItem
             // 
             nACNABPCToolStripMenuItem.Enabled = false;
             nACNABPCToolStripMenuItem.Name = "nACNABPCToolStripMenuItem";
-            nACNABPCToolStripMenuItem.Size = new Size(180, 22);
+            nACNABPCToolStripMenuItem.Size = new Size(128, 22);
             nACNABPCToolStripMenuItem.Text = "NAC/NAB";
             // 
             // tIMToolStripMenuItem4
             // 
             tIMToolStripMenuItem4.Name = "tIMToolStripMenuItem4";
-            tIMToolStripMenuItem4.Size = new Size(180, 22);
+            tIMToolStripMenuItem4.Size = new Size(128, 22);
             tIMToolStripMenuItem4.Text = "TIM";
             tIMToolStripMenuItem4.Click += tIMToolStripMenuItem4_Click;
             // 
@@ -801,7 +803,7 @@
             // 
             hMDToolStripMenuItem.Enabled = false;
             hMDToolStripMenuItem.Name = "hMDToolStripMenuItem";
-            hMDToolStripMenuItem.Size = new Size(180, 22);
+            hMDToolStripMenuItem.Size = new Size(128, 22);
             hMDToolStripMenuItem.Text = "HMD";
             // 
             // rECVBIOCV2000ToolStripMenuItem
@@ -1333,14 +1335,14 @@
             // versionToolStripMenuItem
             // 
             versionToolStripMenuItem.Name = "versionToolStripMenuItem";
-            versionToolStripMenuItem.Size = new Size(174, 22);
+            versionToolStripMenuItem.Size = new Size(180, 22);
             versionToolStripMenuItem.Text = "About";
             versionToolStripMenuItem.Click += versionToolStripMenuItem_Click;
             // 
             // documentationToolStripMenuItem
             // 
             documentationToolStripMenuItem.Name = "documentationToolStripMenuItem";
-            documentationToolStripMenuItem.Size = new Size(174, 22);
+            documentationToolStripMenuItem.Size = new Size(180, 22);
             documentationToolStripMenuItem.Text = "Documentation";
             documentationToolStripMenuItem.Click += documentationToolStripMenuItem_Click;
             // 
@@ -1348,7 +1350,7 @@
             // 
             checkForUpdatesToolStripMenuItem.Enabled = false;
             checkForUpdatesToolStripMenuItem.Name = "checkForUpdatesToolStripMenuItem";
-            checkForUpdatesToolStripMenuItem.Size = new Size(174, 22);
+            checkForUpdatesToolStripMenuItem.Size = new Size(180, 22);
             checkForUpdatesToolStripMenuItem.Text = "Check for Updates";
             // 
             // playStartupSoundToolStripMenuItem
@@ -1357,7 +1359,7 @@
             playStartupSoundToolStripMenuItem.CheckOnClick = true;
             playStartupSoundToolStripMenuItem.CheckState = CheckState.Checked;
             playStartupSoundToolStripMenuItem.Name = "playStartupSoundToolStripMenuItem";
-            playStartupSoundToolStripMenuItem.Size = new Size(174, 22);
+            playStartupSoundToolStripMenuItem.Size = new Size(180, 22);
             playStartupSoundToolStripMenuItem.Text = "Play Startup Sound";
             // 
             // notifyIcon1
@@ -1381,6 +1383,20 @@
             toolStripStatusLabel1.Name = "toolStripStatusLabel1";
             toolStripStatusLabel1.Size = new Size(124, 17);
             toolStripStatusLabel1.Text = "Ready for Experiments";
+            // 
+            // rEmake2002ToolStripMenuItem
+            // 
+            rEmake2002ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { bGZNGCnWiiToolStripMenuItem });
+            rEmake2002ToolStripMenuItem.Name = "rEmake2002ToolStripMenuItem";
+            rEmake2002ToolStripMenuItem.Size = new Size(96, 19);
+            rEmake2002ToolStripMenuItem.Text = "REmake (2002)";
+            // 
+            // bGZNGCnWiiToolStripMenuItem
+            // 
+            bGZNGCnWiiToolStripMenuItem.Enabled = false;
+            bGZNGCnWiiToolStripMenuItem.Name = "bGZNGCnWiiToolStripMenuItem";
+            bGZNGCnWiiToolStripMenuItem.Size = new Size(180, 22);
+            bGZNGCnWiiToolStripMenuItem.Text = "BGZ (NGC/nWii)";
             // 
             // Main
             // 
@@ -1581,5 +1597,7 @@
         private ToolStripMenuItem tIMViewerToolStripMenuItem;
         private ToolStripMenuItem tIMToolStripMenuItem4;
         private ToolStripMenuItem hMDToolStripMenuItem;
+        private ToolStripMenuItem rEmake2002ToolStripMenuItem;
+        private ToolStripMenuItem bGZNGCnWiiToolStripMenuItem;
     }
 }
