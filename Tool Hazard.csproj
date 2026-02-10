@@ -7,7 +7,7 @@
   <Nullable>enable</Nullable>
   <UseWindowsForms>true</UseWindowsForms>
   <ImplicitUsings>enable</ImplicitUsings>
-  <ApplicationIcon>umbrella (1).ico</ApplicationIcon>
+  <ApplicationIcon>icon.ico</ApplicationIcon>
   <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   <StartupObject>Tool_Hazard.Program</StartupObject>
 
@@ -29,7 +29,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="icon.ico" />
     <Content Include="Resources\Biohazard\encoding.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -54,7 +53,7 @@
     <Content Include="Resources\Biohazard\Opcodes\re3_opcodes.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="umbrella (1).ico" />
+    <Content Include="icon.ico" />
   </ItemGroup>
 
   <ItemGroup>
