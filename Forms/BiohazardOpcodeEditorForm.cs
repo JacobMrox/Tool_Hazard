@@ -48,8 +48,8 @@ namespace Tool_Hazard.Forms
         }
         private void SetStatus(string text)
         {
-            Text = $"Biohazard OpCode Editor - {text}";
-            lblStatus.Text = $"Biohazard OpCode Editor - {text}";
+            Text = $"Biohazard SCD OpCode Editor - {text}";
+            lblStatus.Text = $"Biohazard SCD OpCode Editor - {text}";
         }
 
         //Helper methods
