@@ -242,7 +242,7 @@ namespace Tool_Hazard.Forms
             {
                 using var sfd = new SaveFileDialog
                 {
-                    Filter = "SAP files (*.sap)|*.sap|All files (*.*)|*.*",
+                    Filter = "Sound Audio Pack (*.sap)|*.sap|All files (*.*)|*.*",
                     FileName = string.IsNullOrWhiteSpace(_bank.SourcePath) ? "new.sap" : Path.GetFileName(_bank.SourcePath)
                 };
                 if (sfd.ShowDialog(this) != DialogResult.OK)
@@ -414,7 +414,7 @@ namespace Tool_Hazard.Forms
 
             using var ofd = new OpenFileDialog
             {
-                Filter = "SAP files (*.sap)|*.sap|All files (*.*)|*.*"
+                Filter = "Sound Audio Pack (*.sap)|*.sap|All files (*.*)|*.*"
             };
 
             if (ofd.ShowDialog(this) != DialogResult.OK)

@@ -115,6 +115,8 @@
             rESURVVBIOGUNSURVToolStripMenuItem = new ToolStripMenuItem();
             bINPS1ToolStripMenuItem = new ToolStripMenuItem();
             nACNABPCToolStripMenuItem = new ToolStripMenuItem();
+            tIMToolStripMenuItem4 = new ToolStripMenuItem();
+            hMDToolStripMenuItem = new ToolStripMenuItem();
             rECVBIOCV2000ToolStripMenuItem = new ToolStripMenuItem();
             aFSPS2DCToolStripMenuItem = new ToolStripMenuItem();
             aRCHDMTToolStripMenuItem = new ToolStripMenuItem();
@@ -768,7 +770,7 @@
             // 
             // rESURVVBIOGUNSURVToolStripMenuItem
             // 
-            rESURVVBIOGUNSURVToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { bINPS1ToolStripMenuItem, nACNABPCToolStripMenuItem });
+            rESURVVBIOGUNSURVToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { bINPS1ToolStripMenuItem, nACNABPCToolStripMenuItem, tIMToolStripMenuItem4, hMDToolStripMenuItem });
             rESURVVBIOGUNSURVToolStripMenuItem.Name = "rESURVVBIOGUNSURVToolStripMenuItem";
             rESURVVBIOGUNSURVToolStripMenuItem.Size = new Size(144, 19);
             rESURVVBIOGUNSURVToolStripMenuItem.Text = "RESURV/BIOGUN (2000)";
@@ -778,15 +780,29 @@
             // 
             bINPS1ToolStripMenuItem.Enabled = false;
             bINPS1ToolStripMenuItem.Name = "bINPS1ToolStripMenuItem";
-            bINPS1ToolStripMenuItem.Size = new Size(154, 22);
-            bINPS1ToolStripMenuItem.Text = "BIN (PS1)";
+            bINPS1ToolStripMenuItem.Size = new Size(180, 22);
+            bINPS1ToolStripMenuItem.Text = "BIN";
             // 
             // nACNABPCToolStripMenuItem
             // 
             nACNABPCToolStripMenuItem.Enabled = false;
             nACNABPCToolStripMenuItem.Name = "nACNABPCToolStripMenuItem";
-            nACNABPCToolStripMenuItem.Size = new Size(154, 22);
-            nACNABPCToolStripMenuItem.Text = "NAC/NAB (PC)";
+            nACNABPCToolStripMenuItem.Size = new Size(180, 22);
+            nACNABPCToolStripMenuItem.Text = "NAC/NAB";
+            // 
+            // tIMToolStripMenuItem4
+            // 
+            tIMToolStripMenuItem4.Name = "tIMToolStripMenuItem4";
+            tIMToolStripMenuItem4.Size = new Size(180, 22);
+            tIMToolStripMenuItem4.Text = "TIM";
+            tIMToolStripMenuItem4.Click += tIMToolStripMenuItem4_Click;
+            // 
+            // hMDToolStripMenuItem
+            // 
+            hMDToolStripMenuItem.Enabled = false;
+            hMDToolStripMenuItem.Name = "hMDToolStripMenuItem";
+            hMDToolStripMenuItem.Size = new Size(180, 22);
+            hMDToolStripMenuItem.Text = "HMD";
             // 
             // rECVBIOCV2000ToolStripMenuItem
             // 
@@ -1563,5 +1579,7 @@
         private ToolStripMenuItem tIMToolStripMenuItem2;
         private ToolStripMenuItem tIMToolStripMenuItem3;
         private ToolStripMenuItem tIMViewerToolStripMenuItem;
+        private ToolStripMenuItem tIMToolStripMenuItem4;
+        private ToolStripMenuItem hMDToolStripMenuItem;
     }
 }

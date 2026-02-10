@@ -1449,6 +1449,13 @@ namespace Tool_Hazard
             editor.Show(this);
         }
 
+        private void tIMToolStripMenuItem4_Click(object sender, EventArgs e)
+        {
+            //Survivor
+            var editor = new Biohazard_PIX_Viewer();
+            editor.Show(this);
+        }
+
         //BSS Manager/Viewer Hookers
         private void bSSToolStripMenuItem_Click(object sender, EventArgs e)
         {
