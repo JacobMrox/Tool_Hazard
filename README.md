@@ -67,7 +67,7 @@ Inizialmente nato come White Day Mod Tool, si è evoluto in un toolkit completo 
 * White Day (2001):
   * NOP file extraction (the repack functionality is a work in progress).
   * Supports extraction of files with Korean character file names without the need of Locale Emulator.
-  * Font Editor.
+  * Font Editor: this is a part of Gemini's File Editor in C Sharp/C#.
 * Nintendo DS
   * Content Scanner + Lz77Wii Decompressor
 * Sony PS1
