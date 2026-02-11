@@ -84,7 +84,7 @@ Inizialmente nato come White Day Mod Tool, si è evoluto in un toolkit completo 
 This is to be compiled in Visual Studio 2026. For compiled ready-to-use release, please wait until an official stable release is published.
 
 # Credits & Acknoledgments
-
+* Megan Grass - for contributing so much to this community, and at some point being the only person providing tools at all, in this scene.
 * [White Day Font Editor](https://github.com/emuyia/wd-fonteditor) v1.2 by Emuiya.
 * [CRE-SCD-BHS Biohazard SCD Editor](https://github.com/3lric/CRE-SCD-BHS/) by 3lric in C#, with corrected opcode database for Biohazard 3/Resident Evil 3 (1999).
 * Utilizes [Biohazard-utils](https://github.com/biorand/biohazard-utils/) .Net library by Intel.Orca for some file formats.
