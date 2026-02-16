@@ -1,5 +1,7 @@
 **Want to see this project reach the next level?** I’m currently navigating some rough seas and could use a little wind in my sails. If you’ve enjoyed my work so far, a [small donation goes](https://www.paypal.com/paypalme/JACOBQAROONI) a long way in keeping the lights on and the updates coming. Thanks for having my back!
 
+# Project Description
+
 Tool Hazard is a modern, all-in-one modding and research utility written in C# (.NET 8, WinForms), designed for classic survival horror titles such as Biohazard / Resident Evil 1–3, White Day (2001), and selected legacy console formats.
 
 Originally started as White Day Mod Tool, it evolved into a full-featured toolkit inspired by [Biofat](https://www.romhacking.net/utilities/1019/), focused on reverse-engineering, modding, file editing, and preservation of classic game assets.
@@ -75,6 +77,8 @@ Inizialmente nato come White Day Mod Tool, si è evoluto in un toolkit completo 
   * TIM to PNG/BMP/PIX (BIO) and vice versa.
 
 # Planned features
+* Support PCK (RE1 Backgrounds) and ADT (RE2 Backgrounds).
+* Add support for REmake/RE0 File Formats
 * Live HUD feature for RE1-2-3
 * Possible Intel.Orca Biorand implementation in-tool.
 * Auto-Updater
