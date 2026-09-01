@@ -77,10 +77,12 @@ Inizialmente nato come White Day Mod Tool, si è evoluto in un toolkit completo 
   * TIM to PNG/BMP/PIX (BIO) and vice versa.
 
 # Planned features
+* Add Multi-Clut TIM support to the Tim/Pix Viewer.
+* Fix the BSS viewer (currently displays jumbled mess).
 * Support PCK (RE1 Backgrounds) and ADT (RE2 Backgrounds).
-* Add support for REmake/RE0 File Formats
+* Add support for Biohazard REmake/RE0 File Formats.
 * Live HUD feature for RE1-2-3
-* Possible Intel.Orca Biorand implementation in-tool.
+* Possible Biorand implementation in-tool.
 * Auto-Updater
 
 # Compile
