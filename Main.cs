@@ -1,12 +1,13 @@
 ﻿using IntelOrca.Biohazard;
-using Tool_Hazard.Biohazard.GCA;
 using System.Media;
 using System.Reflection;
 using System.Text;
 using Tool_Hazard.Biohazard;
+using Tool_Hazard.Biohazard.DAT;
 using Tool_Hazard.Biohazard.emd;
-using Tool_Hazard.Biohazard.RDT;
 using Tool_Hazard.Biohazard.GCA;
+using Tool_Hazard.Biohazard.GCA;
+using Tool_Hazard.Biohazard.RDT;
 using Tool_Hazard.Forms;
 using Tool_Hazard.Nintendo;
 using Tool_Hazard.Sony_PS1;
@@ -1577,6 +1578,7 @@ namespace Tool_Hazard
                     //try catch errors
                     try
                     {
+                        UpdateStatus("Extracting...");
                         Biohazard.GCA.Extract.ExtractFile(selectedFile);
                         //EmdTool.Unpack(selectedFile, BioVersion.Biohazard1, EmdTool.Format.Original);
                     }
@@ -1586,6 +1588,7 @@ namespace Tool_Hazard
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
+                UpdateStatus("Extracted");
             }
         }
 
@@ -1603,12 +1606,50 @@ namespace Tool_Hazard
                     //try catch errors
                     try
                     {
+                        UpdateStatus("Repacking...");
                         Biohazard.GCA.Repack.RepackFile(selectedFile);
                     }
                     catch (Exception ex)
                     {
+                        UpdateStatus($"Error:\n{ex.Message}");
                         MessageBox.Show($"Error:\n{ex.Message}", "GCA Tool",
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+                UpdateStatus("Repacked.");
+            }
+        }
+        // RE4 2007 UNIVERSAL DAT EXTRACT
+        private void extractToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            using (OpenFileDialog openFileDialog = new OpenFileDialog())
+            {
+                openFileDialog.Filter = "RE4 Archive Files (*.gca;*.dat)|*.gca;*.dat|All Files (*.*)|*.*";
+                openFileDialog.Title = "Select RE4 DAT/GCA Archive to Extract";
+
+                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    using (FolderBrowserDialog folderDialog = new FolderBrowserDialog())
+                    {
+                        folderDialog.Description = "Select Destination Folder for Extracted Files";
+
+                        if (folderDialog.ShowDialog() == DialogResult.OK)
+                        {
+                            try
+                            {
+                                UpdateStatus("Extracting archive...");
+
+                                Biohazard.DAT.GCAHandler.Extract(openFileDialog.FileName, folderDialog.SelectedPath);
+
+                                UpdateStatus("Extraction complete.");
+                                MessageBox.Show("Archive extracted successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            }
+                            catch (Exception ex)
+                            {
+                                UpdateStatus("Extraction failed.");
+                                MessageBox.Show($"Extraction failed: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            }
+                        }
                     }
                 }
             }

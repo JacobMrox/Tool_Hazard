@@ -168,6 +168,8 @@
             gCAPC2007ToolStripMenuItem = new ToolStripMenuItem();
             extractToolStripMenuItem = new ToolStripMenuItem();
             repackToolStripMenuItem3 = new ToolStripMenuItem();
+            dATToolStripMenuItem1 = new ToolStripMenuItem();
+            extractToolStripMenuItem1 = new ToolStripMenuItem();
             whiteDayToolStripMenuItem = new ToolStripMenuItem();
             nOPToolStripMenuItem1 = new ToolStripMenuItem();
             unpackToolStripMenuItem1 = new ToolStripMenuItem();
@@ -209,6 +211,10 @@
             notifyIcon1 = new NotifyIcon(components);
             statusStrip1 = new StatusStrip();
             toolStripStatusLabel1 = new ToolStripStatusLabel();
+            lFSPC2014ToolStripMenuItem = new ToolStripMenuItem();
+            uDASPC2014ToolStripMenuItem = new ToolStripMenuItem();
+            bINPC2014ToolStripMenuItem = new ToolStripMenuItem();
+            pMDPC2007ToolStripMenuItem = new ToolStripMenuItem();
             menuStrip1.SuspendLayout();
             statusStrip1.SuspendLayout();
             SuspendLayout();
@@ -1134,7 +1140,7 @@
             // 
             // rE42005ToolStripMenuItem
             // 
-            rE42005ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { gCAPC2007ToolStripMenuItem });
+            rE42005ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { gCAPC2007ToolStripMenuItem, pMDPC2007ToolStripMenuItem, dATToolStripMenuItem1, lFSPC2014ToolStripMenuItem, uDASPC2014ToolStripMenuItem, bINPC2014ToolStripMenuItem });
             rE42005ToolStripMenuItem.Name = "rE42005ToolStripMenuItem";
             rE42005ToolStripMenuItem.Size = new Size(132, 24);
             rE42005ToolStripMenuItem.Text = "RE4/BIO4 (2005)";
@@ -1143,22 +1149,37 @@
             // 
             gCAPC2007ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { extractToolStripMenuItem, repackToolStripMenuItem3 });
             gCAPC2007ToolStripMenuItem.Name = "gCAPC2007ToolStripMenuItem";
-            gCAPC2007ToolStripMenuItem.Size = new Size(224, 26);
-            gCAPC2007ToolStripMenuItem.Text = "DAT/GCA (PC-2007)";
+            gCAPC2007ToolStripMenuItem.Size = new Size(232, 26);
+            gCAPC2007ToolStripMenuItem.Text = "DAT [GCA] (PC-2007)";
             // 
             // extractToolStripMenuItem
             // 
             extractToolStripMenuItem.Name = "extractToolStripMenuItem";
-            extractToolStripMenuItem.Size = new Size(224, 26);
+            extractToolStripMenuItem.Size = new Size(140, 26);
             extractToolStripMenuItem.Text = "Extract";
             extractToolStripMenuItem.Click += extractToolStripMenuItem_Click;
             // 
             // repackToolStripMenuItem3
             // 
             repackToolStripMenuItem3.Name = "repackToolStripMenuItem3";
-            repackToolStripMenuItem3.Size = new Size(224, 26);
+            repackToolStripMenuItem3.Size = new Size(140, 26);
             repackToolStripMenuItem3.Text = "Repack";
             repackToolStripMenuItem3.Click += repackToolStripMenuItem3_Click;
+            // 
+            // dATToolStripMenuItem1
+            // 
+            dATToolStripMenuItem1.DropDownItems.AddRange(new ToolStripItem[] { extractToolStripMenuItem1 });
+            dATToolStripMenuItem1.Enabled = false;
+            dATToolStripMenuItem1.Name = "dATToolStripMenuItem1";
+            dATToolStripMenuItem1.Size = new Size(232, 26);
+            dATToolStripMenuItem1.Text = "DAT";
+            // 
+            // extractToolStripMenuItem1
+            // 
+            extractToolStripMenuItem1.Name = "extractToolStripMenuItem1";
+            extractToolStripMenuItem1.Size = new Size(224, 26);
+            extractToolStripMenuItem1.Text = "Extract";
+            extractToolStripMenuItem1.Click += extractToolStripMenuItem1_Click;
             // 
             // whiteDayToolStripMenuItem
             // 
@@ -1450,6 +1471,34 @@
             toolStripStatusLabel1.Size = new Size(158, 20);
             toolStripStatusLabel1.Text = "Ready for Experiments";
             // 
+            // lFSPC2014ToolStripMenuItem
+            // 
+            lFSPC2014ToolStripMenuItem.Enabled = false;
+            lFSPC2014ToolStripMenuItem.Name = "lFSPC2014ToolStripMenuItem";
+            lFSPC2014ToolStripMenuItem.Size = new Size(232, 26);
+            lFSPC2014ToolStripMenuItem.Text = "LFS (PC-2014)";
+            // 
+            // uDASPC2014ToolStripMenuItem
+            // 
+            uDASPC2014ToolStripMenuItem.Enabled = false;
+            uDASPC2014ToolStripMenuItem.Name = "uDASPC2014ToolStripMenuItem";
+            uDASPC2014ToolStripMenuItem.Size = new Size(232, 26);
+            uDASPC2014ToolStripMenuItem.Text = "UDAS (PC-2014)";
+            // 
+            // bINPC2014ToolStripMenuItem
+            // 
+            bINPC2014ToolStripMenuItem.Enabled = false;
+            bINPC2014ToolStripMenuItem.Name = "bINPC2014ToolStripMenuItem";
+            bINPC2014ToolStripMenuItem.Size = new Size(232, 26);
+            bINPC2014ToolStripMenuItem.Text = "BIN (PC-2014)";
+            // 
+            // pMDPC2007ToolStripMenuItem
+            // 
+            pMDPC2007ToolStripMenuItem.Enabled = false;
+            pMDPC2007ToolStripMenuItem.Name = "pMDPC2007ToolStripMenuItem";
+            pMDPC2007ToolStripMenuItem.Size = new Size(232, 26);
+            pMDPC2007ToolStripMenuItem.Text = "PMD (PC-2007)";
+            // 
             // Main
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
@@ -1658,5 +1707,11 @@
         private ToolStripMenuItem gCAPC2007ToolStripMenuItem;
         private ToolStripMenuItem extractToolStripMenuItem;
         private ToolStripMenuItem repackToolStripMenuItem3;
+        private ToolStripMenuItem dATToolStripMenuItem1;
+        private ToolStripMenuItem extractToolStripMenuItem1;
+        private ToolStripMenuItem pMDPC2007ToolStripMenuItem;
+        private ToolStripMenuItem lFSPC2014ToolStripMenuItem;
+        private ToolStripMenuItem uDASPC2014ToolStripMenuItem;
+        private ToolStripMenuItem bINPC2014ToolStripMenuItem;
     }
 }
