@@ -1654,5 +1654,91 @@ namespace Tool_Hazard
                 }
             }
         }
+
+        private void decompressToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            using (OpenFileDialog open = new OpenFileDialog())
+            {
+                open.Title = "Select RE4 UHD LFS File";
+                open.Filter = "RE4 LFS Files (*.lfs)|*.lfs|All Files (*.*)|*.*";
+
+                if (open.ShowDialog() != DialogResult.OK)
+                    return;
+
+                using (SaveFileDialog save = new SaveFileDialog())
+                {
+                    save.Title = "Save Decompressed File";
+                    save.FileName = Path.GetFileNameWithoutExtension(open.FileName);
+                    save.Filter = "All Files (*.*)|*.*";
+
+                    if (save.ShowDialog() != DialogResult.OK)
+                        return;
+
+                    try
+                    {
+                        Tool_Hazard.Biohazard.LFS.LFS.Decompress(
+                            open.FileName,
+                            save.FileName);
+
+                        MessageBox.Show(
+                            "LFS decompression completed successfully.",
+                            "RE4 UHD LFS",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Information);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(
+                            $"LFS decompression failed:\n\n{ex.Message}",
+                            "RE4 UHD LFS",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
+
+        private void compressToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            using (OpenFileDialog open = new OpenFileDialog())
+            {
+                open.Title = "Select File to Compress";
+                open.Filter = "All Files (*.*)|*.*";
+
+                if (open.ShowDialog() != DialogResult.OK)
+                    return;
+
+                using (SaveFileDialog save = new SaveFileDialog())
+                {
+                    save.Title = "Save RE4 UHD LFS File";
+                    save.FileName = Path.GetFileName(open.FileName) + ".lfs";
+                    save.Filter = "RE4 LFS Files (*.lfs)|*.lfs|All Files (*.*)|*.*";
+
+                    if (save.ShowDialog() != DialogResult.OK)
+                        return;
+
+                    try
+                    {
+                        Tool_Hazard.Biohazard.LFS.LFS.Compress(
+                            open.FileName,
+                            save.FileName);
+
+                        MessageBox.Show(
+                            "LFS compression completed successfully.",
+                            "RE4 UHD LFS",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Information);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(
+                            $"LFS compression failed:\n\n{ex.Message}",
+                            "RE4 UHD LFS",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
     }
 }
