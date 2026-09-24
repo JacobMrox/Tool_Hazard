@@ -267,9 +267,6 @@ namespace Tool_Hazard.Biohazard.LFS
                     byte[] source = new byte[chunkSize];
                     Buffer.BlockCopy(input, sourceOffset, source, 0, chunkSize);
 
-                    // Compress once and retain the result. This is important for
-                    // a clean library implementation and avoids depending on the
-                    // compressor producing identical output on repeated calls.
                     byte[] compressed = context.Compress(source);
                     compressedChunks[i] = compressed;
 
@@ -287,12 +284,7 @@ namespace Tool_Hazard.Biohazard.LFS
                             $"for the LFS SizeCompressed field.");
                     }
 
-                    if (chunkSize > ushort.MaxValue)
-                        throw new InvalidDataException(
-                            "A non-full LFS chunk cannot have a decompressed size above 0xFFFF.");
-
-                    // Match RE4LFS exactly:
-                    // ((((data_offset - 4) + 0xF) / 0x10) * 0x10) + 4
+                    // Match RE4LFS alignment:
                     long alignedOffset = AlignLfsDataOffset(dataOffset);
 
                     ushort compressedSize = compressed.Length == ChunkSize
@@ -303,8 +295,6 @@ namespace Tool_Hazard.Biohazard.LFS
                         ? (ushort)0
                         : checked((ushort)chunkSize);
 
-                    // Offset is relative to the end of the 20-byte header,
-                    // with bit 0 indicating XMem-compressed data.
                     uint relativeOffset = checked((uint)(alignedOffset - 20));
                     relativeOffset |= 1u;
 
@@ -321,8 +311,6 @@ namespace Tool_Hazard.Biohazard.LFS
                     dataOffset = checked(alignedOffset + compressed.Length);
                     remaining -= chunkSize;
 
-                    // The original RE4LFS adds alignment padding to SizeCompressed
-                    // for big-endian/X360 output.
                     if (bigEndian)
                     {
                         long nextAlignedOffset = AlignLfsDataOffset(dataOffset);
