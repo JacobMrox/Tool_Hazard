@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 
-namespace Tool_Hazard.Biohazard.LFS
+namespace Tool_Hazard.Biohazard.RE4
 {
     /// <summary>
     /// Resident Evil 4 UHD LFS compressor/decompressor.

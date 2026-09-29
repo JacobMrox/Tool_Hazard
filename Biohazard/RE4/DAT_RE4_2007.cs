@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Tool_Hazard.Biohazard.DAT
+namespace Tool_Hazard.Biohazard.RE4
 {
     public static class GCAHandler
     {

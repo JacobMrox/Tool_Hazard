@@ -171,16 +171,17 @@
             pMDPC2007ToolStripMenuItem = new ToolStripMenuItem();
             toSMDToolStripMenuItem = new ToolStripMenuItem();
             sMDToPMDToolStripMenuItem = new ToolStripMenuItem();
-            dATToolStripMenuItem1 = new ToolStripMenuItem();
-            extractToolStripMenuItem1 = new ToolStripMenuItem();
             lFSPC2014ToolStripMenuItem = new ToolStripMenuItem();
             decompressToolStripMenuItem1 = new ToolStripMenuItem();
             compressToolStripMenuItem = new ToolStripMenuItem();
-            uDASPC2014ToolStripMenuItem = new ToolStripMenuItem();
-            unpackToolStripMenuItem2 = new ToolStripMenuItem();
-            repackToolStripMenuItem6 = new ToolStripMenuItem();
+            dATToolStripMenuItem1 = new ToolStripMenuItem();
+            extractToolStripMenuItem1 = new ToolStripMenuItem();
+            repackToolStripMenuItem7 = new ToolStripMenuItem();
             bINPC2014ToolStripMenuItem = new ToolStripMenuItem();
             xWBToolStripMenuItem = new ToolStripMenuItem();
+            uDASToolStripMenuItem = new ToolStripMenuItem();
+            extractToolStripMenuItem2 = new ToolStripMenuItem();
+            repackToolStripMenuItem6 = new ToolStripMenuItem();
             whiteDayToolStripMenuItem = new ToolStripMenuItem();
             nOPToolStripMenuItem1 = new ToolStripMenuItem();
             unpackToolStripMenuItem1 = new ToolStripMenuItem();
@@ -1147,7 +1148,7 @@
             // 
             // rE42005ToolStripMenuItem
             // 
-            rE42005ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { gCAPC2007ToolStripMenuItem, pMDPC2007ToolStripMenuItem, dATToolStripMenuItem1, lFSPC2014ToolStripMenuItem, uDASPC2014ToolStripMenuItem, bINPC2014ToolStripMenuItem, xWBToolStripMenuItem });
+            rE42005ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { gCAPC2007ToolStripMenuItem, pMDPC2007ToolStripMenuItem, lFSPC2014ToolStripMenuItem, dATToolStripMenuItem1, uDASToolStripMenuItem, bINPC2014ToolStripMenuItem, xWBToolStripMenuItem });
             rE42005ToolStripMenuItem.Name = "rE42005ToolStripMenuItem";
             rE42005ToolStripMenuItem.Size = new Size(132, 24);
             rE42005ToolStripMenuItem.Text = "RE4/BIO4 (2005)";
@@ -1156,7 +1157,7 @@
             // 
             gCAPC2007ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { extractToolStripMenuItem, repackToolStripMenuItem3 });
             gCAPC2007ToolStripMenuItem.Name = "gCAPC2007ToolStripMenuItem";
-            gCAPC2007ToolStripMenuItem.Size = new Size(232, 26);
+            gCAPC2007ToolStripMenuItem.Size = new Size(314, 26);
             gCAPC2007ToolStripMenuItem.Text = "DAT [GCA] (PC-2007)";
             // 
             // extractToolStripMenuItem
@@ -1178,90 +1179,97 @@
             pMDPC2007ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { toSMDToolStripMenuItem, sMDToPMDToolStripMenuItem });
             pMDPC2007ToolStripMenuItem.Enabled = false;
             pMDPC2007ToolStripMenuItem.Name = "pMDPC2007ToolStripMenuItem";
-            pMDPC2007ToolStripMenuItem.Size = new Size(232, 26);
+            pMDPC2007ToolStripMenuItem.Size = new Size(314, 26);
             pMDPC2007ToolStripMenuItem.Text = "PMD (PC-2007)";
             // 
             // toSMDToolStripMenuItem
             // 
             toSMDToolStripMenuItem.Name = "toSMDToolStripMenuItem";
-            toSMDToolStripMenuItem.Size = new Size(224, 26);
+            toSMDToolStripMenuItem.Size = new Size(180, 26);
             toSMDToolStripMenuItem.Text = "PMD To SMD";
             // 
             // sMDToPMDToolStripMenuItem
             // 
             sMDToPMDToolStripMenuItem.Name = "sMDToPMDToolStripMenuItem";
-            sMDToPMDToolStripMenuItem.Size = new Size(224, 26);
+            sMDToPMDToolStripMenuItem.Size = new Size(180, 26);
             sMDToPMDToolStripMenuItem.Text = "SMD To PMD";
-            // 
-            // dATToolStripMenuItem1
-            // 
-            dATToolStripMenuItem1.DropDownItems.AddRange(new ToolStripItem[] { extractToolStripMenuItem1 });
-            dATToolStripMenuItem1.Enabled = false;
-            dATToolStripMenuItem1.Name = "dATToolStripMenuItem1";
-            dATToolStripMenuItem1.Size = new Size(232, 26);
-            dATToolStripMenuItem1.Text = "DAT";
-            // 
-            // extractToolStripMenuItem1
-            // 
-            extractToolStripMenuItem1.Name = "extractToolStripMenuItem1";
-            extractToolStripMenuItem1.Size = new Size(137, 26);
-            extractToolStripMenuItem1.Text = "Extract";
-            extractToolStripMenuItem1.Click += extractToolStripMenuItem1_Click;
             // 
             // lFSPC2014ToolStripMenuItem
             // 
             lFSPC2014ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { decompressToolStripMenuItem1, compressToolStripMenuItem });
             lFSPC2014ToolStripMenuItem.Name = "lFSPC2014ToolStripMenuItem";
-            lFSPC2014ToolStripMenuItem.Size = new Size(232, 26);
-            lFSPC2014ToolStripMenuItem.Text = "LFS (PC-2014)";
+            lFSPC2014ToolStripMenuItem.Size = new Size(314, 26);
+            lFSPC2014ToolStripMenuItem.Text = "LFS (PC-2014-UHD)";
             // 
             // decompressToolStripMenuItem1
             // 
             decompressToolStripMenuItem1.Name = "decompressToolStripMenuItem1";
-            decompressToolStripMenuItem1.Size = new Size(224, 26);
-            decompressToolStripMenuItem1.Text = "Decompress LFS";
+            decompressToolStripMenuItem1.Size = new Size(174, 26);
+            decompressToolStripMenuItem1.Text = "Decompress";
             decompressToolStripMenuItem1.Click += decompressToolStripMenuItem1_Click;
             // 
             // compressToolStripMenuItem
             // 
             compressToolStripMenuItem.Name = "compressToolStripMenuItem";
-            compressToolStripMenuItem.Size = new Size(224, 26);
-            compressToolStripMenuItem.Text = "Compress To LFS";
+            compressToolStripMenuItem.Size = new Size(174, 26);
+            compressToolStripMenuItem.Text = "Compress";
             compressToolStripMenuItem.Click += compressToolStripMenuItem_Click;
             // 
-            // uDASPC2014ToolStripMenuItem
+            // dATToolStripMenuItem1
             // 
-            uDASPC2014ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { unpackToolStripMenuItem2, repackToolStripMenuItem6 });
-            uDASPC2014ToolStripMenuItem.Enabled = false;
-            uDASPC2014ToolStripMenuItem.Name = "uDASPC2014ToolStripMenuItem";
-            uDASPC2014ToolStripMenuItem.Size = new Size(232, 26);
-            uDASPC2014ToolStripMenuItem.Text = "UDAS (PC-2014)";
+            dATToolStripMenuItem1.DropDownItems.AddRange(new ToolStripItem[] { extractToolStripMenuItem1, repackToolStripMenuItem7 });
+            dATToolStripMenuItem1.Name = "dATToolStripMenuItem1";
+            dATToolStripMenuItem1.Size = new Size(314, 26);
+            dATToolStripMenuItem1.Text = "DAT (GC/WII/X360/PS3/UHD)";
             // 
-            // unpackToolStripMenuItem2
+            // extractToolStripMenuItem1
             // 
-            unpackToolStripMenuItem2.Name = "unpackToolStripMenuItem2";
-            unpackToolStripMenuItem2.Size = new Size(141, 26);
-            unpackToolStripMenuItem2.Text = "Unpack";
+            extractToolStripMenuItem1.Name = "extractToolStripMenuItem1";
+            extractToolStripMenuItem1.Size = new Size(140, 26);
+            extractToolStripMenuItem1.Text = "Extract";
+            extractToolStripMenuItem1.Click += extractToolStripMenuItem1_Click;
             // 
-            // repackToolStripMenuItem6
+            // repackToolStripMenuItem7
             // 
-            repackToolStripMenuItem6.Name = "repackToolStripMenuItem6";
-            repackToolStripMenuItem6.Size = new Size(141, 26);
-            repackToolStripMenuItem6.Text = "Repack";
+            repackToolStripMenuItem7.Name = "repackToolStripMenuItem7";
+            repackToolStripMenuItem7.Size = new Size(140, 26);
+            repackToolStripMenuItem7.Text = "Repack";
+            repackToolStripMenuItem7.Click += repackToolStripMenuItem7_Click;
             // 
             // bINPC2014ToolStripMenuItem
             // 
             bINPC2014ToolStripMenuItem.Enabled = false;
             bINPC2014ToolStripMenuItem.Name = "bINPC2014ToolStripMenuItem";
-            bINPC2014ToolStripMenuItem.Size = new Size(232, 26);
-            bINPC2014ToolStripMenuItem.Text = "BIN (PC-2014)";
+            bINPC2014ToolStripMenuItem.Size = new Size(314, 26);
+            bINPC2014ToolStripMenuItem.Text = "BIN (GC/PS2/WII/X360/PS3/UHD)";
             // 
             // xWBToolStripMenuItem
             // 
             xWBToolStripMenuItem.Enabled = false;
             xWBToolStripMenuItem.Name = "xWBToolStripMenuItem";
-            xWBToolStripMenuItem.Size = new Size(232, 26);
+            xWBToolStripMenuItem.Size = new Size(314, 26);
             xWBToolStripMenuItem.Text = "XWB";
+            // 
+            // uDASToolStripMenuItem
+            // 
+            uDASToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { extractToolStripMenuItem2, repackToolStripMenuItem6 });
+            uDASToolStripMenuItem.Name = "uDASToolStripMenuItem";
+            uDASToolStripMenuItem.Size = new Size(314, 26);
+            uDASToolStripMenuItem.Text = "UDAS";
+            // 
+            // extractToolStripMenuItem2
+            // 
+            extractToolStripMenuItem2.Name = "extractToolStripMenuItem2";
+            extractToolStripMenuItem2.Size = new Size(224, 26);
+            extractToolStripMenuItem2.Text = "Extract";
+            extractToolStripMenuItem2.Click += extractToolStripMenuItem2_Click;
+            // 
+            // repackToolStripMenuItem6
+            // 
+            repackToolStripMenuItem6.Name = "repackToolStripMenuItem6";
+            repackToolStripMenuItem6.Size = new Size(224, 26);
+            repackToolStripMenuItem6.Text = "Repack";
+            repackToolStripMenuItem6.Click += repackToolStripMenuItem6_Click;
             // 
             // whiteDayToolStripMenuItem
             // 
@@ -1765,14 +1773,15 @@
         private ToolStripMenuItem extractToolStripMenuItem1;
         private ToolStripMenuItem pMDPC2007ToolStripMenuItem;
         private ToolStripMenuItem lFSPC2014ToolStripMenuItem;
-        private ToolStripMenuItem uDASPC2014ToolStripMenuItem;
         private ToolStripMenuItem bINPC2014ToolStripMenuItem;
         private ToolStripMenuItem toSMDToolStripMenuItem;
         private ToolStripMenuItem sMDToPMDToolStripMenuItem;
         private ToolStripMenuItem decompressToolStripMenuItem1;
         private ToolStripMenuItem compressToolStripMenuItem;
-        private ToolStripMenuItem unpackToolStripMenuItem2;
-        private ToolStripMenuItem repackToolStripMenuItem6;
         private ToolStripMenuItem xWBToolStripMenuItem;
+        private ToolStripMenuItem repackToolStripMenuItem7;
+        private ToolStripMenuItem uDASToolStripMenuItem;
+        private ToolStripMenuItem extractToolStripMenuItem2;
+        private ToolStripMenuItem repackToolStripMenuItem6;
     }
 }

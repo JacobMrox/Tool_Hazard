@@ -3,7 +3,7 @@ using System.Media;
 using System.Reflection;
 using System.Text;
 using Tool_Hazard.Biohazard;
-using Tool_Hazard.Biohazard.DAT;
+using Tool_Hazard.Biohazard.RE4;
 using Tool_Hazard.Biohazard.emd;
 using Tool_Hazard.Biohazard.GCA;
 using Tool_Hazard.Biohazard.GCA;
@@ -1619,41 +1619,7 @@ namespace Tool_Hazard
                 UpdateStatus("Repacked.");
             }
         }
-        // RE4 2007 UNIVERSAL DAT EXTRACT
-        private void extractToolStripMenuItem1_Click(object sender, EventArgs e)
-        {
-            using (OpenFileDialog openFileDialog = new OpenFileDialog())
-            {
-                openFileDialog.Filter = "RE4 Archive Files (*.gca;*.dat)|*.gca;*.dat|All Files (*.*)|*.*";
-                openFileDialog.Title = "Select RE4 DAT/GCA Archive to Extract";
 
-                if (openFileDialog.ShowDialog() == DialogResult.OK)
-                {
-                    using (FolderBrowserDialog folderDialog = new FolderBrowserDialog())
-                    {
-                        folderDialog.Description = "Select Destination Folder for Extracted Files";
-
-                        if (folderDialog.ShowDialog() == DialogResult.OK)
-                        {
-                            try
-                            {
-                                UpdateStatus("Extracting archive...");
-
-                                Biohazard.DAT.GCAHandler.Extract(openFileDialog.FileName, folderDialog.SelectedPath);
-
-                                UpdateStatus("Extraction complete.");
-                                MessageBox.Show("Archive extracted successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                            }
-                            catch (Exception ex)
-                            {
-                                UpdateStatus("Extraction failed.");
-                                MessageBox.Show($"Extraction failed: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            }
-                        }
-                    }
-                }
-            }
-        }
 
         private void decompressToolStripMenuItem1_Click(object sender, EventArgs e)
         {
@@ -1676,7 +1642,7 @@ namespace Tool_Hazard
 
                     try
                     {
-                        Tool_Hazard.Biohazard.LFS.LFS.Decompress(
+                        Tool_Hazard.Biohazard.RE4.LFS.Decompress(
                             open.FileName,
                             save.FileName);
 
@@ -1719,7 +1685,7 @@ namespace Tool_Hazard
 
                     try
                     {
-                        Tool_Hazard.Biohazard.LFS.LFS.Compress(
+                        Tool_Hazard.Biohazard.RE4.LFS.Compress(
                             open.FileName,
                             save.FileName);
 
@@ -1736,6 +1702,259 @@ namespace Tool_Hazard
                             "RE4 UHD LFS",
                             MessageBoxButtons.OK,
                             MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
+        // RE4 (2005) UNIVERSAL DAT EXTRACT
+        private async void extractToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            // Extract DAT/UDAS/MAP/DAS/DRS/DECMP files (RE4 Big Endian) [GC/WII/X360/PS3]
+            using (OpenFileDialog ofd = new OpenFileDialog())
+            {
+                ofd.Title = "Select RE4 Big Endian Archive [DAT/UDAS/MAP/DAS/DRS/DECMP]";
+                ofd.Filter = "RE4 Big Endian Archives (*.dat;*.udas;*.map;*.das;*.drs;*.decmp)|*.dat;*.udas;*.map;*.das;*.drs;*.decmp|All Files (*.*)|*.*";
+                ofd.Multiselect = false;
+
+                if (ofd.ShowDialog() == DialogResult.OK)
+                {
+                    string filePath = ofd.FileName;
+                    string outputDirectory = Path.Combine(
+                        Path.GetDirectoryName(filePath) ?? string.Empty,
+                        Path.GetFileNameWithoutExtension(filePath) + "_" + Path.GetExtension(filePath).TrimStart('.').ToUpper() + "_extracted"
+                    );
+
+                    try
+                    {
+                        toolStripStatusLabel1.Text = "Extracting archive...";
+
+                        int totalFiles = await Task.Run(() =>
+                            Re4BigEndianArchive.Extract(filePath, outputDirectory, (statusMessage, percent) =>
+                            {
+                                this.Invoke((Action)(() =>
+                                {
+                                    toolStripStatusLabel1.Text = $"[{percent}%] {statusMessage}";
+                                }));
+                            })
+                        );
+
+                        toolStripStatusLabel1.Text = $"Extracted {totalFiles} file(s) to: {Path.GetFileName(outputDirectory)}";
+                        MessageBox.Show($"Extraction completed successfully!\n\nExtracted {totalFiles} files to:\n{outputDirectory}",
+                                        "RE4 Extractor", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                    catch (Exception ex)
+                    {
+                        toolStripStatusLabel1.Text = "Extraction failed.";
+                        MessageBox.Show($"Extraction error:\n{ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
+
+        // RE4 (2005) UNIVERSAL DAT REPACK
+        private async void repackToolStripMenuItem7_Click(object sender, EventArgs e)
+        {
+            // Repack DAT/UDAS/MAP/DAS/DRS/DECMP files (RE4 Big Endian) [GC/WII/X360/PS3]
+            using (FolderBrowserDialog fbd = new FolderBrowserDialog())
+            {
+                fbd.Description = "Select Folder to Repack into Big Endian Archive [DAT/UDAS/MAP/DAS/DRS/DECMP]";
+                fbd.ShowNewFolderButton = false;
+
+                if (fbd.ShowDialog() == DialogResult.OK)
+                {
+                    string selectedFolder = fbd.SelectedPath;
+                    string parentFolder = Path.GetDirectoryName(selectedFolder) ?? string.Empty;
+                    string folderName = Path.GetFileName(selectedFolder);
+
+                    string defaultOutputName = folderName.Replace("_extracted", "") + ".dat";
+                    if (!defaultOutputName.Contains(".")) defaultOutputName += ".dat";
+
+                    using (SaveFileDialog sfd = new SaveFileDialog())
+                    {
+                        sfd.Title = "Save Repacked Big Endian Archive";
+                        sfd.Filter = "RE4 Big Endian Archives (*.dat;*.udas;*.map;*.das;*.drs;*.decmp)|*.dat;*.udas;*.map;*.das;*.drs;*.decmp|All Files (*.*)|*.*";
+                        sfd.InitialDirectory = parentFolder;
+                        sfd.FileName = defaultOutputName;
+
+                        if (sfd.ShowDialog() == DialogResult.OK)
+                        {
+                            string targetFile = sfd.FileName;
+
+                            try
+                            {
+                                toolStripStatusLabel1.Text = "Repacking archive...";
+
+                                int repackedCount = await Task.Run(() =>
+                                    Re4BigEndianArchive.Repack(selectedFolder, targetFile, (statusMessage, percent) =>
+                                    {
+                                        this.Invoke((Action)(() =>
+                                        {
+                                            toolStripStatusLabel1.Text = $"[{percent}%] {statusMessage}";
+                                        }));
+                                    })
+                                );
+
+                                toolStripStatusLabel1.Text = $"Repacked {repackedCount} file(s) into: {Path.GetFileName(targetFile)}";
+                                MessageBox.Show($"Repack completed successfully!\n\nPacked {repackedCount} files into:\n{targetFile}",
+                                                "RE4 Repacker", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            }
+                            catch (Exception ex)
+                            {
+                                toolStripStatusLabel1.Text = "Repack failed.";
+                                MessageBox.Show($"Repack error:\n{ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // RE4 UDAS EXTRACT
+        private async void extractToolStripMenuItem2_Click(object sender, EventArgs e)
+        {
+            using (OpenFileDialog ofd = new OpenFileDialog())
+            {
+                ofd.Title = "Select RE4 UDAS Archive";
+                ofd.Filter = "RE4 UDAS Archives (*.udas)|*.udas|All Files (*.*)|*.*";
+                ofd.Multiselect = false;
+
+                if (ofd.ShowDialog() == DialogResult.OK)
+                {
+                    string filePath = ofd.FileName;
+                    string outputDirectory = Path.Combine(
+                        Path.GetDirectoryName(filePath) ?? string.Empty,
+                        Path.GetFileNameWithoutExtension(filePath) + "_" + Path.GetExtension(filePath).TrimStart('.').ToUpper() + "_extracted"
+                    );
+
+                    try
+                    {
+                        toolStripStatusLabel1.Text = "Extracting UDAS archive...";
+
+                        int totalFiles = await Task.Run(() =>
+                        {
+                            var sections = UdasHandler.Read(filePath);
+                            Directory.CreateDirectory(outputDirectory);
+
+                            for (int i = 0; i < sections.Count; i++)
+                            {
+                                var sec = sections[i];
+                                string fileName = $"{sec.Index:D2}_{sec.Name}.dat";
+                                string fullPath = Path.Combine(outputDirectory, fileName);
+                                File.WriteAllBytes(fullPath, sec.Data);
+
+                                int percent = (int)(((i + 1) / (float)sections.Count) * 100);
+                                string status = $"Extracted {sec.Name} ({i + 1}/{sections.Count})";
+                                this.Invoke((Action)(() =>
+                                {
+                                    toolStripStatusLabel1.Text = $"[{percent}%] {status}";
+                                }));
+                            }
+
+                            return sections.Count;
+                        });
+
+                        toolStripStatusLabel1.Text = $"Extracted {totalFiles} section(s) to: {Path.GetFileName(outputDirectory)}";
+                        MessageBox.Show($"UDAS extraction completed successfully!\n\nExtracted {totalFiles} section(s) to:\n{outputDirectory}",
+                                        "RE4 UDAS Extractor", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                    catch (Exception ex)
+                    {
+                        toolStripStatusLabel1.Text = "UDAS extraction failed.";
+                        MessageBox.Show($"UDAS extraction error:\n{ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
+
+        // RE4 UDAS REPACK
+        private async void repackToolStripMenuItem6_Click(object sender, EventArgs e)
+        {
+            using (FolderBrowserDialog fbd = new FolderBrowserDialog())
+            {
+                fbd.Description = "Select Folder to Repack into UDAS Archive";
+                fbd.ShowNewFolderButton = false;
+
+                if (fbd.ShowDialog() == DialogResult.OK)
+                {
+                    string selectedFolder = fbd.SelectedPath;
+                    string parentFolder = Path.GetDirectoryName(selectedFolder) ?? string.Empty;
+                    string folderName = Path.GetFileName(selectedFolder);
+
+                    // Clean up folder name suffixes (e.g. "r100_UDAS_extracted" -> "r100.udas")
+                    string defaultOutputName = folderName.Replace("_extracted", "");
+                    if (defaultOutputName.EndsWith("_UDAS", StringComparison.OrdinalIgnoreCase))
+                    {
+                        defaultOutputName = defaultOutputName.Substring(0, defaultOutputName.Length - 5);
+                    }
+                    if (!defaultOutputName.EndsWith(".udas", StringComparison.OrdinalIgnoreCase))
+                    {
+                        defaultOutputName += ".udas";
+                    }
+
+                    using (SaveFileDialog sfd = new SaveFileDialog())
+                    {
+                        sfd.Title = "Save Repacked UDAS Archive";
+                        sfd.Filter = "RE4 UDAS Archives (*.udas)|*.udas|All Files (*.*)|*.*";
+                        sfd.InitialDirectory = parentFolder;
+                        sfd.FileName = defaultOutputName;
+
+                        if (sfd.ShowDialog() == DialogResult.OK)
+                        {
+                            string targetFile = sfd.FileName;
+
+                            try
+                            {
+                                toolStripStatusLabel1.Text = "Repacking UDAS archive...";
+
+                                int repackedCount = await Task.Run(() =>
+                                {
+                                    var sections = new List<UdasSection>();
+                                    string[] files = Directory.GetFiles(selectedFolder, "*.dat");
+
+                                    for (int i = 0; i < files.Length; i++)
+                                    {
+                                        string file = files[i];
+                                        string nameOnly = Path.GetFileNameWithoutExtension(file);
+                                        string[] parts = nameOnly.Split('_');
+
+                                        if (parts.Length >= 2 && int.TryParse(parts[0], out int index))
+                                        {
+                                            sections.Add(new UdasSection
+                                            {
+                                                Index = index,
+                                                Name = parts[1],
+                                                Data = File.ReadAllBytes(file)
+                                            });
+                                        }
+
+                                        int percent = (int)(((i + 1) / (float)files.Length) * 50);
+                                        string status = $"Reading section data ({i + 1}/{files.Length})";
+                                        this.Invoke((Action)(() =>
+                                        {
+                                            toolStripStatusLabel1.Text = $"[{percent}%] {status}";
+                                        }));
+                                    }
+
+                                    this.Invoke((Action)(() =>
+                                    {
+                                        toolStripStatusLabel1.Text = "[75%] Rebuilding section offsets and alignment...";
+                                    }));
+
+                                    UdasHandler.Save(sections, targetFile);
+
+                                    return sections.Count;
+                                });
+
+                                toolStripStatusLabel1.Text = $"Repacked {repackedCount} section(s) into: {Path.GetFileName(targetFile)}";
+                                MessageBox.Show($"UDAS repack completed successfully!\n\nPacked {repackedCount} section(s) into:\n{targetFile}",
+                                                "RE4 UDAS Repacker", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            }
+                            catch (Exception ex)
+                            {
+                                toolStripStatusLabel1.Text = "UDAS repack failed.";
+                                MessageBox.Show($"UDAS repack error:\n{ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            }
+                        }
                     }
                 }
             }
