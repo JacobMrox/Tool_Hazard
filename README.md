@@ -77,7 +77,7 @@ Inizialmente nato come White Day Mod Tool, si è evoluto in un toolkit completo 
   * TIM to PNG/BMP/PIX (BIO) and vice versa.
 
 # Planned features
-* Add Multi-Clut TIM support to the Tim/Pix Viewer.
+* ~~Add Multi-Clut TIM support to the Tim/Pix Viewer.~~
 * Fix the BSS viewer (currently displays jumbled mess).
 * Support PCK (RE1 Backgrounds) and ADT (RE2 Backgrounds).
 * Add support for Biohazard REmake/RE0 File Formats.
@@ -85,7 +85,7 @@ Inizialmente nato come White Day Mod Tool, si è evoluto in un toolkit completo 
 * Possible Biorand implementation in-tool.
 * Auto-Updater
 
-# Compile
+# Compile/Build Instructions
 
 This is to be compiled in Visual Studio 2026. For compiled ready-to-use release, please wait until an official stable release is published.
 
@@ -93,7 +93,7 @@ This is to be compiled in Visual Studio 2026. For compiled ready-to-use release,
 * [Megan Grass](https://github.com/MeganGrass) - for contributing so much to this community, and at some point being the only person providing tools at all, in this scene, and the one who's tool (BIOFAT) was an inspiration for this project.
 * [White Day Font Editor](https://github.com/emuyia/wd-fonteditor) v1.2 by Emuiya.
 * [CRE-SCD-BHS Biohazard SCD Editor](https://github.com/3lric/CRE-SCD-BHS/) by 3lric in C#, with corrected opcode database for Biohazard 3/Resident Evil 3 (1999).
-* Utilizes [Biohazard-utils](https://github.com/biorand/biohazard-utils/) .Net library by Intel.Orca for some file formats.
+* Utilizes [Biohazard-utils](https://github.com/biorand/biohazard-utils/) .Net library by [Intel.Orca](https://github.com/intelorca) for some file formats.
 * Umbrella Corp [wallpaper](https://www.deviantart.com/grungestyle/art/umbrella-corp-wallpaper-v4-142492419) by GrungeStyle.
 * Leo2236 for providing lots of tools for the Resident Evil/Biohazard community including source codes, some of which were used in this project.
 * [Gemini-Loboto3](https://github.com/Gemini-Loboto3): for his immense work and contribution to the RE Community, some of my work which is based or inspired by his work, including the File Editor.
