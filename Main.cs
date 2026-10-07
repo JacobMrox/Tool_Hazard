@@ -1,13 +1,15 @@
 ﻿using IntelOrca.Biohazard;
-using System.Media;
+using System.Diagnostics;
 using System.Reflection;
+using System.Linq;
+using System.Media;
 using System.Text;
 using Tool_Hazard.Biohazard;
-using Tool_Hazard.Biohazard.RE4;
 using Tool_Hazard.Biohazard.emd;
 using Tool_Hazard.Biohazard.GCA;
 using Tool_Hazard.Biohazard.GCA;
 using Tool_Hazard.Biohazard.RDT;
+using Tool_Hazard.Biohazard.RE4;
 using Tool_Hazard.Forms;
 using Tool_Hazard.Nintendo;
 using Tool_Hazard.Sony_PS1;
@@ -91,6 +93,153 @@ namespace Tool_Hazard
                 MessageBox.Show($"Error Updating Status Bar to '{text}'.\n\nThe error is: {ex}", "UpdateStatus Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
+        //UDAS Extraction helper (for RE4 UHD UDAS Tool)
+
+        private async Task<List<string>> RunUdasToolAsync(
+            string mode,
+            IEnumerable<string> inputFiles,
+            string outputDirectory)
+        {
+            string workDirectory = Path.Combine(
+                Path.GetTempPath(),
+                "ToolHazard_UDAS_" + Guid.NewGuid().ToString("N")
+            );
+
+            Directory.CreateDirectory(workDirectory);
+            Directory.CreateDirectory(outputDirectory);
+
+            try
+            {
+                // Extract embedded executable.
+                Assembly assembly = Assembly.GetExecutingAssembly();
+
+                string? resourceName = assembly
+                    .GetManifestResourceNames()
+                    .FirstOrDefault(n =>
+                        n.EndsWith(
+                            "RE4_UHD_UDAS_Tool.exe",
+                            StringComparison.OrdinalIgnoreCase));
+
+                if (resourceName == null)
+                    throw new FileNotFoundException(
+                        "Embedded RE4_UHD_UDAS_Tool.exe was not found.");
+
+                string exePath = Path.Combine(
+                    workDirectory, "RE4_UHD_UDAS_Tool.exe");
+
+                using (Stream resource =
+                    assembly.GetManifestResourceStream(resourceName)
+                    ?? throw new FileNotFoundException(resourceName))
+                using (FileStream output = File.Create(exePath))
+                {
+                    await resource.CopyToAsync(output);
+                }
+
+                // Copy inputs beside the executable.
+                var stagedFiles = new HashSet<string>(
+                    StringComparer.OrdinalIgnoreCase);
+
+                foreach (string sourceFile in inputFiles)
+                {
+                    string fileName = Path.GetFileName(sourceFile);
+                    string stagedPath = Path.Combine(workDirectory, fileName);
+
+                    if (!stagedFiles.Add(fileName))
+                        throw new IOException(
+                            $"Duplicate input filename: {fileName}");
+
+                    File.Copy(sourceFile, stagedPath, true);
+                }
+
+                // Run the tool in batch mode, with no file arguments.
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = exePath,
+                    WorkingDirectory = workDirectory,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true
+                };
+
+                startInfo.ArgumentList.Add(mode);
+
+                using Process process = new Process
+                {
+                    StartInfo = startInfo
+                };
+
+                process.Start();
+
+                Task<string> stdout =
+                    process.StandardOutput.ReadToEndAsync();
+                Task<string> stderr =
+                    process.StandardError.ReadToEndAsync();
+
+                using var timeout = new CancellationTokenSource(
+                    TimeSpan.FromMinutes(3));
+
+                try
+                {
+                    await process.WaitForExitAsync(timeout.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    process.Kill(entireProcessTree: true);
+                    throw new TimeoutException(
+                        "UDAS tool did not finish within 3 minutes.");
+                }
+
+                string outputText = await stdout;
+                string errorText = await stderr;
+
+                if (process.ExitCode != 0)
+                {
+                    throw new Exception(
+                        $"UDAS tool exited with code {process.ExitCode}.\n" +
+                        errorText + "\n" + outputText);
+                }
+
+                // Collect generated files, excluding the executable
+                // and the original staged input files.
+                var generatedFiles = new List<string>();
+
+                foreach (string file in Directory.GetFiles(
+                    workDirectory, "*", SearchOption.AllDirectories))
+                {
+                    string name = Path.GetFileName(file);
+
+                    if (name.Equals("RE4_UHD_UDAS_Tool.exe",
+                        StringComparison.OrdinalIgnoreCase))
+                        continue;
+
+                    if (stagedFiles.Contains(name) &&
+                        Path.GetDirectoryName(file) == workDirectory)
+                        continue;
+
+                    string relativePath = Path.GetRelativePath(
+                        workDirectory, file);
+
+                    string destination = Path.Combine(
+                        outputDirectory, relativePath);
+
+                    Directory.CreateDirectory(
+                        Path.GetDirectoryName(destination)!);
+
+                    File.Copy(file, destination, true);
+                    generatedFiles.Add(destination);
+                }
+
+                return generatedFiles;
+            }
+            finally
+            {
+                if (Directory.Exists(workDirectory))
+                    Directory.Delete(workDirectory, true);
+            }
+        }
+
 
         // --------------------------------------------------------------------
         // Menu Hooks
@@ -1809,154 +1958,23 @@ namespace Tool_Hazard
             }
         }
 
-        // RE4 UDAS EXTRACT
-        private async void extractToolStripMenuItem2_Click(object sender, EventArgs e)
+        //Classic Rebirth Website launcher menu hook
+        private void websiteToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            using (OpenFileDialog ofd = new OpenFileDialog())
+            //visit Classic Rebirth website
+            string url = "https://classicrebirth.com/";
+            try
             {
-                ofd.Title = "Select RE4 UDAS Archive";
-                ofd.Filter = "RE4 UDAS Archives (*.udas)|*.udas|All Files (*.*)|*.*";
-                ofd.Multiselect = false;
-
-                if (ofd.ShowDialog() == DialogResult.OK)
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
                 {
-                    string filePath = ofd.FileName;
-                    string outputDirectory = Path.Combine(
-                        Path.GetDirectoryName(filePath) ?? string.Empty,
-                        Path.GetFileNameWithoutExtension(filePath) + "_" + Path.GetExtension(filePath).TrimStart('.').ToUpper() + "_extracted"
-                    );
-
-                    try
-                    {
-                        toolStripStatusLabel1.Text = "Extracting UDAS archive...";
-
-                        int totalFiles = await Task.Run(() =>
-                        {
-                            var sections = UdasHandler.Read(filePath);
-                            Directory.CreateDirectory(outputDirectory);
-
-                            for (int i = 0; i < sections.Count; i++)
-                            {
-                                var sec = sections[i];
-                                string fileName = $"{sec.Index:D2}_{sec.Name}.dat";
-                                string fullPath = Path.Combine(outputDirectory, fileName);
-                                File.WriteAllBytes(fullPath, sec.Data);
-
-                                int percent = (int)(((i + 1) / (float)sections.Count) * 100);
-                                string status = $"Extracted {sec.Name} ({i + 1}/{sections.Count})";
-                                this.Invoke((Action)(() =>
-                                {
-                                    toolStripStatusLabel1.Text = $"[{percent}%] {status}";
-                                }));
-                            }
-
-                            return sections.Count;
-                        });
-
-                        toolStripStatusLabel1.Text = $"Extracted {totalFiles} section(s) to: {Path.GetFileName(outputDirectory)}";
-                        MessageBox.Show($"UDAS extraction completed successfully!\n\nExtracted {totalFiles} section(s) to:\n{outputDirectory}",
-                                        "RE4 UDAS Extractor", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    }
-                    catch (Exception ex)
-                    {
-                        toolStripStatusLabel1.Text = "UDAS extraction failed.";
-                        MessageBox.Show($"UDAS extraction error:\n{ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
-                }
+                    FileName = url,
+                    UseShellExecute = true
+                });
             }
-        }
-
-        // RE4 UDAS REPACK
-        private async void repackToolStripMenuItem6_Click(object sender, EventArgs e)
-        {
-            using (FolderBrowserDialog fbd = new FolderBrowserDialog())
+            catch (Exception ex)
             {
-                fbd.Description = "Select Folder to Repack into UDAS Archive";
-                fbd.ShowNewFolderButton = false;
-
-                if (fbd.ShowDialog() == DialogResult.OK)
-                {
-                    string selectedFolder = fbd.SelectedPath;
-                    string parentFolder = Path.GetDirectoryName(selectedFolder) ?? string.Empty;
-                    string folderName = Path.GetFileName(selectedFolder);
-
-                    // Clean up folder name suffixes (e.g. "r100_UDAS_extracted" -> "r100.udas")
-                    string defaultOutputName = folderName.Replace("_extracted", "");
-                    if (defaultOutputName.EndsWith("_UDAS", StringComparison.OrdinalIgnoreCase))
-                    {
-                        defaultOutputName = defaultOutputName.Substring(0, defaultOutputName.Length - 5);
-                    }
-                    if (!defaultOutputName.EndsWith(".udas", StringComparison.OrdinalIgnoreCase))
-                    {
-                        defaultOutputName += ".udas";
-                    }
-
-                    using (SaveFileDialog sfd = new SaveFileDialog())
-                    {
-                        sfd.Title = "Save Repacked UDAS Archive";
-                        sfd.Filter = "RE4 UDAS Archives (*.udas)|*.udas|All Files (*.*)|*.*";
-                        sfd.InitialDirectory = parentFolder;
-                        sfd.FileName = defaultOutputName;
-
-                        if (sfd.ShowDialog() == DialogResult.OK)
-                        {
-                            string targetFile = sfd.FileName;
-
-                            try
-                            {
-                                toolStripStatusLabel1.Text = "Repacking UDAS archive...";
-
-                                int repackedCount = await Task.Run(() =>
-                                {
-                                    var sections = new List<UdasSection>();
-                                    string[] files = Directory.GetFiles(selectedFolder, "*.dat");
-
-                                    for (int i = 0; i < files.Length; i++)
-                                    {
-                                        string file = files[i];
-                                        string nameOnly = Path.GetFileNameWithoutExtension(file);
-                                        string[] parts = nameOnly.Split('_');
-
-                                        if (parts.Length >= 2 && int.TryParse(parts[0], out int index))
-                                        {
-                                            sections.Add(new UdasSection
-                                            {
-                                                Index = index,
-                                                Name = parts[1],
-                                                Data = File.ReadAllBytes(file)
-                                            });
-                                        }
-
-                                        int percent = (int)(((i + 1) / (float)files.Length) * 50);
-                                        string status = $"Reading section data ({i + 1}/{files.Length})";
-                                        this.Invoke((Action)(() =>
-                                        {
-                                            toolStripStatusLabel1.Text = $"[{percent}%] {status}";
-                                        }));
-                                    }
-
-                                    this.Invoke((Action)(() =>
-                                    {
-                                        toolStripStatusLabel1.Text = "[75%] Rebuilding section offsets and alignment...";
-                                    }));
-
-                                    UdasHandler.Save(sections, targetFile);
-
-                                    return sections.Count;
-                                });
-
-                                toolStripStatusLabel1.Text = $"Repacked {repackedCount} section(s) into: {Path.GetFileName(targetFile)}";
-                                MessageBox.Show($"UDAS repack completed successfully!\n\nPacked {repackedCount} section(s) into:\n{targetFile}",
-                                                "RE4 UDAS Repacker", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                            }
-                            catch (Exception ex)
-                            {
-                                toolStripStatusLabel1.Text = "UDAS repack failed.";
-                                MessageBox.Show($"UDAS repack error:\n{ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            }
-                        }
-                    }
-                }
+                MessageBox.Show($"Failed to open documentation URL:\n{ex.Message}", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
     }

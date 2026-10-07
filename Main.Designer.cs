@@ -177,11 +177,11 @@
             dATToolStripMenuItem1 = new ToolStripMenuItem();
             extractToolStripMenuItem1 = new ToolStripMenuItem();
             repackToolStripMenuItem7 = new ToolStripMenuItem();
-            bINPC2014ToolStripMenuItem = new ToolStripMenuItem();
-            xWBToolStripMenuItem = new ToolStripMenuItem();
             uDASToolStripMenuItem = new ToolStripMenuItem();
             extractToolStripMenuItem2 = new ToolStripMenuItem();
             repackToolStripMenuItem6 = new ToolStripMenuItem();
+            bINPC2014ToolStripMenuItem = new ToolStripMenuItem();
+            xWBToolStripMenuItem = new ToolStripMenuItem();
             whiteDayToolStripMenuItem = new ToolStripMenuItem();
             nOPToolStripMenuItem1 = new ToolStripMenuItem();
             unpackToolStripMenuItem1 = new ToolStripMenuItem();
@@ -223,6 +223,7 @@
             notifyIcon1 = new NotifyIcon(components);
             statusStrip1 = new StatusStrip();
             toolStripStatusLabel1 = new ToolStripStatusLabel();
+            websiteToolStripMenuItem = new ToolStripMenuItem();
             menuStrip1.SuspendLayout();
             statusStrip1.SuspendLayout();
             SuspendLayout();
@@ -1236,6 +1237,27 @@
             repackToolStripMenuItem7.Text = "Repack";
             repackToolStripMenuItem7.Click += repackToolStripMenuItem7_Click;
             // 
+            // uDASToolStripMenuItem
+            // 
+            uDASToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { extractToolStripMenuItem2, repackToolStripMenuItem6 });
+            uDASToolStripMenuItem.Name = "uDASToolStripMenuItem";
+            uDASToolStripMenuItem.Size = new Size(314, 26);
+            uDASToolStripMenuItem.Text = "UDAS";
+            // 
+            // extractToolStripMenuItem2
+            // 
+            extractToolStripMenuItem2.Name = "extractToolStripMenuItem2";
+            extractToolStripMenuItem2.Size = new Size(140, 26);
+            extractToolStripMenuItem2.Text = "Extract";
+            extractToolStripMenuItem2.Click += extractToolStripMenuItem2_Click;
+            // 
+            // repackToolStripMenuItem6
+            // 
+            repackToolStripMenuItem6.Name = "repackToolStripMenuItem6";
+            repackToolStripMenuItem6.Size = new Size(140, 26);
+            repackToolStripMenuItem6.Text = "Repack";
+            repackToolStripMenuItem6.Click += repackToolStripMenuItem6_Click;
+            // 
             // bINPC2014ToolStripMenuItem
             // 
             bINPC2014ToolStripMenuItem.Enabled = false;
@@ -1249,27 +1271,6 @@
             xWBToolStripMenuItem.Name = "xWBToolStripMenuItem";
             xWBToolStripMenuItem.Size = new Size(314, 26);
             xWBToolStripMenuItem.Text = "XWB";
-            // 
-            // uDASToolStripMenuItem
-            // 
-            uDASToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { extractToolStripMenuItem2, repackToolStripMenuItem6 });
-            uDASToolStripMenuItem.Name = "uDASToolStripMenuItem";
-            uDASToolStripMenuItem.Size = new Size(314, 26);
-            uDASToolStripMenuItem.Text = "UDAS";
-            // 
-            // extractToolStripMenuItem2
-            // 
-            extractToolStripMenuItem2.Name = "extractToolStripMenuItem2";
-            extractToolStripMenuItem2.Size = new Size(224, 26);
-            extractToolStripMenuItem2.Text = "Extract";
-            extractToolStripMenuItem2.Click += extractToolStripMenuItem2_Click;
-            // 
-            // repackToolStripMenuItem6
-            // 
-            repackToolStripMenuItem6.Name = "repackToolStripMenuItem6";
-            repackToolStripMenuItem6.Size = new Size(224, 26);
-            repackToolStripMenuItem6.Text = "Repack";
-            repackToolStripMenuItem6.Click += repackToolStripMenuItem6_Click;
             // 
             // whiteDayToolStripMenuItem
             // 
@@ -1397,7 +1398,7 @@
             // 
             // classicRebirthToolStripMenuItem
             // 
-            classicRebirthToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { fileEditorToolStripMenuItem3, bGMXMLEditorToolStripMenuItem3 });
+            classicRebirthToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { websiteToolStripMenuItem, fileEditorToolStripMenuItem3, bGMXMLEditorToolStripMenuItem3 });
             classicRebirthToolStripMenuItem.Name = "classicRebirthToolStripMenuItem";
             classicRebirthToolStripMenuItem.Size = new Size(260, 26);
             classicRebirthToolStripMenuItem.Text = "Classic Rebirth";
@@ -1405,14 +1406,14 @@
             // fileEditorToolStripMenuItem3
             // 
             fileEditorToolStripMenuItem3.Name = "fileEditorToolStripMenuItem3";
-            fileEditorToolStripMenuItem3.Size = new Size(201, 26);
+            fileEditorToolStripMenuItem3.Size = new Size(224, 26);
             fileEditorToolStripMenuItem3.Text = "File Editor";
             fileEditorToolStripMenuItem3.Click += fileEditorToolStripMenuItem3_Click;
             // 
             // bGMXMLEditorToolStripMenuItem3
             // 
             bGMXMLEditorToolStripMenuItem3.Name = "bGMXMLEditorToolStripMenuItem3";
-            bGMXMLEditorToolStripMenuItem3.Size = new Size(201, 26);
+            bGMXMLEditorToolStripMenuItem3.Size = new Size(224, 26);
             bGMXMLEditorToolStripMenuItem3.Text = "BGM XML Editor";
             bGMXMLEditorToolStripMenuItem3.Click += bGMXMLEditorToolStripMenuItem3_Click;
             // 
@@ -1510,14 +1511,14 @@
             // versionToolStripMenuItem
             // 
             versionToolStripMenuItem.Name = "versionToolStripMenuItem";
-            versionToolStripMenuItem.Size = new Size(217, 26);
+            versionToolStripMenuItem.Size = new Size(224, 26);
             versionToolStripMenuItem.Text = "About";
             versionToolStripMenuItem.Click += versionToolStripMenuItem_Click;
             // 
             // documentationToolStripMenuItem
             // 
             documentationToolStripMenuItem.Name = "documentationToolStripMenuItem";
-            documentationToolStripMenuItem.Size = new Size(217, 26);
+            documentationToolStripMenuItem.Size = new Size(224, 26);
             documentationToolStripMenuItem.Text = "Documentation";
             documentationToolStripMenuItem.Click += documentationToolStripMenuItem_Click;
             // 
@@ -1525,7 +1526,7 @@
             // 
             checkForUpdatesToolStripMenuItem.Enabled = false;
             checkForUpdatesToolStripMenuItem.Name = "checkForUpdatesToolStripMenuItem";
-            checkForUpdatesToolStripMenuItem.Size = new Size(217, 26);
+            checkForUpdatesToolStripMenuItem.Size = new Size(224, 26);
             checkForUpdatesToolStripMenuItem.Text = "Check for Updates";
             // 
             // playStartupSoundToolStripMenuItem
@@ -1534,7 +1535,7 @@
             playStartupSoundToolStripMenuItem.CheckOnClick = true;
             playStartupSoundToolStripMenuItem.CheckState = CheckState.Checked;
             playStartupSoundToolStripMenuItem.Name = "playStartupSoundToolStripMenuItem";
-            playStartupSoundToolStripMenuItem.Size = new Size(217, 26);
+            playStartupSoundToolStripMenuItem.Size = new Size(224, 26);
             playStartupSoundToolStripMenuItem.Text = "Play Startup Sound";
             // 
             // notifyIcon1
@@ -1560,6 +1561,13 @@
             toolStripStatusLabel1.Name = "toolStripStatusLabel1";
             toolStripStatusLabel1.Size = new Size(158, 20);
             toolStripStatusLabel1.Text = "Ready for Experiments";
+            // 
+            // websiteToolStripMenuItem
+            // 
+            websiteToolStripMenuItem.Name = "websiteToolStripMenuItem";
+            websiteToolStripMenuItem.Size = new Size(224, 26);
+            websiteToolStripMenuItem.Text = "Website";
+            websiteToolStripMenuItem.Click += websiteToolStripMenuItem_Click;
             // 
             // Main
             // 
@@ -1783,5 +1791,6 @@
         private ToolStripMenuItem uDASToolStripMenuItem;
         private ToolStripMenuItem extractToolStripMenuItem2;
         private ToolStripMenuItem repackToolStripMenuItem6;
+        private ToolStripMenuItem websiteToolStripMenuItem;
     }
 }
