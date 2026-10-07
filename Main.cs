@@ -58,6 +58,20 @@ namespace Tool_Hazard
         // Helpers
         // --------------------------------------------------------------------
 
+        //Rebirth Status Bar Update Helper
+        private void UpdateRebirthStatus(string status)
+        {
+            if (InvokeRequired)
+            {
+                Invoke(new Action(() =>
+                    toolStripStatusLabel1.Text = status));
+            }
+            else
+            {
+                toolStripStatusLabel1.Text = status;
+            }
+        }
+
         // Play the embedded WAV at startupPlays a .wav sound embedded as a resource in the assembly.
         // The resource name is the full namespace path to the .wav file.
         public static void PlayEmbeddedWav(string resourceName)
@@ -390,59 +404,147 @@ namespace Tool_Hazard
         private async void menuInstallRE1CR_Click_1(object sender, EventArgs e)
         {
             System.Media.SystemSounds.Exclamation.Play();//Play sound to grab attention
+
             DialogResult ask_setup = MessageBox.Show(
-                    $"Classic Rebirth is a fan-patch made by Gemini-Loboto3.\n\nThis patch for the Mediakite version of Resident Evil/Biohazard fixes common compatibility issues on modern systems, and includes several other enhancements such as raw and native xinput controller support, higher resolution display options, and forcefeedback (vibration), among other things.\n\nWould you like to proceed with install?",
-                    "Classic Rebirth Installer",
-                    MessageBoxButtons.YesNo,
-                    MessageBoxIcon.Question
-                );
+                $"Classic Rebirth is a fan-patch made by Gemini-Loboto3.\n\n" +
+                $"This patch for the Mediakite version of Resident Evil/Biohazard fixes common compatibility issues on modern systems, " +
+                $"and includes several other enhancements such as raw and native xinput controller support, higher resolution display options, " +
+                $"and forcefeedback (vibration), among other things.\n\n" +
+                $"Would you like to proceed with install?",
+                "Classic Rebirth Installer",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question
+            );
 
             if (ask_setup == DialogResult.Yes)
             {
-                using var dlg = new FolderBrowserDialog { Description = "Select Resident Evil 1 directory" };
+                using var dlg = new FolderBrowserDialog
+                {
+                    Description = "Select Resident Evil 1 directory"
+                };
+
                 if (dlg.ShowDialog() == DialogResult.OK)
-                    await rebirth.Install(BioVersion.Biohazard1, dlg.SelectedPath);
+                {
+                    UpdateRebirthStatus("Preparing Resident Evil 1 Classic Rebirth...");
+
+                    var rebirth = new RebirthManager(UpdateRebirthStatus);
+
+                    await rebirth.Install(
+                        BioVersion.Biohazard1,
+                        dlg.SelectedPath
+                    );
+
+                    UpdateRebirthStatus("Resident Evil 1 Classic Rebirth operation finished.");
+                }
             }
         }
+
 
         //RE2 Classic Rebirth Installer Menu Hook
         private async void menuInstallRE2CR_Click(object sender, EventArgs e)
         {
             System.Media.SystemSounds.Exclamation.Play();//Play sound to grab attention
+
             DialogResult ask_setup = MessageBox.Show(
-                    $"Classic Rebirth is a fan-patch made by Gemini-Loboto3.\n\nThis patch for Resident Evil/Biohazard 2 Sourcenext fix common compatibility issues on modern systems, and includes several other enhancements such as raw and native xinput controller support, higher resolution display options, and forcefeedback (vibration), among other things.\n\nWould you like to proceed with install?",
-                    "Classic Rebirth Installer",
-                    MessageBoxButtons.YesNo,
-                    MessageBoxIcon.Question
-                );
+                $"Classic Rebirth is a fan-patch made by Gemini-Loboto3.\n\n" +
+                $"This patch for Resident Evil/Biohazard 2 Sourcenext fix common compatibility issues on modern systems, " +
+                $"and includes several other enhancements such as raw and native xinput controller support, higher resolution display options, " +
+                $"and forcefeedback (vibration), among other things.\n\n" +
+                $"Would you like to proceed with install?",
+                "Classic Rebirth Installer",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question
+            );
 
             if (ask_setup == DialogResult.Yes)
             {
-                using var dlg = new FolderBrowserDialog { Description = "Select Resident Evil 2 directory" };
+                using var dlg = new FolderBrowserDialog
+                {
+                    Description = "Select Resident Evil 2 directory"
+                };
+
                 if (dlg.ShowDialog() == DialogResult.OK)
-                    await rebirth.Install(BioVersion.Biohazard2, dlg.SelectedPath);
+                {
+                    UpdateRebirthStatus("Preparing Resident Evil 2 Classic Rebirth...");
+
+                    var rebirth = new RebirthManager(UpdateRebirthStatus);
+
+                    await rebirth.Install(
+                        BioVersion.Biohazard2,
+                        dlg.SelectedPath
+                    );
+
+                    UpdateRebirthStatus("Resident Evil 2 Classic Rebirth operation finished.");
+                }
             }
         }
+
 
         //RE3 Classic Rebirth Installer Menu Hook
         private async void menuInstallRE3CR_Click(object sender, EventArgs e)
         {
             System.Media.SystemSounds.Exclamation.Play();//Play sound to grab attention
+
             DialogResult ask_setup = MessageBox.Show(
-                    $"Classic Rebirth is a fan-patch made by Gemini-Loboto3.\n\nThis patch for Resident Evil/Biohazard 3 Sourcenext ver 1.1.0 fixes common compatibility issues on modern systems, and includes several other enhancements and features.\n\nThese features include fixing wobbly polygons, crash issues, controller support, a PC friendly version of the PS1's options menu restored and upgraded, Mercenaries launch-able through the main executable, among other things.\n\nWould you like to proceed with install?",
-                    "Classic Rebirth Installer",
-                    MessageBoxButtons.YesNo,
-                    MessageBoxIcon.Question
-                );
+                $"Classic Rebirth is a fan-patch made by Gemini-Loboto3.\n\n" +
+                $"This patch for Resident Evil/Biohazard 3 Sourcenext ver 1.1.0 fixes common compatibility issues on modern systems, " +
+                $"and includes several other enhancements and features.\n\n" +
+                $"These features include fixing wobbly polygons, crash issues, controller support, a PC friendly version of the PS1's options menu restored and upgraded, " +
+                $"Mercenaries launch-able through the main executable, among other things.\n\n" +
+                $"Would you like to proceed with install?",
+                "Classic Rebirth Installer",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question
+            );
 
             if (ask_setup == DialogResult.Yes)
             {
-                using var dlg = new FolderBrowserDialog { Description = "Select Resident Evil 3 directory" };
+                using var dlg = new FolderBrowserDialog
+                {
+                    Description = "Select Resident Evil 3 directory"
+                };
+
                 if (dlg.ShowDialog() == DialogResult.OK)
-                    await rebirth.Install(BioVersion.Biohazard3, dlg.SelectedPath);
+                {
+                    UpdateRebirthStatus("Preparing Resident Evil 3 Classic Rebirth...");
+
+                    var rebirth = new RebirthManager(UpdateRebirthStatus);
+
+                    await rebirth.Install(
+                        BioVersion.Biohazard3,
+                        dlg.SelectedPath
+                    );
+
+                    UpdateRebirthStatus("Resident Evil 3 Classic Rebirth operation finished.");
+                }
             }
         }
 
+        //Classic Rebirth Website launcher menu hook
+        private void websiteToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //visit Classic Rebirth website
+            string url = "https://classicrebirth.com/";
+            try
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = url,
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to open documentation URL:\n{ex.Message}", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        //
+        //VH/BH VAB Tool menu hook
+        //this is a tool to extract and repack VH/BH VAB files
+        //for the PS1 versions of Biohazard 1-3
+        //
         private void vBVHToolStripMenuItem_Click(object sender, EventArgs e)
         {
             try
@@ -1955,26 +2057,6 @@ namespace Tool_Hazard
                         }
                     }
                 }
-            }
-        }
-
-        //Classic Rebirth Website launcher menu hook
-        private void websiteToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            //visit Classic Rebirth website
-            string url = "https://classicrebirth.com/";
-            try
-            {
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = url,
-                    UseShellExecute = true
-                });
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Failed to open documentation URL:\n{ex.Message}", "Error",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
     }

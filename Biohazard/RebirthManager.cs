@@ -1,4 +1,5 @@
-﻿using IntelOrca.Biohazard;
+﻿using System;
+using IntelOrca.Biohazard;
 using SevenZipExtractor;
 using System.Diagnostics;
 using System.IO.Compression;
@@ -7,6 +8,21 @@ using System.Net;
 public class RebirthManager
 {
     private readonly HttpClient _http;
+
+    // Optional callback used by main.cs to update the main form status bar.
+    private readonly Action<string> _statusCallback;
+
+    private void SetStatus(string status)
+    {
+        try
+        {
+            _statusCallback?.Invoke(status);
+        }
+        catch
+        {
+            // Status reporting must never interrupt installation.
+        }
+    }
 
     // -------------------------------------------------------------------------
     // Download URLs
@@ -32,8 +48,10 @@ public class RebirthManager
     // Constructor
     // -------------------------------------------------------------------------
 
-    public RebirthManager()
+    public RebirthManager(Action<string> statusCallback = null)
     {
+        _statusCallback = statusCallback;
+
         var handler = new HttpClientHandler
         {
             AllowAutoRedirect = true,
@@ -329,6 +347,8 @@ public class RebirthManager
     {
         try
         {
+            SetStatus("Connecting to Classic Rebirth...");
+
             using (var response = await _http.GetAsync(
                 url,
                 HttpCompletionOption.ResponseHeadersRead))
@@ -342,6 +362,8 @@ public class RebirthManager
                     response.Content.Headers.ContentType?.MediaType
                     ?? "Unknown";
 
+                SetStatus("Downloading Classic Rebirth...");
+
                 await using (var input =
                     await response.Content.ReadAsStreamAsync())
 
@@ -354,6 +376,8 @@ public class RebirthManager
                 {
                     await input.CopyToAsync(output);
                 }
+
+                SetStatus("Checking downloaded archive...");
 
                 string archiveType =
                     GetArchiveType(destination);
@@ -382,6 +406,8 @@ public class RebirthManager
                     // Ignore.
                 }
 
+                SetStatus("Downloaded file is not a valid Classic Rebirth archive.");
+
                 MessageBox.Show(
                     "The downloaded file is not a recognised " +
                     "ZIP or 7z archive.\n\n" +
@@ -403,6 +429,8 @@ public class RebirthManager
         }
         catch (HttpRequestException ex)
         {
+            SetStatus("Classic Rebirth download failed.");
+
             MessageBox.Show(
                 $"Could not download Classic Rebirth:\n\n{ex.Message}",
                 "Download Error",
@@ -414,6 +442,8 @@ public class RebirthManager
         }
         catch (TaskCanceledException)
         {
+            SetStatus("Classic Rebirth download cancelled or timed out.");
+
             MessageBox.Show(
                 "The download timed out or was cancelled.",
                 "Download Error",
@@ -445,6 +475,8 @@ public class RebirthManager
         BioVersion version,
         string gameDir)
     {
+        SetStatus($"Preparing {version} Classic Rebirth...");
+
         if (!Directory.Exists(gameDir))
         {
             MessageBox.Show(
@@ -470,6 +502,8 @@ public class RebirthManager
             // -------------------------------------------------------------
             // Download
             // -------------------------------------------------------------
+
+            SetStatus($"Downloading {version} Classic Rebirth...");
 
             bool downloaded =
                 await DownloadArchive(
@@ -505,6 +539,8 @@ public class RebirthManager
             // Existing installation
             // -------------------------------------------------------------
 
+            SetStatus("Checking existing Classic Rebirth installation...");
+
             if (IsInstalled(gameDir))
             {
                 string installVer =
@@ -522,6 +558,8 @@ public class RebirthManager
                         archiveVer,
                         StringComparison.OrdinalIgnoreCase))
                 {
+                    SetStatus("Classic Rebirth is already up to date.");
+
                     MessageBox.Show(
                         "Classic Rebirth is already up to date.\n\n" +
                         $"Installed version: {installVer}\n" +
@@ -552,13 +590,18 @@ public class RebirthManager
                     );
 
                 if (ask == DialogResult.No)
+                {
+                    SetStatus("Classic Rebirth update cancelled.");
                     return;
+                }
             }
 
 
             // -------------------------------------------------------------
             // Extract
             // -------------------------------------------------------------
+
+            SetStatus($"Installing {version} Classic Rebirth...");
 
             bool extracted =
                 ExtractArchive(
@@ -574,6 +617,8 @@ public class RebirthManager
             // Success
             // -------------------------------------------------------------
 
+            SetStatus($"{version} Classic Rebirth installed successfully.");
+
             MessageBox.Show(
                 $"{version} Classic Rebirth " +
                 "installed/updated successfully.",
@@ -584,6 +629,8 @@ public class RebirthManager
         }
         catch (Exception ex)
         {
+            SetStatus("Classic Rebirth installation failed.");
+
             MessageBox.Show(
                 $"Installation error:\n\n{ex.Message}",
                 "Error",
@@ -616,6 +663,8 @@ public class RebirthManager
     {
         try
         {
+            SetStatus("Extracting Classic Rebirth files...");
+
             string archiveType =
                 GetArchiveType(archivePath);
 
@@ -781,6 +830,8 @@ public class RebirthManager
         }
         catch (Exception ex)
         {
+            SetStatus("Classic Rebirth extraction failed.");
+
             MessageBox.Show(
                 "Extraction failed:\n\n" +
                 $"{ex.Message}\n\n" +
