@@ -1244,20 +1244,6 @@
             uDASToolStripMenuItem.Size = new Size(314, 26);
             uDASToolStripMenuItem.Text = "UDAS";
             // 
-            // extractToolStripMenuItem2
-            // 
-            extractToolStripMenuItem2.Name = "extractToolStripMenuItem2";
-            extractToolStripMenuItem2.Size = new Size(140, 26);
-            extractToolStripMenuItem2.Text = "Extract";
-            extractToolStripMenuItem2.Click += extractToolStripMenuItem2_Click;
-            // 
-            // repackToolStripMenuItem6
-            // 
-            repackToolStripMenuItem6.Name = "repackToolStripMenuItem6";
-            repackToolStripMenuItem6.Size = new Size(140, 26);
-            repackToolStripMenuItem6.Text = "Repack";
-            repackToolStripMenuItem6.Click += repackToolStripMenuItem6_Click;
-            // 
             // bINPC2014ToolStripMenuItem
             // 
             bINPC2014ToolStripMenuItem.Enabled = false;
