@@ -401,7 +401,7 @@ namespace Tool_Hazard
         //Clasic Rebirth Installers Menu Hooks
 
         //RE1 Classic Rebirth Installer Menu Hook
-        private async void menuInstallRE1CR_Click_1(object sender, EventArgs e)
+        private async void menuInstallRE1CR_Click(object sender, EventArgs e)
         {
             System.Media.SystemSounds.Exclamation.Play();//Play sound to grab attention
 
@@ -441,7 +441,7 @@ namespace Tool_Hazard
 
 
         //RE2 Classic Rebirth Installer Menu Hook
-        private async void menuInstallRE2CR_Click(object sender, EventArgs e)
+        private async void menuInstallRE2CR_Click_1(object sender, EventArgs e)
         {
             System.Media.SystemSounds.Exclamation.Play();//Play sound to grab attention
 
@@ -481,7 +481,7 @@ namespace Tool_Hazard
 
 
         //RE3 Classic Rebirth Installer Menu Hook
-        private async void menuInstallRE3CR_Click(object sender, EventArgs e)
+        private async void menuInstallRE3CR_Click_1(object sender, EventArgs e)
         {
             System.Media.SystemSounds.Exclamation.Play();//Play sound to grab attention
 

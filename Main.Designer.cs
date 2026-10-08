@@ -61,6 +61,7 @@
             vHVBToolStripMenuItem2 = new ToolStripMenuItem();
             toolStripSeparator7 = new ToolStripSeparator();
             classicRebirthToolsToolStripMenuItem2 = new ToolStripMenuItem();
+            menuInstallRE1CR = new ToolStripMenuItem();
             bGMXMLEditorToolStripMenuItem2 = new ToolStripMenuItem();
             fileEditorToolStripMenuItem = new ToolStripMenuItem();
             bIO151997ToolStripMenuItem = new ToolStripMenuItem();
@@ -108,6 +109,7 @@
             toolStripSeparator1 = new ToolStripSeparator();
             installPatch110ToolStripMenuItem = new ToolStripMenuItem();
             classicRebirthToolsToolStripMenuItem1 = new ToolStripMenuItem();
+            menuInstallRE2CR = new ToolStripMenuItem();
             bGMXMLEditorToolStripMenuItem1 = new ToolStripMenuItem();
             fileEditorToolStripMenuItem1 = new ToolStripMenuItem();
             rESURVVBIOGUNSURVToolStripMenuItem = new ToolStripMenuItem();
@@ -159,6 +161,7 @@
             toolStripSeparator6 = new ToolStripSeparator();
             installPatch110ToolStripMenuItem1 = new ToolStripMenuItem();
             classicRebirthToolsToolStripMenuItem = new ToolStripMenuItem();
+            menuInstallRE3CR = new ToolStripMenuItem();
             bGMXMLEditorToolStripMenuItem = new ToolStripMenuItem();
             fileEditorToolStripMenuItem2 = new ToolStripMenuItem();
             rE42005ToolStripMenuItem = new ToolStripMenuItem();
@@ -218,9 +221,6 @@
             notifyIcon1 = new NotifyIcon(components);
             statusStrip1 = new StatusStrip();
             toolStripStatusLabel1 = new ToolStripStatusLabel();
-            menuInstallRE1CR = new ToolStripMenuItem();
-            menuInstallRE2CR = new ToolStripMenuItem();
-            menuInstallRE3CR = new ToolStripMenuItem();
             menuStrip1.SuspendLayout();
             statusStrip1.SuspendLayout();
             SuspendLayout();
@@ -238,7 +238,7 @@
             menuStrip1.Padding = new Padding(7, 3, 0, 3);
             menuStrip1.RenderMode = ToolStripRenderMode.Professional;
             menuStrip1.ShowItemToolTips = true;
-            menuStrip1.Size = new Size(816, 54);
+            menuStrip1.Size = new Size(816, 78);
             menuStrip1.TabIndex = 0;
             menuStrip1.Text = "menuStrip1";
             // 
@@ -269,7 +269,7 @@
             // bSSToolStripMenuItem
             // 
             bSSToolStripMenuItem.Name = "bSSToolStripMenuItem";
-            bSSToolStripMenuItem.Size = new Size(188, 26);
+            bSSToolStripMenuItem.Size = new Size(224, 26);
             bSSToolStripMenuItem.Text = "BSS (PS1)";
             bSSToolStripMenuItem.Click += bSSToolStripMenuItem_Click;
             // 
@@ -277,14 +277,14 @@
             // 
             pCKPCToolStripMenuItem.Enabled = false;
             pCKPCToolStripMenuItem.Name = "pCKPCToolStripMenuItem";
-            pCKPCToolStripMenuItem.Size = new Size(188, 26);
+            pCKPCToolStripMenuItem.Size = new Size(224, 26);
             pCKPCToolStripMenuItem.Text = "PCK (PC)";
             // 
             // rDTToolStripMenuItem2
             // 
             rDTToolStripMenuItem2.DropDownItems.AddRange(new ToolStripItem[] { unpackToolStripMenuItem4, repackToolStripMenuItem5, toolStripSeparator13, convertToBIO2ToolStripMenuItem1, convertToBIO3ToolStripMenuItem1, toolStripSeparator14, sCDScriptDataToolStripMenuItem, toolStripSeparator21, mSGToolStripMenuItem2 });
             rDTToolStripMenuItem2.Name = "rDTToolStripMenuItem2";
-            rDTToolStripMenuItem2.Size = new Size(188, 26);
+            rDTToolStripMenuItem2.Size = new Size(224, 26);
             rDTToolStripMenuItem2.Text = "RDT";
             // 
             // unpackToolStripMenuItem4
@@ -366,7 +366,7 @@
             // 
             eMDToolStripMenuItem2.DropDownItems.AddRange(new ToolStripItem[] { unpackOriginalToolStripMenuItem1, repackOriginalToolStripMenuItem1, toolStripSeparator11, unpackEditableToolStripMenuItem1, repackEditableToolStripMenuItem1 });
             eMDToolStripMenuItem2.Name = "eMDToolStripMenuItem2";
-            eMDToolStripMenuItem2.Size = new Size(188, 26);
+            eMDToolStripMenuItem2.Size = new Size(224, 26);
             eMDToolStripMenuItem2.Text = "EMD";
             // 
             // unpackOriginalToolStripMenuItem1
@@ -405,14 +405,14 @@
             // pIXToolStripMenuItem
             // 
             pIXToolStripMenuItem.Name = "pIXToolStripMenuItem";
-            pIXToolStripMenuItem.Size = new Size(188, 26);
+            pIXToolStripMenuItem.Size = new Size(224, 26);
             pIXToolStripMenuItem.Text = "PIX";
             pIXToolStripMenuItem.Click += pIXToolStripMenuItem_Click;
             // 
             // tIMToolStripMenuItem1
             // 
             tIMToolStripMenuItem1.Name = "tIMToolStripMenuItem1";
-            tIMToolStripMenuItem1.Size = new Size(188, 26);
+            tIMToolStripMenuItem1.Size = new Size(224, 26);
             tIMToolStripMenuItem1.Text = "TIM";
             tIMToolStripMenuItem1.Click += tIMToolStripMenuItem1_Click;
             // 
@@ -420,27 +420,34 @@
             // 
             pLWToolStripMenuItem2.Enabled = false;
             pLWToolStripMenuItem2.Name = "pLWToolStripMenuItem2";
-            pLWToolStripMenuItem2.Size = new Size(188, 26);
+            pLWToolStripMenuItem2.Size = new Size(224, 26);
             pLWToolStripMenuItem2.Text = "PLW";
             // 
             // vHVBToolStripMenuItem2
             // 
             vHVBToolStripMenuItem2.Enabled = false;
             vHVBToolStripMenuItem2.Name = "vHVBToolStripMenuItem2";
-            vHVBToolStripMenuItem2.Size = new Size(188, 26);
+            vHVBToolStripMenuItem2.Size = new Size(224, 26);
             vHVBToolStripMenuItem2.Text = "VH/VB";
             // 
             // toolStripSeparator7
             // 
             toolStripSeparator7.Name = "toolStripSeparator7";
-            toolStripSeparator7.Size = new Size(185, 6);
+            toolStripSeparator7.Size = new Size(221, 6);
             // 
             // classicRebirthToolsToolStripMenuItem2
             // 
             classicRebirthToolsToolStripMenuItem2.DropDownItems.AddRange(new ToolStripItem[] { menuInstallRE1CR, bGMXMLEditorToolStripMenuItem2, fileEditorToolStripMenuItem });
             classicRebirthToolsToolStripMenuItem2.Name = "classicRebirthToolsToolStripMenuItem2";
-            classicRebirthToolsToolStripMenuItem2.Size = new Size(188, 26);
+            classicRebirthToolsToolStripMenuItem2.Size = new Size(224, 26);
             classicRebirthToolsToolStripMenuItem2.Text = "Classic Rebirth";
+            // 
+            // menuInstallRE1CR
+            // 
+            menuInstallRE1CR.Name = "menuInstallRE1CR";
+            menuInstallRE1CR.Size = new Size(315, 26);
+            menuInstallRE1CR.Text = "Install/Update RE1 Classic Rebirth";
+            menuInstallRE1CR.Click += menuInstallRE1CR_Click;
             // 
             // bGMXMLEditorToolStripMenuItem2
             // 
@@ -469,42 +476,42 @@
             // 
             bSSToolStripMenuItem3.Enabled = false;
             bSSToolStripMenuItem3.Name = "bSSToolStripMenuItem3";
-            bSSToolStripMenuItem3.Size = new Size(224, 26);
+            bSSToolStripMenuItem3.Size = new Size(136, 26);
             bSSToolStripMenuItem3.Text = "BSS";
             // 
             // rDTToolStripMenuItem3
             // 
             rDTToolStripMenuItem3.Enabled = false;
             rDTToolStripMenuItem3.Name = "rDTToolStripMenuItem3";
-            rDTToolStripMenuItem3.Size = new Size(224, 26);
+            rDTToolStripMenuItem3.Size = new Size(136, 26);
             rDTToolStripMenuItem3.Text = "RDT";
             // 
             // eMDToolStripMenuItem3
             // 
             eMDToolStripMenuItem3.Enabled = false;
             eMDToolStripMenuItem3.Name = "eMDToolStripMenuItem3";
-            eMDToolStripMenuItem3.Size = new Size(224, 26);
+            eMDToolStripMenuItem3.Size = new Size(136, 26);
             eMDToolStripMenuItem3.Text = "EMD";
             // 
             // pLDToolStripMenuItem2
             // 
             pLDToolStripMenuItem2.Enabled = false;
             pLDToolStripMenuItem2.Name = "pLDToolStripMenuItem2";
-            pLDToolStripMenuItem2.Size = new Size(224, 26);
+            pLDToolStripMenuItem2.Size = new Size(136, 26);
             pLDToolStripMenuItem2.Text = "PLD";
             // 
             // pLWToolStripMenuItem3
             // 
             pLWToolStripMenuItem3.Enabled = false;
             pLWToolStripMenuItem3.Name = "pLWToolStripMenuItem3";
-            pLWToolStripMenuItem3.Size = new Size(224, 26);
+            pLWToolStripMenuItem3.Size = new Size(136, 26);
             pLWToolStripMenuItem3.Text = "PLW";
             // 
             // vHVBToolStripMenuItem1
             // 
             vHVBToolStripMenuItem1.Enabled = false;
             vHVBToolStripMenuItem1.Name = "vHVBToolStripMenuItem1";
-            vHVBToolStripMenuItem1.Size = new Size(224, 26);
+            vHVBToolStripMenuItem1.Size = new Size(136, 26);
             vHVBToolStripMenuItem1.Text = "VH/VB";
             // 
             // bIO2RE21998ToolStripMenuItem
@@ -761,6 +768,13 @@
             classicRebirthToolsToolStripMenuItem1.Name = "classicRebirthToolsToolStripMenuItem1";
             classicRebirthToolsToolStripMenuItem1.Size = new Size(281, 26);
             classicRebirthToolsToolStripMenuItem1.Text = "Classic Rebirth";
+            // 
+            // menuInstallRE2CR
+            // 
+            menuInstallRE2CR.Name = "menuInstallRE2CR";
+            menuInstallRE2CR.Size = new Size(315, 26);
+            menuInstallRE2CR.Text = "Install/Update RE2 Classic Rebirth";
+            menuInstallRE2CR.Click += menuInstallRE2CR_Click_1;
             // 
             // bGMXMLEditorToolStripMenuItem1
             // 
@@ -1108,6 +1122,13 @@
             classicRebirthToolsToolStripMenuItem.Name = "classicRebirthToolsToolStripMenuItem";
             classicRebirthToolsToolStripMenuItem.Size = new Size(281, 26);
             classicRebirthToolsToolStripMenuItem.Text = "Classic Rebirth";
+            // 
+            // menuInstallRE3CR
+            // 
+            menuInstallRE3CR.Name = "menuInstallRE3CR";
+            menuInstallRE3CR.Size = new Size(315, 26);
+            menuInstallRE3CR.Text = "Install/Update RE3 Classic Rebirth";
+            menuInstallRE3CR.Click += menuInstallRE3CR_Click_1;
             // 
             // bGMXMLEditorToolStripMenuItem
             // 
@@ -1523,24 +1544,6 @@
             toolStripStatusLabel1.Name = "toolStripStatusLabel1";
             toolStripStatusLabel1.Size = new Size(158, 20);
             toolStripStatusLabel1.Text = "Ready for Experiments";
-            // 
-            // menuInstallRE1CR
-            // 
-            menuInstallRE1CR.Name = "menuInstallRE1CR";
-            menuInstallRE1CR.Size = new Size(315, 26);
-            menuInstallRE1CR.Text = "Install/Update RE1 Classic Rebirth";
-            // 
-            // menuInstallRE2CR
-            // 
-            menuInstallRE2CR.Name = "menuInstallRE2CR";
-            menuInstallRE2CR.Size = new Size(315, 26);
-            menuInstallRE2CR.Text = "Install/Update RE2 Classic Rebirth";
-            // 
-            // menuInstallRE3CR
-            // 
-            menuInstallRE3CR.Name = "menuInstallRE3CR";
-            menuInstallRE3CR.Size = new Size(315, 26);
-            menuInstallRE3CR.Text = "Install/Update RE3 Classic Rebirth";
             // 
             // Main
             // 
