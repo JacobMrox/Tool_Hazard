@@ -62,6 +62,8 @@
             toolStripSeparator7 = new ToolStripSeparator();
             classicRebirthToolsToolStripMenuItem2 = new ToolStripMenuItem();
             menuInstallRE1CR = new ToolStripMenuItem();
+            toolStripSeparator22 = new ToolStripSeparator();
+            createModFolderToolStripMenuItem = new ToolStripMenuItem();
             bGMXMLEditorToolStripMenuItem2 = new ToolStripMenuItem();
             fileEditorToolStripMenuItem = new ToolStripMenuItem();
             bIO151997ToolStripMenuItem = new ToolStripMenuItem();
@@ -110,16 +112,10 @@
             installPatch110ToolStripMenuItem = new ToolStripMenuItem();
             classicRebirthToolsToolStripMenuItem1 = new ToolStripMenuItem();
             menuInstallRE2CR = new ToolStripMenuItem();
+            toolStripSeparator23 = new ToolStripSeparator();
+            createModFolderToolStripMenuItem1 = new ToolStripMenuItem();
             bGMXMLEditorToolStripMenuItem1 = new ToolStripMenuItem();
             fileEditorToolStripMenuItem1 = new ToolStripMenuItem();
-            rESURVVBIOGUNSURVToolStripMenuItem = new ToolStripMenuItem();
-            bINPS1ToolStripMenuItem = new ToolStripMenuItem();
-            nACNABPCToolStripMenuItem = new ToolStripMenuItem();
-            tIMToolStripMenuItem4 = new ToolStripMenuItem();
-            hMDToolStripMenuItem = new ToolStripMenuItem();
-            rECVBIOCV2000ToolStripMenuItem = new ToolStripMenuItem();
-            aFSPS2DCToolStripMenuItem = new ToolStripMenuItem();
-            aRCHDMTToolStripMenuItem = new ToolStripMenuItem();
             bIORE31999ToolStripMenuItem = new ToolStripMenuItem();
             rOFSToolStripMenuItem = new ToolStripMenuItem();
             ROFSunpackToolStripMenuItem = new ToolStripMenuItem();
@@ -162,8 +158,33 @@
             installPatch110ToolStripMenuItem1 = new ToolStripMenuItem();
             classicRebirthToolsToolStripMenuItem = new ToolStripMenuItem();
             menuInstallRE3CR = new ToolStripMenuItem();
+            toolStripSeparator24 = new ToolStripSeparator();
+            createModFolderToolStripMenuItem2 = new ToolStripMenuItem();
             bGMXMLEditorToolStripMenuItem = new ToolStripMenuItem();
             fileEditorToolStripMenuItem2 = new ToolStripMenuItem();
+            rESURVVBIOGUNSURVToolStripMenuItem = new ToolStripMenuItem();
+            bINPS1ToolStripMenuItem = new ToolStripMenuItem();
+            nACNABPCToolStripMenuItem = new ToolStripMenuItem();
+            tIMToolStripMenuItem4 = new ToolStripMenuItem();
+            hMDToolStripMenuItem = new ToolStripMenuItem();
+            rECVBIOCV2000ToolStripMenuItem = new ToolStripMenuItem();
+            aFSPS2DCToolStripMenuItem = new ToolStripMenuItem();
+            aRCHDMTToolStripMenuItem = new ToolStripMenuItem();
+            whiteDayToolStripMenuItem = new ToolStripMenuItem();
+            nOPToolStripMenuItem1 = new ToolStripMenuItem();
+            unpackToolStripMenuItem1 = new ToolStripMenuItem();
+            repackToolStripMenuItem1 = new ToolStripMenuItem();
+            wADToolStripMenuItem1 = new ToolStripMenuItem();
+            pETToolStripMenuItem = new ToolStripMenuItem();
+            toolStripSeparator25 = new ToolStripSeparator();
+            fontEditorToolStripMenuItem1 = new ToolStripMenuItem();
+            torresMP3PlaylistEditorToolStripMenuItem = new ToolStripMenuItem();
+            saveEditorToolStripMenuItem1 = new ToolStripMenuItem();
+            toolStripSeparator8 = new ToolStripSeparator();
+            installEnglishCompatibilityPatchToolStripMenuItem = new ToolStripMenuItem();
+            rEmake2002ToolStripMenuItem = new ToolStripMenuItem();
+            bGZNGCnWiiToolStripMenuItem = new ToolStripMenuItem();
+            dATToolStripMenuItem = new ToolStripMenuItem();
             rE42005ToolStripMenuItem = new ToolStripMenuItem();
             gCAPC2007ToolStripMenuItem = new ToolStripMenuItem();
             extractToolStripMenuItem = new ToolStripMenuItem();
@@ -179,20 +200,6 @@
             repackToolStripMenuItem7 = new ToolStripMenuItem();
             bINPC2014ToolStripMenuItem = new ToolStripMenuItem();
             xWBToolStripMenuItem = new ToolStripMenuItem();
-            whiteDayToolStripMenuItem = new ToolStripMenuItem();
-            nOPToolStripMenuItem1 = new ToolStripMenuItem();
-            unpackToolStripMenuItem1 = new ToolStripMenuItem();
-            repackToolStripMenuItem1 = new ToolStripMenuItem();
-            wADToolStripMenuItem1 = new ToolStripMenuItem();
-            pETToolStripMenuItem = new ToolStripMenuItem();
-            fontEditorToolStripMenuItem1 = new ToolStripMenuItem();
-            torresMP3PlaylistEditorToolStripMenuItem = new ToolStripMenuItem();
-            saveEditorToolStripMenuItem1 = new ToolStripMenuItem();
-            toolStripSeparator8 = new ToolStripSeparator();
-            installEnglishCompatibilityPatchToolStripMenuItem = new ToolStripMenuItem();
-            rEmake2002ToolStripMenuItem = new ToolStripMenuItem();
-            bGZNGCnWiiToolStripMenuItem = new ToolStripMenuItem();
-            dATToolStripMenuItem = new ToolStripMenuItem();
             toolStripMenuItem2 = new ToolStripMenuItem();
             residentEvilBiohazardToolStripMenuItem = new ToolStripMenuItem();
             enableRE123LiveHUDToolStripMenuItem = new ToolStripMenuItem();
@@ -221,6 +228,7 @@
             notifyIcon1 = new NotifyIcon(components);
             statusStrip1 = new StatusStrip();
             toolStripStatusLabel1 = new ToolStripStatusLabel();
+            bMPDSToolStripMenuItem = new ToolStripMenuItem();
             menuStrip1.SuspendLayout();
             statusStrip1.SuspendLayout();
             SuspendLayout();
@@ -231,14 +239,14 @@
             menuStrip1.Font = new Font("Segoe UI", 9F);
             menuStrip1.GripMargin = new Padding(2);
             menuStrip1.ImageScalingSize = new Size(20, 20);
-            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, toolStripMenuItem1, bIO151997ToolStripMenuItem, bIO2RE21998ToolStripMenuItem, rESURVVBIOGUNSURVToolStripMenuItem, rECVBIOCV2000ToolStripMenuItem, bIORE31999ToolStripMenuItem, rE42005ToolStripMenuItem, whiteDayToolStripMenuItem, rEmake2002ToolStripMenuItem, toolStripMenuItem2, helpToolStripMenuItem });
+            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, toolStripMenuItem1, bIO151997ToolStripMenuItem, bIO2RE21998ToolStripMenuItem, bIORE31999ToolStripMenuItem, rESURVVBIOGUNSURVToolStripMenuItem, rECVBIOCV2000ToolStripMenuItem, whiteDayToolStripMenuItem, rEmake2002ToolStripMenuItem, rE42005ToolStripMenuItem, toolStripMenuItem2, helpToolStripMenuItem });
             menuStrip1.LayoutStyle = ToolStripLayoutStyle.Flow;
             menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
             menuStrip1.Padding = new Padding(7, 3, 0, 3);
             menuStrip1.RenderMode = ToolStripRenderMode.Professional;
             menuStrip1.ShowItemToolTips = true;
-            menuStrip1.Size = new Size(816, 78);
+            menuStrip1.Size = new Size(816, 54);
             menuStrip1.TabIndex = 0;
             menuStrip1.Text = "menuStrip1";
             // 
@@ -259,7 +267,7 @@
             // toolStripMenuItem1
             // 
             toolStripMenuItem1.AutoToolTip = true;
-            toolStripMenuItem1.DropDownItems.AddRange(new ToolStripItem[] { bSSToolStripMenuItem, pCKPCToolStripMenuItem, rDTToolStripMenuItem2, eMDToolStripMenuItem2, pIXToolStripMenuItem, tIMToolStripMenuItem1, pLWToolStripMenuItem2, vHVBToolStripMenuItem2, toolStripSeparator7, classicRebirthToolsToolStripMenuItem2 });
+            toolStripMenuItem1.DropDownItems.AddRange(new ToolStripItem[] { bSSToolStripMenuItem, pCKPCToolStripMenuItem, rDTToolStripMenuItem2, eMDToolStripMenuItem2, bMPDSToolStripMenuItem, pIXToolStripMenuItem, tIMToolStripMenuItem1, pLWToolStripMenuItem2, vHVBToolStripMenuItem2, toolStripSeparator7, classicRebirthToolsToolStripMenuItem2 });
             toolStripMenuItem1.Name = "toolStripMenuItem1";
             toolStripMenuItem1.Size = new Size(132, 24);
             toolStripMenuItem1.Text = "BIO1/RE1 (1996)";
@@ -269,7 +277,7 @@
             // bSSToolStripMenuItem
             // 
             bSSToolStripMenuItem.Name = "bSSToolStripMenuItem";
-            bSSToolStripMenuItem.Size = new Size(224, 26);
+            bSSToolStripMenuItem.Size = new Size(188, 26);
             bSSToolStripMenuItem.Text = "BSS (PS1)";
             bSSToolStripMenuItem.Click += bSSToolStripMenuItem_Click;
             // 
@@ -277,14 +285,14 @@
             // 
             pCKPCToolStripMenuItem.Enabled = false;
             pCKPCToolStripMenuItem.Name = "pCKPCToolStripMenuItem";
-            pCKPCToolStripMenuItem.Size = new Size(224, 26);
+            pCKPCToolStripMenuItem.Size = new Size(188, 26);
             pCKPCToolStripMenuItem.Text = "PCK (PC)";
             // 
             // rDTToolStripMenuItem2
             // 
             rDTToolStripMenuItem2.DropDownItems.AddRange(new ToolStripItem[] { unpackToolStripMenuItem4, repackToolStripMenuItem5, toolStripSeparator13, convertToBIO2ToolStripMenuItem1, convertToBIO3ToolStripMenuItem1, toolStripSeparator14, sCDScriptDataToolStripMenuItem, toolStripSeparator21, mSGToolStripMenuItem2 });
             rDTToolStripMenuItem2.Name = "rDTToolStripMenuItem2";
-            rDTToolStripMenuItem2.Size = new Size(224, 26);
+            rDTToolStripMenuItem2.Size = new Size(188, 26);
             rDTToolStripMenuItem2.Text = "RDT";
             // 
             // unpackToolStripMenuItem4
@@ -366,7 +374,7 @@
             // 
             eMDToolStripMenuItem2.DropDownItems.AddRange(new ToolStripItem[] { unpackOriginalToolStripMenuItem1, repackOriginalToolStripMenuItem1, toolStripSeparator11, unpackEditableToolStripMenuItem1, repackEditableToolStripMenuItem1 });
             eMDToolStripMenuItem2.Name = "eMDToolStripMenuItem2";
-            eMDToolStripMenuItem2.Size = new Size(224, 26);
+            eMDToolStripMenuItem2.Size = new Size(188, 26);
             eMDToolStripMenuItem2.Text = "EMD";
             // 
             // unpackOriginalToolStripMenuItem1
@@ -405,14 +413,14 @@
             // pIXToolStripMenuItem
             // 
             pIXToolStripMenuItem.Name = "pIXToolStripMenuItem";
-            pIXToolStripMenuItem.Size = new Size(224, 26);
+            pIXToolStripMenuItem.Size = new Size(188, 26);
             pIXToolStripMenuItem.Text = "PIX";
             pIXToolStripMenuItem.Click += pIXToolStripMenuItem_Click;
             // 
             // tIMToolStripMenuItem1
             // 
             tIMToolStripMenuItem1.Name = "tIMToolStripMenuItem1";
-            tIMToolStripMenuItem1.Size = new Size(224, 26);
+            tIMToolStripMenuItem1.Size = new Size(188, 26);
             tIMToolStripMenuItem1.Text = "TIM";
             tIMToolStripMenuItem1.Click += tIMToolStripMenuItem1_Click;
             // 
@@ -420,26 +428,26 @@
             // 
             pLWToolStripMenuItem2.Enabled = false;
             pLWToolStripMenuItem2.Name = "pLWToolStripMenuItem2";
-            pLWToolStripMenuItem2.Size = new Size(224, 26);
+            pLWToolStripMenuItem2.Size = new Size(188, 26);
             pLWToolStripMenuItem2.Text = "PLW";
             // 
             // vHVBToolStripMenuItem2
             // 
             vHVBToolStripMenuItem2.Enabled = false;
             vHVBToolStripMenuItem2.Name = "vHVBToolStripMenuItem2";
-            vHVBToolStripMenuItem2.Size = new Size(224, 26);
+            vHVBToolStripMenuItem2.Size = new Size(188, 26);
             vHVBToolStripMenuItem2.Text = "VH/VB";
             // 
             // toolStripSeparator7
             // 
             toolStripSeparator7.Name = "toolStripSeparator7";
-            toolStripSeparator7.Size = new Size(221, 6);
+            toolStripSeparator7.Size = new Size(185, 6);
             // 
             // classicRebirthToolsToolStripMenuItem2
             // 
-            classicRebirthToolsToolStripMenuItem2.DropDownItems.AddRange(new ToolStripItem[] { menuInstallRE1CR, bGMXMLEditorToolStripMenuItem2, fileEditorToolStripMenuItem });
+            classicRebirthToolsToolStripMenuItem2.DropDownItems.AddRange(new ToolStripItem[] { menuInstallRE1CR, toolStripSeparator22, createModFolderToolStripMenuItem, bGMXMLEditorToolStripMenuItem2, fileEditorToolStripMenuItem });
             classicRebirthToolsToolStripMenuItem2.Name = "classicRebirthToolsToolStripMenuItem2";
-            classicRebirthToolsToolStripMenuItem2.Size = new Size(224, 26);
+            classicRebirthToolsToolStripMenuItem2.Size = new Size(188, 26);
             classicRebirthToolsToolStripMenuItem2.Text = "Classic Rebirth";
             // 
             // menuInstallRE1CR
@@ -448,6 +456,18 @@
             menuInstallRE1CR.Size = new Size(315, 26);
             menuInstallRE1CR.Text = "Install/Update RE1 Classic Rebirth";
             menuInstallRE1CR.Click += menuInstallRE1CR_Click;
+            // 
+            // toolStripSeparator22
+            // 
+            toolStripSeparator22.Name = "toolStripSeparator22";
+            toolStripSeparator22.Size = new Size(312, 6);
+            // 
+            // createModFolderToolStripMenuItem
+            // 
+            createModFolderToolStripMenuItem.Enabled = false;
+            createModFolderToolStripMenuItem.Name = "createModFolderToolStripMenuItem";
+            createModFolderToolStripMenuItem.Size = new Size(315, 26);
+            createModFolderToolStripMenuItem.Text = "Create Mod Folder";
             // 
             // bGMXMLEditorToolStripMenuItem2
             // 
@@ -476,42 +496,42 @@
             // 
             bSSToolStripMenuItem3.Enabled = false;
             bSSToolStripMenuItem3.Name = "bSSToolStripMenuItem3";
-            bSSToolStripMenuItem3.Size = new Size(136, 26);
+            bSSToolStripMenuItem3.Size = new Size(224, 26);
             bSSToolStripMenuItem3.Text = "BSS";
             // 
             // rDTToolStripMenuItem3
             // 
             rDTToolStripMenuItem3.Enabled = false;
             rDTToolStripMenuItem3.Name = "rDTToolStripMenuItem3";
-            rDTToolStripMenuItem3.Size = new Size(136, 26);
+            rDTToolStripMenuItem3.Size = new Size(224, 26);
             rDTToolStripMenuItem3.Text = "RDT";
             // 
             // eMDToolStripMenuItem3
             // 
             eMDToolStripMenuItem3.Enabled = false;
             eMDToolStripMenuItem3.Name = "eMDToolStripMenuItem3";
-            eMDToolStripMenuItem3.Size = new Size(136, 26);
+            eMDToolStripMenuItem3.Size = new Size(224, 26);
             eMDToolStripMenuItem3.Text = "EMD";
             // 
             // pLDToolStripMenuItem2
             // 
             pLDToolStripMenuItem2.Enabled = false;
             pLDToolStripMenuItem2.Name = "pLDToolStripMenuItem2";
-            pLDToolStripMenuItem2.Size = new Size(136, 26);
+            pLDToolStripMenuItem2.Size = new Size(224, 26);
             pLDToolStripMenuItem2.Text = "PLD";
             // 
             // pLWToolStripMenuItem3
             // 
             pLWToolStripMenuItem3.Enabled = false;
             pLWToolStripMenuItem3.Name = "pLWToolStripMenuItem3";
-            pLWToolStripMenuItem3.Size = new Size(136, 26);
+            pLWToolStripMenuItem3.Size = new Size(224, 26);
             pLWToolStripMenuItem3.Text = "PLW";
             // 
             // vHVBToolStripMenuItem1
             // 
             vHVBToolStripMenuItem1.Enabled = false;
             vHVBToolStripMenuItem1.Name = "vHVBToolStripMenuItem1";
-            vHVBToolStripMenuItem1.Size = new Size(136, 26);
+            vHVBToolStripMenuItem1.Size = new Size(224, 26);
             vHVBToolStripMenuItem1.Text = "VH/VB";
             // 
             // bIO2RE21998ToolStripMenuItem
@@ -764,7 +784,7 @@
             // 
             // classicRebirthToolsToolStripMenuItem1
             // 
-            classicRebirthToolsToolStripMenuItem1.DropDownItems.AddRange(new ToolStripItem[] { menuInstallRE2CR, bGMXMLEditorToolStripMenuItem1, fileEditorToolStripMenuItem1 });
+            classicRebirthToolsToolStripMenuItem1.DropDownItems.AddRange(new ToolStripItem[] { menuInstallRE2CR, toolStripSeparator23, createModFolderToolStripMenuItem1, bGMXMLEditorToolStripMenuItem1, fileEditorToolStripMenuItem1 });
             classicRebirthToolsToolStripMenuItem1.Name = "classicRebirthToolsToolStripMenuItem1";
             classicRebirthToolsToolStripMenuItem1.Size = new Size(281, 26);
             classicRebirthToolsToolStripMenuItem1.Text = "Classic Rebirth";
@@ -775,6 +795,18 @@
             menuInstallRE2CR.Size = new Size(315, 26);
             menuInstallRE2CR.Text = "Install/Update RE2 Classic Rebirth";
             menuInstallRE2CR.Click += menuInstallRE2CR_Click_1;
+            // 
+            // toolStripSeparator23
+            // 
+            toolStripSeparator23.Name = "toolStripSeparator23";
+            toolStripSeparator23.Size = new Size(312, 6);
+            // 
+            // createModFolderToolStripMenuItem1
+            // 
+            createModFolderToolStripMenuItem1.Enabled = false;
+            createModFolderToolStripMenuItem1.Name = "createModFolderToolStripMenuItem1";
+            createModFolderToolStripMenuItem1.Size = new Size(315, 26);
+            createModFolderToolStripMenuItem1.Text = "Create Mod Folder";
             // 
             // bGMXMLEditorToolStripMenuItem1
             // 
@@ -789,64 +821,6 @@
             fileEditorToolStripMenuItem1.Size = new Size(315, 26);
             fileEditorToolStripMenuItem1.Text = "File Editor";
             fileEditorToolStripMenuItem1.Click += fileEditorToolStripMenuItem1_Click;
-            // 
-            // rESURVVBIOGUNSURVToolStripMenuItem
-            // 
-            rESURVVBIOGUNSURVToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { bINPS1ToolStripMenuItem, nACNABPCToolStripMenuItem, tIMToolStripMenuItem4, hMDToolStripMenuItem });
-            rESURVVBIOGUNSURVToolStripMenuItem.Name = "rESURVVBIOGUNSURVToolStripMenuItem";
-            rESURVVBIOGUNSURVToolStripMenuItem.Size = new Size(183, 24);
-            rESURVVBIOGUNSURVToolStripMenuItem.Text = "RESURV/BIOGUN (2000)";
-            rESURVVBIOGUNSURVToolStripMenuItem.Click += rESURVVBIOGUNSURVToolStripMenuItem_Click;
-            // 
-            // bINPS1ToolStripMenuItem
-            // 
-            bINPS1ToolStripMenuItem.Enabled = false;
-            bINPS1ToolStripMenuItem.Name = "bINPS1ToolStripMenuItem";
-            bINPS1ToolStripMenuItem.Size = new Size(158, 26);
-            bINPS1ToolStripMenuItem.Text = "BIN";
-            // 
-            // nACNABPCToolStripMenuItem
-            // 
-            nACNABPCToolStripMenuItem.Enabled = false;
-            nACNABPCToolStripMenuItem.Name = "nACNABPCToolStripMenuItem";
-            nACNABPCToolStripMenuItem.Size = new Size(158, 26);
-            nACNABPCToolStripMenuItem.Text = "NAC/NAB";
-            // 
-            // tIMToolStripMenuItem4
-            // 
-            tIMToolStripMenuItem4.Name = "tIMToolStripMenuItem4";
-            tIMToolStripMenuItem4.Size = new Size(158, 26);
-            tIMToolStripMenuItem4.Text = "TIM";
-            tIMToolStripMenuItem4.Click += tIMToolStripMenuItem4_Click;
-            // 
-            // hMDToolStripMenuItem
-            // 
-            hMDToolStripMenuItem.Enabled = false;
-            hMDToolStripMenuItem.Name = "hMDToolStripMenuItem";
-            hMDToolStripMenuItem.Size = new Size(158, 26);
-            hMDToolStripMenuItem.Text = "HMD";
-            // 
-            // rECVBIOCV2000ToolStripMenuItem
-            // 
-            rECVBIOCV2000ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { aFSPS2DCToolStripMenuItem, aRCHDMTToolStripMenuItem });
-            rECVBIOCV2000ToolStripMenuItem.Name = "rECVBIOCV2000ToolStripMenuItem";
-            rECVBIOCV2000ToolStripMenuItem.Size = new Size(152, 24);
-            rECVBIOCV2000ToolStripMenuItem.Text = "RECV/BIOCV (2000)";
-            rECVBIOCV2000ToolStripMenuItem.Click += rECVBIOCV2000ToolStripMenuItem_Click;
-            // 
-            // aFSPS2DCToolStripMenuItem
-            // 
-            aFSPS2DCToolStripMenuItem.Enabled = false;
-            aFSPS2DCToolStripMenuItem.Name = "aFSPS2DCToolStripMenuItem";
-            aFSPS2DCToolStripMenuItem.Size = new Size(183, 26);
-            aFSPS2DCToolStripMenuItem.Text = "AFS (PS2/DC)";
-            // 
-            // aRCHDMTToolStripMenuItem
-            // 
-            aRCHDMTToolStripMenuItem.Enabled = false;
-            aRCHDMTToolStripMenuItem.Name = "aRCHDMTToolStripMenuItem";
-            aRCHDMTToolStripMenuItem.Size = new Size(183, 26);
-            aRCHDMTToolStripMenuItem.Text = "ARC (HD/MT)";
             // 
             // bIORE31999ToolStripMenuItem
             // 
@@ -1118,7 +1092,7 @@
             // 
             // classicRebirthToolsToolStripMenuItem
             // 
-            classicRebirthToolsToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { menuInstallRE3CR, bGMXMLEditorToolStripMenuItem, fileEditorToolStripMenuItem2 });
+            classicRebirthToolsToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { menuInstallRE3CR, toolStripSeparator24, createModFolderToolStripMenuItem2, bGMXMLEditorToolStripMenuItem, fileEditorToolStripMenuItem2 });
             classicRebirthToolsToolStripMenuItem.Name = "classicRebirthToolsToolStripMenuItem";
             classicRebirthToolsToolStripMenuItem.Size = new Size(281, 26);
             classicRebirthToolsToolStripMenuItem.Text = "Classic Rebirth";
@@ -1129,6 +1103,18 @@
             menuInstallRE3CR.Size = new Size(315, 26);
             menuInstallRE3CR.Text = "Install/Update RE3 Classic Rebirth";
             menuInstallRE3CR.Click += menuInstallRE3CR_Click_1;
+            // 
+            // toolStripSeparator24
+            // 
+            toolStripSeparator24.Name = "toolStripSeparator24";
+            toolStripSeparator24.Size = new Size(312, 6);
+            // 
+            // createModFolderToolStripMenuItem2
+            // 
+            createModFolderToolStripMenuItem2.Enabled = false;
+            createModFolderToolStripMenuItem2.Name = "createModFolderToolStripMenuItem2";
+            createModFolderToolStripMenuItem2.Size = new Size(315, 26);
+            createModFolderToolStripMenuItem2.Text = "Create Mod Folder";
             // 
             // bGMXMLEditorToolStripMenuItem
             // 
@@ -1143,6 +1129,165 @@
             fileEditorToolStripMenuItem2.Size = new Size(315, 26);
             fileEditorToolStripMenuItem2.Text = "File Editor";
             fileEditorToolStripMenuItem2.Click += fileEditorToolStripMenuItem2_Click;
+            // 
+            // rESURVVBIOGUNSURVToolStripMenuItem
+            // 
+            rESURVVBIOGUNSURVToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { bINPS1ToolStripMenuItem, nACNABPCToolStripMenuItem, tIMToolStripMenuItem4, hMDToolStripMenuItem });
+            rESURVVBIOGUNSURVToolStripMenuItem.Name = "rESURVVBIOGUNSURVToolStripMenuItem";
+            rESURVVBIOGUNSURVToolStripMenuItem.Size = new Size(183, 24);
+            rESURVVBIOGUNSURVToolStripMenuItem.Text = "RESURV/BIOGUN (2000)";
+            rESURVVBIOGUNSURVToolStripMenuItem.Click += rESURVVBIOGUNSURVToolStripMenuItem_Click;
+            // 
+            // bINPS1ToolStripMenuItem
+            // 
+            bINPS1ToolStripMenuItem.Enabled = false;
+            bINPS1ToolStripMenuItem.Name = "bINPS1ToolStripMenuItem";
+            bINPS1ToolStripMenuItem.Size = new Size(158, 26);
+            bINPS1ToolStripMenuItem.Text = "BIN";
+            // 
+            // nACNABPCToolStripMenuItem
+            // 
+            nACNABPCToolStripMenuItem.Enabled = false;
+            nACNABPCToolStripMenuItem.Name = "nACNABPCToolStripMenuItem";
+            nACNABPCToolStripMenuItem.Size = new Size(158, 26);
+            nACNABPCToolStripMenuItem.Text = "NAC/NAB";
+            // 
+            // tIMToolStripMenuItem4
+            // 
+            tIMToolStripMenuItem4.Name = "tIMToolStripMenuItem4";
+            tIMToolStripMenuItem4.Size = new Size(158, 26);
+            tIMToolStripMenuItem4.Text = "TIM";
+            tIMToolStripMenuItem4.Click += tIMToolStripMenuItem4_Click;
+            // 
+            // hMDToolStripMenuItem
+            // 
+            hMDToolStripMenuItem.Enabled = false;
+            hMDToolStripMenuItem.Name = "hMDToolStripMenuItem";
+            hMDToolStripMenuItem.Size = new Size(158, 26);
+            hMDToolStripMenuItem.Text = "HMD";
+            // 
+            // rECVBIOCV2000ToolStripMenuItem
+            // 
+            rECVBIOCV2000ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { aFSPS2DCToolStripMenuItem, aRCHDMTToolStripMenuItem });
+            rECVBIOCV2000ToolStripMenuItem.Name = "rECVBIOCV2000ToolStripMenuItem";
+            rECVBIOCV2000ToolStripMenuItem.Size = new Size(152, 24);
+            rECVBIOCV2000ToolStripMenuItem.Text = "RECV/BIOCV (2000)";
+            rECVBIOCV2000ToolStripMenuItem.Click += rECVBIOCV2000ToolStripMenuItem_Click;
+            // 
+            // aFSPS2DCToolStripMenuItem
+            // 
+            aFSPS2DCToolStripMenuItem.Enabled = false;
+            aFSPS2DCToolStripMenuItem.Name = "aFSPS2DCToolStripMenuItem";
+            aFSPS2DCToolStripMenuItem.Size = new Size(183, 26);
+            aFSPS2DCToolStripMenuItem.Text = "AFS (PS2/DC)";
+            // 
+            // aRCHDMTToolStripMenuItem
+            // 
+            aRCHDMTToolStripMenuItem.Enabled = false;
+            aRCHDMTToolStripMenuItem.Name = "aRCHDMTToolStripMenuItem";
+            aRCHDMTToolStripMenuItem.Size = new Size(183, 26);
+            aRCHDMTToolStripMenuItem.Text = "ARC (HD/MT)";
+            // 
+            // whiteDayToolStripMenuItem
+            // 
+            whiteDayToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { nOPToolStripMenuItem1, wADToolStripMenuItem1, pETToolStripMenuItem, toolStripSeparator25, fontEditorToolStripMenuItem1, torresMP3PlaylistEditorToolStripMenuItem, saveEditorToolStripMenuItem1, toolStripSeparator8, installEnglishCompatibilityPatchToolStripMenuItem });
+            whiteDayToolStripMenuItem.Name = "whiteDayToolStripMenuItem";
+            whiteDayToolStripMenuItem.Size = new Size(138, 24);
+            whiteDayToolStripMenuItem.Text = "White Day (2001)";
+            // 
+            // nOPToolStripMenuItem1
+            // 
+            nOPToolStripMenuItem1.DropDownItems.AddRange(new ToolStripItem[] { unpackToolStripMenuItem1, repackToolStripMenuItem1 });
+            nOPToolStripMenuItem1.Name = "nOPToolStripMenuItem1";
+            nOPToolStripMenuItem1.Size = new Size(331, 26);
+            nOPToolStripMenuItem1.Text = "NOP";
+            // 
+            // unpackToolStripMenuItem1
+            // 
+            unpackToolStripMenuItem1.Name = "unpackToolStripMenuItem1";
+            unpackToolStripMenuItem1.Size = new Size(141, 26);
+            unpackToolStripMenuItem1.Text = "Unpack";
+            unpackToolStripMenuItem1.Click += unpackToolStripMenuItem1_Click;
+            // 
+            // repackToolStripMenuItem1
+            // 
+            repackToolStripMenuItem1.Name = "repackToolStripMenuItem1";
+            repackToolStripMenuItem1.Size = new Size(141, 26);
+            repackToolStripMenuItem1.Text = "Repack";
+            repackToolStripMenuItem1.Click += repackToolStripMenuItem1_Click;
+            // 
+            // wADToolStripMenuItem1
+            // 
+            wADToolStripMenuItem1.Enabled = false;
+            wADToolStripMenuItem1.Name = "wADToolStripMenuItem1";
+            wADToolStripMenuItem1.Size = new Size(331, 26);
+            wADToolStripMenuItem1.Text = "WAD";
+            // 
+            // pETToolStripMenuItem
+            // 
+            pETToolStripMenuItem.Enabled = false;
+            pETToolStripMenuItem.Name = "pETToolStripMenuItem";
+            pETToolStripMenuItem.Size = new Size(331, 26);
+            pETToolStripMenuItem.Text = "PET";
+            // 
+            // toolStripSeparator25
+            // 
+            toolStripSeparator25.Name = "toolStripSeparator25";
+            toolStripSeparator25.Size = new Size(328, 6);
+            // 
+            // fontEditorToolStripMenuItem1
+            // 
+            fontEditorToolStripMenuItem1.Name = "fontEditorToolStripMenuItem1";
+            fontEditorToolStripMenuItem1.Size = new Size(331, 26);
+            fontEditorToolStripMenuItem1.Text = "Font Editor";
+            fontEditorToolStripMenuItem1.Click += fontEditorToolStripMenuItem1_Click;
+            // 
+            // torresMP3PlaylistEditorToolStripMenuItem
+            // 
+            torresMP3PlaylistEditorToolStripMenuItem.Enabled = false;
+            torresMP3PlaylistEditorToolStripMenuItem.Name = "torresMP3PlaylistEditorToolStripMenuItem";
+            torresMP3PlaylistEditorToolStripMenuItem.Size = new Size(331, 26);
+            torresMP3PlaylistEditorToolStripMenuItem.Text = "Torres MP3 Playlist Editor";
+            // 
+            // saveEditorToolStripMenuItem1
+            // 
+            saveEditorToolStripMenuItem1.Enabled = false;
+            saveEditorToolStripMenuItem1.Name = "saveEditorToolStripMenuItem1";
+            saveEditorToolStripMenuItem1.Size = new Size(331, 26);
+            saveEditorToolStripMenuItem1.Text = "Save Editor";
+            // 
+            // toolStripSeparator8
+            // 
+            toolStripSeparator8.Name = "toolStripSeparator8";
+            toolStripSeparator8.Size = new Size(328, 6);
+            // 
+            // installEnglishCompatibilityPatchToolStripMenuItem
+            // 
+            installEnglishCompatibilityPatchToolStripMenuItem.Enabled = false;
+            installEnglishCompatibilityPatchToolStripMenuItem.Name = "installEnglishCompatibilityPatchToolStripMenuItem";
+            installEnglishCompatibilityPatchToolStripMenuItem.Size = new Size(331, 26);
+            installEnglishCompatibilityPatchToolStripMenuItem.Text = "Install English + Compatibility patch";
+            // 
+            // rEmake2002ToolStripMenuItem
+            // 
+            rEmake2002ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { bGZNGCnWiiToolStripMenuItem, dATToolStripMenuItem });
+            rEmake2002ToolStripMenuItem.Name = "rEmake2002ToolStripMenuItem";
+            rEmake2002ToolStripMenuItem.Size = new Size(122, 24);
+            rEmake2002ToolStripMenuItem.Text = "REmake (2002)";
+            // 
+            // bGZNGCnWiiToolStripMenuItem
+            // 
+            bGZNGCnWiiToolStripMenuItem.Enabled = false;
+            bGZNGCnWiiToolStripMenuItem.Name = "bGZNGCnWiiToolStripMenuItem";
+            bGZNGCnWiiToolStripMenuItem.Size = new Size(200, 26);
+            bGZNGCnWiiToolStripMenuItem.Text = "BGZ (NGC/nWii)";
+            // 
+            // dATToolStripMenuItem
+            // 
+            dATToolStripMenuItem.Enabled = false;
+            dATToolStripMenuItem.Name = "dATToolStripMenuItem";
+            dATToolStripMenuItem.Size = new Size(200, 26);
+            dATToolStripMenuItem.Text = "DAT (NGC/nWii)";
             // 
             // rE42005ToolStripMenuItem
             // 
@@ -1247,102 +1392,6 @@
             xWBToolStripMenuItem.Name = "xWBToolStripMenuItem";
             xWBToolStripMenuItem.Size = new Size(314, 26);
             xWBToolStripMenuItem.Text = "XWB";
-            // 
-            // whiteDayToolStripMenuItem
-            // 
-            whiteDayToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { nOPToolStripMenuItem1, wADToolStripMenuItem1, pETToolStripMenuItem, fontEditorToolStripMenuItem1, torresMP3PlaylistEditorToolStripMenuItem, saveEditorToolStripMenuItem1, toolStripSeparator8, installEnglishCompatibilityPatchToolStripMenuItem });
-            whiteDayToolStripMenuItem.Name = "whiteDayToolStripMenuItem";
-            whiteDayToolStripMenuItem.Size = new Size(138, 24);
-            whiteDayToolStripMenuItem.Text = "White Day (2001)";
-            // 
-            // nOPToolStripMenuItem1
-            // 
-            nOPToolStripMenuItem1.DropDownItems.AddRange(new ToolStripItem[] { unpackToolStripMenuItem1, repackToolStripMenuItem1 });
-            nOPToolStripMenuItem1.Name = "nOPToolStripMenuItem1";
-            nOPToolStripMenuItem1.Size = new Size(331, 26);
-            nOPToolStripMenuItem1.Text = "NOP";
-            // 
-            // unpackToolStripMenuItem1
-            // 
-            unpackToolStripMenuItem1.Name = "unpackToolStripMenuItem1";
-            unpackToolStripMenuItem1.Size = new Size(141, 26);
-            unpackToolStripMenuItem1.Text = "Unpack";
-            unpackToolStripMenuItem1.Click += unpackToolStripMenuItem1_Click;
-            // 
-            // repackToolStripMenuItem1
-            // 
-            repackToolStripMenuItem1.Name = "repackToolStripMenuItem1";
-            repackToolStripMenuItem1.Size = new Size(141, 26);
-            repackToolStripMenuItem1.Text = "Repack";
-            repackToolStripMenuItem1.Click += repackToolStripMenuItem1_Click;
-            // 
-            // wADToolStripMenuItem1
-            // 
-            wADToolStripMenuItem1.Enabled = false;
-            wADToolStripMenuItem1.Name = "wADToolStripMenuItem1";
-            wADToolStripMenuItem1.Size = new Size(331, 26);
-            wADToolStripMenuItem1.Text = "WAD";
-            // 
-            // pETToolStripMenuItem
-            // 
-            pETToolStripMenuItem.Enabled = false;
-            pETToolStripMenuItem.Name = "pETToolStripMenuItem";
-            pETToolStripMenuItem.Size = new Size(331, 26);
-            pETToolStripMenuItem.Text = "PET";
-            // 
-            // fontEditorToolStripMenuItem1
-            // 
-            fontEditorToolStripMenuItem1.Name = "fontEditorToolStripMenuItem1";
-            fontEditorToolStripMenuItem1.Size = new Size(331, 26);
-            fontEditorToolStripMenuItem1.Text = "Font Editor";
-            fontEditorToolStripMenuItem1.Click += fontEditorToolStripMenuItem1_Click;
-            // 
-            // torresMP3PlaylistEditorToolStripMenuItem
-            // 
-            torresMP3PlaylistEditorToolStripMenuItem.Enabled = false;
-            torresMP3PlaylistEditorToolStripMenuItem.Name = "torresMP3PlaylistEditorToolStripMenuItem";
-            torresMP3PlaylistEditorToolStripMenuItem.Size = new Size(331, 26);
-            torresMP3PlaylistEditorToolStripMenuItem.Text = "Torres MP3 Playlist Editor";
-            // 
-            // saveEditorToolStripMenuItem1
-            // 
-            saveEditorToolStripMenuItem1.Enabled = false;
-            saveEditorToolStripMenuItem1.Name = "saveEditorToolStripMenuItem1";
-            saveEditorToolStripMenuItem1.Size = new Size(331, 26);
-            saveEditorToolStripMenuItem1.Text = "Save Editor";
-            // 
-            // toolStripSeparator8
-            // 
-            toolStripSeparator8.Name = "toolStripSeparator8";
-            toolStripSeparator8.Size = new Size(328, 6);
-            // 
-            // installEnglishCompatibilityPatchToolStripMenuItem
-            // 
-            installEnglishCompatibilityPatchToolStripMenuItem.Enabled = false;
-            installEnglishCompatibilityPatchToolStripMenuItem.Name = "installEnglishCompatibilityPatchToolStripMenuItem";
-            installEnglishCompatibilityPatchToolStripMenuItem.Size = new Size(331, 26);
-            installEnglishCompatibilityPatchToolStripMenuItem.Text = "Install English + Compatibility patch";
-            // 
-            // rEmake2002ToolStripMenuItem
-            // 
-            rEmake2002ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { bGZNGCnWiiToolStripMenuItem, dATToolStripMenuItem });
-            rEmake2002ToolStripMenuItem.Name = "rEmake2002ToolStripMenuItem";
-            rEmake2002ToolStripMenuItem.Size = new Size(122, 24);
-            rEmake2002ToolStripMenuItem.Text = "REmake (2002)";
-            // 
-            // bGZNGCnWiiToolStripMenuItem
-            // 
-            bGZNGCnWiiToolStripMenuItem.Enabled = false;
-            bGZNGCnWiiToolStripMenuItem.Name = "bGZNGCnWiiToolStripMenuItem";
-            bGZNGCnWiiToolStripMenuItem.Size = new Size(200, 26);
-            bGZNGCnWiiToolStripMenuItem.Text = "BGZ (NGC/nWii)";
-            // 
-            // dATToolStripMenuItem
-            // 
-            dATToolStripMenuItem.Enabled = false;
-            dATToolStripMenuItem.Name = "dATToolStripMenuItem";
-            dATToolStripMenuItem.Size = new Size(200, 26);
-            dATToolStripMenuItem.Text = "DAT (NGC/nWii)";
             // 
             // toolStripMenuItem2
             // 
@@ -1544,6 +1593,13 @@
             toolStripStatusLabel1.Name = "toolStripStatusLabel1";
             toolStripStatusLabel1.Size = new Size(158, 20);
             toolStripStatusLabel1.Text = "Ready for Experiments";
+            // 
+            // bMPDSToolStripMenuItem
+            // 
+            bMPDSToolStripMenuItem.Enabled = false;
+            bMPDSToolStripMenuItem.Name = "bMPDSToolStripMenuItem";
+            bMPDSToolStripMenuItem.Size = new Size(188, 26);
+            bMPDSToolStripMenuItem.Text = "BMP (DS)";
             // 
             // Main
             // 
@@ -1765,5 +1821,13 @@
         private ToolStripMenuItem menuInstallRE1CR;
         private ToolStripMenuItem menuInstallRE2CR;
         private ToolStripMenuItem menuInstallRE3CR;
+        private ToolStripSeparator toolStripSeparator22;
+        private ToolStripMenuItem createModFolderToolStripMenuItem;
+        private ToolStripSeparator toolStripSeparator23;
+        private ToolStripMenuItem createModFolderToolStripMenuItem1;
+        private ToolStripSeparator toolStripSeparator24;
+        private ToolStripMenuItem createModFolderToolStripMenuItem2;
+        private ToolStripSeparator toolStripSeparator25;
+        private ToolStripMenuItem bMPDSToolStripMenuItem;
     }
 }
