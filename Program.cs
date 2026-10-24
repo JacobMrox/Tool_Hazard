@@ -1,6 +1,7 @@
 // Alias the form type so it doesn't conflict with Program.Main()
 using System.Globalization;
 using MainForm = Tool_Hazard.Main;
+using Tool_Hazard.UI;
 
 namespace Tool_Hazard
 {
@@ -16,8 +17,10 @@ namespace Tool_Hazard
             // To customize application configuration such as set high DPI settings or default font, 
             // see https://aka.ms/applicationconfiguration.
             ApplicationConfiguration.Initialize();
+            FluentTheme.Initialize();
 
             var main = new MainForm();
+            FluentTheme.Apply(main);
 
             main.Shown += (_, __) =>
             {
