@@ -55,6 +55,7 @@
             toolStripSeparator11 = new ToolStripSeparator();
             unpackEditableToolStripMenuItem1 = new ToolStripMenuItem();
             repackEditableToolStripMenuItem1 = new ToolStripMenuItem();
+            bMPDSToolStripMenuItem = new ToolStripMenuItem();
             pIXToolStripMenuItem = new ToolStripMenuItem();
             tIMToolStripMenuItem1 = new ToolStripMenuItem();
             pLWToolStripMenuItem2 = new ToolStripMenuItem();
@@ -231,7 +232,6 @@
             notifyIcon1 = new NotifyIcon(components);
             statusStrip1 = new StatusStrip();
             toolStripStatusLabel1 = new ToolStripStatusLabel();
-            bMPDSToolStripMenuItem = new ToolStripMenuItem();
             menuStrip1.SuspendLayout();
             statusStrip1.SuspendLayout();
             SuspendLayout();
@@ -249,7 +249,7 @@
             menuStrip1.Padding = new Padding(7, 3, 0, 3);
             menuStrip1.RenderMode = ToolStripRenderMode.Professional;
             menuStrip1.ShowItemToolTips = true;
-            menuStrip1.Size = new Size(816, 54);
+            menuStrip1.Size = new Size(816, 78);
             menuStrip1.TabIndex = 0;
             menuStrip1.Text = "menuStrip1";
             // 
@@ -413,6 +413,13 @@
             repackEditableToolStripMenuItem1.Text = "Repack (Editable)";
             repackEditableToolStripMenuItem1.Click += repackEditableToolStripMenuItem1_Click;
             // 
+            // bMPDSToolStripMenuItem
+            // 
+            bMPDSToolStripMenuItem.Enabled = false;
+            bMPDSToolStripMenuItem.Name = "bMPDSToolStripMenuItem";
+            bMPDSToolStripMenuItem.Size = new Size(188, 26);
+            bMPDSToolStripMenuItem.Text = "BMP (DS)";
+            // 
             // pIXToolStripMenuItem
             // 
             pIXToolStripMenuItem.Name = "pIXToolStripMenuItem";
@@ -489,7 +496,6 @@
             // bIO151997ToolStripMenuItem
             // 
             bIO151997ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { bSSToolStripMenuItem3, rDTToolStripMenuItem3, eMDToolStripMenuItem3, pLDToolStripMenuItem2, pLWToolStripMenuItem3, vHVBToolStripMenuItem1 });
-            bIO151997ToolStripMenuItem.Enabled = false;
             bIO151997ToolStripMenuItem.Name = "bIO151997ToolStripMenuItem";
             bIO151997ToolStripMenuItem.Size = new Size(112, 24);
             bIO151997ToolStripMenuItem.Text = "BIO1.5 (1997)";
@@ -497,10 +503,10 @@
             // 
             // bSSToolStripMenuItem3
             // 
-            bSSToolStripMenuItem3.Enabled = false;
             bSSToolStripMenuItem3.Name = "bSSToolStripMenuItem3";
             bSSToolStripMenuItem3.Size = new Size(224, 26);
             bSSToolStripMenuItem3.Text = "BSS";
+            bSSToolStripMenuItem3.Click += bSSToolStripMenuItem3_Click;
             // 
             // rDTToolStripMenuItem3
             // 
@@ -532,10 +538,10 @@
             // 
             // vHVBToolStripMenuItem1
             // 
-            vHVBToolStripMenuItem1.Enabled = false;
             vHVBToolStripMenuItem1.Name = "vHVBToolStripMenuItem1";
             vHVBToolStripMenuItem1.Size = new Size(224, 26);
             vHVBToolStripMenuItem1.Text = "VH/VB";
+            vHVBToolStripMenuItem1.Click += vHVBToolStripMenuItem1_Click;
             // 
             // bIO2RE21998ToolStripMenuItem
             // 
@@ -1145,20 +1151,20 @@
             // 
             bINPS1ToolStripMenuItem.Enabled = false;
             bINPS1ToolStripMenuItem.Name = "bINPS1ToolStripMenuItem";
-            bINPS1ToolStripMenuItem.Size = new Size(158, 26);
+            bINPS1ToolStripMenuItem.Size = new Size(188, 26);
             bINPS1ToolStripMenuItem.Text = "BIN";
             // 
             // nACNABPCToolStripMenuItem
             // 
             nACNABPCToolStripMenuItem.Enabled = false;
             nACNABPCToolStripMenuItem.Name = "nACNABPCToolStripMenuItem";
-            nACNABPCToolStripMenuItem.Size = new Size(158, 26);
+            nACNABPCToolStripMenuItem.Size = new Size(188, 26);
             nACNABPCToolStripMenuItem.Text = "NAC/NAB";
             // 
             // tIMToolStripMenuItem4
             // 
             tIMToolStripMenuItem4.Name = "tIMToolStripMenuItem4";
-            tIMToolStripMenuItem4.Size = new Size(158, 26);
+            tIMToolStripMenuItem4.Size = new Size(188, 26);
             tIMToolStripMenuItem4.Text = "TIM";
             tIMToolStripMenuItem4.Click += tIMToolStripMenuItem4_Click;
             // 
@@ -1166,25 +1172,25 @@
             // 
             hMDToolStripMenuItem.Enabled = false;
             hMDToolStripMenuItem.Name = "hMDToolStripMenuItem";
-            hMDToolStripMenuItem.Size = new Size(158, 26);
+            hMDToolStripMenuItem.Size = new Size(188, 26);
             hMDToolStripMenuItem.Text = "HMD";
-            //
+            // 
             // toolStripSeparator26
-            //
+            // 
             toolStripSeparator26.Name = "toolStripSeparator26";
-            toolStripSeparator26.Size = new Size(255, 6);
-            //
+            toolStripSeparator26.Size = new Size(185, 6);
+            // 
             // classicRebirthToolsToolStripMenuItem3
-            //
+            // 
             classicRebirthToolsToolStripMenuItem3.DropDownItems.AddRange(new ToolStripItem[] { menuInstallSurvivorCR });
             classicRebirthToolsToolStripMenuItem3.Name = "classicRebirthToolsToolStripMenuItem3";
-            classicRebirthToolsToolStripMenuItem3.Size = new Size(258, 26);
+            classicRebirthToolsToolStripMenuItem3.Size = new Size(188, 26);
             classicRebirthToolsToolStripMenuItem3.Text = "Classic Rebirth";
-            //
+            // 
             // menuInstallSurvivorCR
-            //
+            // 
             menuInstallSurvivorCR.Name = "menuInstallSurvivorCR";
-            menuInstallSurvivorCR.Size = new Size(354, 26);
+            menuInstallSurvivorCR.Size = new Size(373, 26);
             menuInstallSurvivorCR.Text = "Install/Update Gun Survivor Classic Rebirth";
             menuInstallSurvivorCR.Click += menuInstallSurvivorCR_Click;
             // 
@@ -1615,13 +1621,6 @@
             toolStripStatusLabel1.Name = "toolStripStatusLabel1";
             toolStripStatusLabel1.Size = new Size(158, 20);
             toolStripStatusLabel1.Text = "Ready for Experiments";
-            // 
-            // bMPDSToolStripMenuItem
-            // 
-            bMPDSToolStripMenuItem.Enabled = false;
-            bMPDSToolStripMenuItem.Name = "bMPDSToolStripMenuItem";
-            bMPDSToolStripMenuItem.Size = new Size(188, 26);
-            bMPDSToolStripMenuItem.Text = "BMP (DS)";
             // 
             // Main
             // 

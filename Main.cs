@@ -2110,5 +2110,26 @@ namespace Tool_Hazard
                 }
             }
         }
+
+        private void bSSToolStripMenuItem3_Click(object sender, EventArgs e)
+        {
+            var editor = new BssViewerForm();
+            editor.Show(this);
+        }
+
+        private void vHVBToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                // Just create and show the form. 
+                // The SampleManagerForm will handle prompting for files in its Shown event.
+                VHVB_Tool managerForm = new VHVB_Tool();
+                managerForm.Show();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to open Sample Manager: {ex.Message}", "Form Load Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
     }
 }
