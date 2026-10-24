@@ -72,20 +72,11 @@ namespace Tool_Hazard.Biohazard.BSS
 
         public static byte[] EncodeFromBitmap(Bitmap source, int width, int height, int quant)
         {
-            // Safe stub: do not crash tool; but this does NOT generate original-valid BS.
-            // When you’re ready, we’ll port the encoder from unpacker/mdec/bs.cpp (Huffman tables + writer).
             if (source == null) throw new ArgumentNullException(nameof(source));
             if (width <= 0 || height <= 0) throw new ArgumentOutOfRangeException(nameof(width));
             if (quant < 1 || quant > 63) throw new ArgumentOutOfRangeException(nameof(quant), "Quant must be 1..63.");
-
-            // Return a minimal "valid-shaped" BS header + padding; decode will show grey.
-            // (This is just so Import/Re-encode buttons don’t explode while decode work is ongoing.)
-            byte[] outBytes = new byte[0x8000];
-            BinaryPrimitives.WriteUInt16LittleEndian(outBytes.AsSpan(0, 2), 0x0000);
-            BinaryPrimitives.WriteUInt16LittleEndian(outBytes.AsSpan(2, 2), VLC_ID);
-            BinaryPrimitives.WriteUInt16LittleEndian(outBytes.AsSpan(4, 2), (ushort)quant);
-            BinaryPrimitives.WriteUInt16LittleEndian(outBytes.AsSpan(6, 2), 0x0002);
-            return outBytes;
+            throw new NotSupportedException(
+                "BSS encoding is not implemented yet. The previous placeholder produced invalid game data, so import and re-encode are disabled until a real encoder is available.");
         }
 
         // --------------------------------------------
@@ -94,166 +85,132 @@ namespace Tool_Hazard.Biohazard.BSS
 
         private static ushort[] VlcDepackToRlWords(byte[] bs)
         {
-            // BS header in the compressed chunk:
-            // [0]=length (16-bit)
-            // [1]=id (0x3800)
-            // [2]=quant
-            // [3]=version
             if (bs.Length < 8) throw new InvalidDataException("BS too small.");
 
             ushort length = ReadU16LE(bs, 0);
             ushort id = ReadU16LE(bs, 2);
+            ushort quant = ReadU16LE(bs, 4);
+            ushort version = ReadU16LE(bs, 6);
             if (id != VLC_ID)
                 throw new InvalidDataException($"Not a BS/VLC stream (id=0x{id:X4}).");
+            if (version is not 2 and not 3)
+                throw new InvalidDataException($"Unsupported PlayStation BS version {version}.");
 
-            // In depack_vlc.c:
-            // dstBufLen = (length+2) * sizeof(Uint32) * 2
-            // total_length = dstBufLen >> 1  (count of Uint16)
             int totalU16 = checked((length + 2) * 4);
-            if (totalU16 < 16) totalU16 = 16;
+            if (totalU16 < 2)
+                throw new InvalidDataException("Invalid BS output length.");
 
             ushort[] dst = new ushort[totalU16];
-            dst[0] = (ushort)Math.Min(0xFFFF, totalU16);
+            dst[0] = length;
             dst[1] = VLC_ID;
-
-            // Reader starts AFTER the 4 header words (8 bytes)
             var br = new BsBitReader(bs, byteOffset: 8);
-
             int dstOffset = 2;
+            int block = 0;
+            int[] lastDc = new int[3];
+            int qCode = quant << 10;
 
             while (dstOffset < totalU16)
             {
-                // q_scale (10 bits + sign bit)
-                int qScale = br.GetBits(10);
-                if (br.GetBit() != 0) qScale = -qScale;
+                uint code = version == 2
+                    ? (uint)(br.ShowBits(10) | (10 << 16))
+                    : DecodeVersion3Dc(ref br, block, lastDc);
+                code = (code & 0xFFFF03FFu) | (uint)qCode;
 
-                // dc (10 bits + sign bit)
-                int dc = br.GetBits(10);
-                if (br.GetBit() != 0) dc = -dc;
-
-                dst[dstOffset++] = (ushort)(((qScale & 0x3F) << 10) | (dc & 0x03FF));
-
-                // AC coefficients
-                while (dstOffset < totalU16)
+                while (true)
                 {
-                    uint code = GetVlcCode(ref br);
+                    if (dstOffset >= totalU16)
+                        return dst;
 
-                    int run = (int)((code >> 10) & 0x3F);
-                    int level = (int)(code & 0x03FF);
-                    int bits = (int)(code >> 16);
+                    dst[dstOffset++] = (ushort)code;
+                    br.FlushBits((int)(code >> 16));
 
-                    // sign extend 10-bit
-                    if ((level & 0x200) != 0) level -= 0x400;
-
-                    // Special marker 0xFE00 used for ESC/EOB in Mandin tables
-                    if (((ushort)code) == EOB)
+                    code = DecodeAcCode(ref br);
+                    if (code == EndStreamCode)
                     {
-                        // EOB: run==63 (in Mandin)
-                        if (run == 63)
-                        {
+                        while (dstOffset < totalU16)
                             dst[dstOffset++] = EOB;
-                            break;
-                        }
-
-                        // ESC: read explicit 16-bit run/level
-                        // (Mandin uses ESC as 0xFE00 with run==0)
-                        int esc = br.GetBits(16);
-                        dst[dstOffset++] = (ushort)esc;
-                        continue;
+                        return dst;
                     }
+                    if (code == EobCode)
+                        break;
 
-                    // normal RL
-                    dst[dstOffset++] = (ushort)(((run & 0x3F) << 10) | (level & 0x03FF));
-
-                    // End of block when run==63 in many streams; but Mandin ends via EOB code.
+                    if (code == EscapeCode)
+                    {
+                        br.FlushBits(6);
+                        code = (uint)(br.ShowBits(16) | (16 << 16));
+                    }
                 }
 
-                // Safety: if we ran out, stop
-                if (!br.HasMore) break;
+                if (dstOffset < totalU16)
+                    dst[dstOffset++] = EOB;
+                br.FlushBits(2);
+                block = (block + 1) % 6;
             }
-
-            // Pad the rest with EOB to keep decoder safe
-            for (int i = dstOffset; i < totalU16; i++)
-                dst[i] = EOB;
 
             return dst;
         }
 
-        private static uint GetVlcCode(ref BsBitReader br)
+        private static uint DecodeVersion3Dc(ref BsBitReader br, int block, int[] lastDc)
         {
-            // This matches Mandin's table selection strategy
-            int bits = br.ShowBits(16);
+            int prefix = br.ShowBits(6);
+            uint code;
+            int channel = block < 2 ? block : 2;
 
-            // "next" table fast path
-            if ((bits & 0xF000) >= 0x4000)
+            if (block >= 2)
             {
-                int idx = ((bits >> 12) - 4) * 2;
-                if (idx < 0) idx = 0;
-                if (idx >= VLCtabnext.Length) idx = VLCtabnext.Length - 2;
-                uint code = VLCtabnext[idx];
-                br.FlushBits((int)(code >> 16));
-                return code;
-            }
-
-            // choose VLCtab by leading zeros
-            int lz = CountLeadingZeros16(bits);
-
-            uint c;
-            if (lz <= 5)
-            {
-                int idx = ((bits >> 8) & 0x3F);
-                idx &= 0x3B;
-                idx >>= 1;
-                idx *= 2;
-                if (idx < 0) idx = 0;
-                if (idx >= VLCtab0.Length) idx = VLCtab0.Length - 2;
-                c = VLCtab0[idx];
-            }
-            else if (lz == 6)
-            {
-                int idx = (bits >> 6) & 0x0F;
-                if (idx > 7) idx = 7;
-                idx *= 2;
-                c = VLCtab1[idx];
-            }
-            else if (lz == 7)
-            {
-                int idx = (bits >> 4) & 0x1F;
-                idx &= 0x0F;
-                idx *= 2;
-                c = VLCtab2[idx];
-            }
-            else if (lz == 8)
-            {
-                int idx = (bits >> 3) & 0x1F;
-                idx &= 0x0F;
-                idx *= 2;
-                c = VLCtab3[idx];
-            }
-            else if (lz == 9)
-            {
-                int idx = (bits >> 2) & 0x1F;
-                idx &= 0x0F;
-                idx *= 2;
-                c = VLCtab4[idx];
-            }
-            else if (lz == 10)
-            {
-                int idx = (bits >> 1) & 0x1F;
-                idx &= 0x0F;
-                idx *= 2;
-                c = VLCtab5[idx];
+                if (prefix < DcYTable.Length)
+                    code = DcYTable[prefix];
+                else
+                    code = DecodeLongDc(ref br, 3, yChannel: true);
             }
             else
             {
-                int idx = (bits >> 0) & 0x1F;
-                idx &= 0x0F;
-                idx *= 2;
-                c = VLCtab6[idx];
+                if (prefix < DcUvTable.Length)
+                    code = DcUvTable[prefix];
+                else
+                    code = DecodeLongDc(ref br, 4, yChannel: false);
             }
 
-            br.FlushBits((int)(c >> 16));
-            return c;
+            int delta = Sign10((int)code) * 4;
+            int dc = lastDc[channel] + delta;
+            lastDc[channel] = dc;
+            return (code & 0xFFFF0000u) | (uint)(dc & 0x3FF);
+        }
+
+        private static uint DecodeLongDc(ref BsBitReader br, int startBits, bool yChannel)
+        {
+            int bit = startBits;
+            while ((br.ShowBits(bit) & 1) != 0 && bit < 16)
+                bit++;
+
+            if (yChannel)
+                bit++;
+
+            int totalBits = yChannel ? bit * 2 - 1 : bit * 2;
+            int value = br.ShowBits(totalBits) & ((1 << bit) - 1);
+            if ((value & (1 << (bit - 1))) == 0)
+                value -= (1 << bit) - 1;
+            return (uint)((totalBits << 16) | (value & 0x3FF));
+        }
+
+        private static uint DecodeAcCode(ref BsBitReader br)
+        {
+            int code = br.ShowBits(17);
+            if (code >= 1 << 15) return VlcNext[(code >> 12) - 8];
+            if (code >= 1 << 11)
+            {
+                int index = (code >> 8) - 8;
+                if ((uint)index >= (uint)Vlc0.Length)
+                    throw new InvalidDataException($"Invalid VLC table-0 index {index} (bits=0x{code:X5}).");
+                return Vlc0[index];
+            }
+            if (code >= 1 << 10) return Vlc1[(code >> 6) - 16];
+            if (code >= 1 << 9) return Vlc2[(code >> 4) - 32];
+            if (code >= 1 << 8) return Vlc3[(code >> 3) - 32];
+            if (code >= 1 << 7) return Vlc4[(code >> 2) - 32];
+            if (code >= 1 << 6) return Vlc5[(code >> 1) - 32];
+            if (code >= 1 << 5) return Vlc6[code - 32];
+            return EndStreamCode;
         }
 
         // --------------------------------------------
@@ -313,7 +270,7 @@ namespace Tool_Hazard.Biohazard.BSS
 
             for (int y = 0; y < height; y++)
             {
-                int srcY = (height - 1) - y; // vertical flip
+                int srcY = y;
                 int srcOff = srcY * sliceRowBytes;
 
                 int dstOff = y * dstRowBytes + dstXBytes;
@@ -422,9 +379,11 @@ namespace Tool_Hazard.Biohazard.BSS
                     int b = y + ((1815 * cb) >> 10);
 
                     int o = dstRow + xx * 3;
-                    dst[o + 0] = (byte)Clamp8(b + 128);
+                    // The PlayStation decoder's 24-bit output is RGB byte order.
+                    // Format24bppRgb stores scanlines as BGR, so reverse R/B here.
+                    dst[o + 0] = (byte)Clamp8(r + 128);
                     dst[o + 1] = (byte)Clamp8(g + 128);
-                    dst[o + 2] = (byte)Clamp8(r + 128);
+                    dst[o + 2] = (byte)Clamp8(b + 128);
                 }
             }
         }
@@ -451,56 +410,85 @@ namespace Tool_Hazard.Biohazard.BSS
 
         private static void InitIqTab(ref MdecContext ctxt)
         {
-            // iqtab[i] = bs_iqtab[i] * aanscales[i] >> 12
-            // We build aanscales via AAN outer product (standard fast IDCT scaling)
+            // The BS quantizer is paired with the AAN integer IDCT below.
+            // Folding its scale factors into this table is part of the format.
             for (int i = 0; i < 64; i++)
-            {
-                int v = BsIqTab[i] * AanScales[i];
-                ctxt.IqTab[i] = v >> 12;
-                if (ctxt.IqTab[i] == 0) ctxt.IqTab[i] = 1;
-            }
+                ctxt.IqTab[i] = (BsIqTab[i] * AanScales[i]) >> 12;
         }
 
         // --------------------------------------------
-        // IDCT (simple, stable)
+        // AAN fast integer IDCT used by the original BS/MDEC decoder.
         // --------------------------------------------
 
         private static void Idct8x8InPlace(int[] data, int baseIndex)
         {
-            // Simple double IDCT (quality > speed). Good enough to validate correctness of bitstream.
-            double[] tmp = new double[64];
-
-            // rows
-            for (int y = 0; y < 8; y++)
+            // Pass 1: columns.
+            for (int col = 0; col < 8; col++)
             {
-                int row = baseIndex + y * 8;
-                for (int x = 0; x < 8; x++)
+                int p = baseIndex + col;
+                if ((data[p + 8] | data[p + 16] | data[p + 24] | data[p + 32] |
+                     data[p + 40] | data[p + 48] | data[p + 56]) == 0)
                 {
-                    double sum = 0.0;
-                    for (int u = 0; u < 8; u++)
-                    {
-                        double cu = (u == 0) ? 1.0 / Math.Sqrt(2.0) : 1.0;
-                        sum += cu * data[row + u] * Math.Cos(((2 * x + 1) * u * Math.PI) / 16.0);
-                    }
-                    tmp[y * 8 + x] = sum / 2.0;
+                    int dc = data[p];
+                    for (int row = 0; row < 8; row++) data[p + row * 8] = dc;
+                    continue;
                 }
+
+                IdctPass(data, p, 8, false);
             }
 
-            // cols
-            for (int x = 0; x < 8; x++)
+            // Pass 2: rows and final scale-down (PASS1_BITS + 3 = 5).
+            for (int row = 0; row < 8; row++)
             {
-                for (int y = 0; y < 8; y++)
+                int p = baseIndex + row * 8;
+                if ((data[p + 1] | data[p + 2] | data[p + 3] | data[p + 4] |
+                     data[p + 5] | data[p + 6] | data[p + 7]) == 0)
                 {
-                    double sum = 0.0;
-                    for (int v = 0; v < 8; v++)
-                    {
-                        double cv = (v == 0) ? 1.0 / Math.Sqrt(2.0) : 1.0;
-                        sum += cv * tmp[v * 8 + x] * Math.Cos(((2 * y + 1) * v * Math.PI) / 16.0);
-                    }
-                    data[baseIndex + y * 8 + x] = (int)Math.Round(sum / 2.0);
+                    int dc = data[p] >> 5;
+                    for (int col = 0; col < 8; col++) data[p + col] = dc;
+                    continue;
                 }
+
+                IdctPass(data, p, 1, true);
             }
         }
+
+        private static void IdctPass(int[] data, int p, int step, bool finalPass)
+        {
+            int z10 = data[p] + data[p + 4 * step];
+            int z11 = data[p] - data[p + 4 * step];
+            int z13 = data[p + 2 * step] + data[p + 6 * step];
+            int z12 = MultiplyIdct(data[p + 2 * step] - data[p + 6 * step], 362) - z13;
+
+            int tmp0 = z10 + z13;
+            int tmp3 = z10 - z13;
+            int tmp1 = z11 + z12;
+            int tmp2 = z11 - z12;
+
+            z13 = data[p + 3 * step] + data[p + 5 * step];
+            z10 = data[p + 3 * step] - data[p + 5 * step];
+            z11 = data[p + step] + data[p + 7 * step];
+            z12 = data[p + step] - data[p + 7 * step];
+
+            int z5 = MultiplyIdct(z12 - z10, 473);
+            int tmp7 = z11 + z13;
+            int tmp6 = MultiplyIdct(z10, 669) + z5 - tmp7;
+            int tmp5 = MultiplyIdct(z11 - z13, 362) - tmp6;
+            int tmp4 = MultiplyIdct(z12, 277) - z5 + tmp5;
+
+            int shift = finalPass ? 5 : 0;
+            data[p] = (tmp0 + tmp7) >> shift;
+            data[p + 7 * step] = (tmp0 - tmp7) >> shift;
+            data[p + step] = (tmp1 + tmp6) >> shift;
+            data[p + 6 * step] = (tmp1 - tmp6) >> shift;
+            data[p + 2 * step] = (tmp2 + tmp5) >> shift;
+            data[p + 5 * step] = (tmp2 - tmp5) >> shift;
+            data[p + 4 * step] = (tmp3 + tmp4) >> shift;
+            data[p + 3 * step] = (tmp3 - tmp4) >> shift;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int MultiplyIdct(int value, int constant) => (value * constant) >> 8;
 
         // --------------------------------------------
         // Helpers / structs
@@ -670,92 +658,85 @@ namespace Tool_Hazard.Biohazard.BSS
             27,29,35,38,46,56,69,83
         };
 
-        // AAN scales outer-product (standard libjpeg fast-idct scaling)
-        private static readonly int[] AanScales = BuildAanScales();
-
-        private static int[] BuildAanScales()
+        private static readonly int[] AanScales = new int[64]
         {
-            // base factors
-            int[] f = new int[8] { 16384, 22725, 21407, 19266, 16384, 12873, 8867, 4520 };
-            int[] a = new int[64];
-            int k = 0;
-            for (int y = 0; y < 8; y++)
-                for (int x = 0; x < 8; x++)
-                    a[k++] = (f[y] * f[x] + 8192) >> 14;
-            return a;
+            16384,22725,21407,19266,16384,12873, 8867,4520,
+            22725,31521,29692,26722,22725,17855,12299,6270,
+            21407,29692,27969,25172,21407,16819,11585,5906,
+            19266,26722,25172,22654,19266,15137,10426,5315,
+            16384,22725,21407,19266,16384,12873, 8867,4520,
+            12873,17855,16819,15137,12873,10114, 6967,3552,
+             8867,12299,11585,10426, 8867, 6967, 4799,2446,
+             4520, 6270, 5906, 5315, 4520, 3552, 2446,1247
+        };
+
+        private static uint Code(int run, int level, int bits) =>
+            (uint)((run << 10) | (level & 0x3FF) | (bits << 16));
+
+        private static readonly uint EscapeCode = Code(63, 0, 6);
+        private static readonly uint EobCode = Code(63, 512, 2);
+        private const uint EndStreamCode = uint.MaxValue;
+        private static readonly uint[] VlcNext = BuildVlcNext();
+        private static readonly uint[] Vlc0 = BuildVlc0();
+        private static readonly uint[] Vlc1 = Pairs((16,1),(5,2),(0,7),(2,3),(1,4),(15,1),(14,1),(4,2), 10);
+        private static readonly uint[] Vlc2 = Pairs((0,11),(8,2),(4,3),(0,10),(2,4),(7,2),(21,1),(20,1),(0,9),(19,1),(18,1),(1,5),(3,3),(0,8),(6,2),(17,1), 12);
+        private static readonly uint[] Vlc3 = Pairs((10,2),(9,2),(5,3),(3,4),(2,5),(1,7),(1,6),(0,15),(0,14),(0,13),(0,12),(26,1),(25,1),(24,1),(23,1),(22,1), 13);
+        private static readonly uint[] Vlc4 = Pairs((0,31),(0,30),(0,29),(0,28),(0,27),(0,26),(0,25),(0,24),(0,23),(0,22),(0,21),(0,20),(0,19),(0,18),(0,17),(0,16), 14);
+        private static readonly uint[] Vlc5 = Pairs((0,40),(0,39),(0,38),(0,37),(0,36),(0,35),(0,34),(0,33),(0,32),(1,14),(1,13),(1,12),(1,11),(1,10),(1,9),(1,8), 15);
+        private static readonly uint[] Vlc6 = Pairs((1,18),(1,17),(1,16),(1,15),(6,3),(16,2),(15,2),(14,2),(13,2),(12,2),(11,2),(31,1),(30,1),(29,1),(28,1),(27,1), 16);
+        private static readonly uint[] DcYTable = BuildDcYTable();
+        private static readonly uint[] DcUvTable = BuildDcUvTable();
+
+        private static uint[] Pairs((int run, int level) a,(int,int) b,(int,int) c,(int,int) d,(int,int) e,(int,int) f,(int,int) g,(int,int) h, int bits) => Pairs(new[] { a,b,c,d,e,f,g,h }, bits);
+        private static uint[] Pairs((int run, int level) a,(int,int) b,(int,int) c,(int,int) d,(int,int) e,(int,int) f,(int,int) g,(int,int) h,(int,int) i,(int,int) j,(int,int) k,(int,int) l,(int,int) m,(int,int) n,(int,int) o,(int,int) p, int bits) => Pairs(new[] { a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p }, bits);
+        private static uint[] Pairs(IEnumerable<(int run, int level)> values, int bits) =>
+            values.SelectMany(v => new[] { Code(v.run, v.level, bits + 1), Code(v.run, -v.level, bits + 1) }).ToArray();
+
+        private static uint[] BuildVlcNext()
+        {
+            var t = new List<uint>();
+            AddPair(t, 0, 2, 4); AddPair(t, 2, 1, 4);
+            AddTwice(t, 1, 1, 3); AddTwice(t, 1, -1, 3);
+            AddRepeat(t, 63, 512, 2, 8);
+            AddTwice(t, 0, 1, 2); AddTwice(t, 0, 1, 2);
+            AddTwice(t, 0, -1, 2); AddTwice(t, 0, -1, 2);
+            return t.ToArray();
         }
 
-        // --------------------------------------------
-        // VLC tables expanded from depack_vlc.c macros
-        // (These are required for correct depack)
-        // --------------------------------------------
-
-        private static readonly uint[] VLCtabnext = new uint[]
+        private static uint[] BuildVlc0()
         {
-            0x00050002u, 0x000503FEu, 0x00050801u, 0x00050BFFu, 0x00040401u, 0x00040401u,
-            0x000407FFu, 0x000407FFu, 0x0002FE00u, 0x0002FE00u, 0x0002FE00u, 0x0002FE00u,
-            0x0002FE00u, 0x0002FE00u, 0x0002FE00u, 0x0002FE00u, 0x00030001u, 0x00030001u,
-            0x00030001u, 0x00030001u, 0x000303FFu, 0x000303FFu, 0x000303FFu, 0x000303FFu,
-        };
+            var t = new List<uint>();
+            AddRepeat(t,63,0,6,8); AddTwice(t,2,2,7); AddTwice(t,2,-2,7); AddTwice(t,9,1,7); AddTwice(t,9,-1,7);
+            AddTwice(t,0,4,7); AddTwice(t,0,-4,7); AddTwice(t,8,1,7); AddTwice(t,8,-1,7);
+            foreach (var v in new[] {(7,1),(7,1),(7,-1),(7,-1),(6,1),(6,1),(6,-1),(6,-1),
+                                      (1,2),(1,2),(1,-2),(1,-2),(5,1),(5,1),(5,-1),(5,-1)})
+                AddTwice(t,v.Item1,v.Item2,6);
+            foreach (var v in new[] {(13,1),(0,6),(12,1),(11,1),(3,2),(1,3),(0,5),(10,1)}) AddPair(t,v.Item1,v.Item2,8);
+            foreach (var v in new[] {(0,3),(0,-3),(4,1),(4,-1),(3,1),(3,-1)}) AddRepeat(t,v.Item1,v.Item2,6,8);
+            return t.ToArray();
+        }
 
-        private static readonly uint[] VLCtab0 = new uint[]
+        private static uint[] BuildDcYTable()
         {
-            // 120 entries (60*2) expanded from Mandin table macros
-            0x0006FC00u, 0x0006FC00u, 0x0006FC00u, 0x0006FC00u, 0x0007FC00u, 0x0007FC00u,
-            0x0007FC00u, 0x0007FC00u, 0x00070002u, 0x0007FFFEu, 0x00070009u, 0x0007FFF7u,
-            0x00070000u, 0x0007FFFCu, 0x00070008u, 0x0007FFF8u, 0x00060007u, 0x0006FFF9u,
-            0x00060006u, 0x0006FFFAu, 0x00060001u, 0x0006FFFFu, 0x00060005u, 0x0006FFFBu,
-            0x00060003u, 0x0006FFFDu, 0x00060004u, 0x0006FFFCu, 0x0005000Fu, 0x0005FFF1u,
-            0x00050010u, 0x0005FFF0u, 0x0005000Eu, 0x0005FFF2u, 0x00050011u, 0x0005FFEFu,
-            0x0005000Du, 0x0005FFF3u, 0x00050012u, 0x0005FFEEu, 0x0005000Cu, 0x0005FFF4u,
-            0x00050013u, 0x0005FFEDu, 0x0005000Bu, 0x0005FFF5u, 0x00050014u, 0x0005FFEcu,
-            0x0004001Bu, 0x0004FFE5u, 0x0004001Au, 0x0004FFE6u, 0x00040019u, 0x0004FFE7u,
-            0x00040018u, 0x0004FFE8u, 0x00040017u, 0x0004FFE9u, 0x00040016u, 0x0004FFEAu,
-            0x00040015u, 0x0004FFEbu, 0x00040014u, 0x0004FFEcu, 0x00040013u, 0x0004FFEDu,
-            0x00040012u, 0x0004FFEEu, 0x00040011u, 0x0004FFEFu, 0x00040010u, 0x0004FFF0u,
-            0x00030022u, 0x0003FFDEu, 0x00030021u, 0x0003FFDFu, 0x00030020u, 0x0003FFE0u,
-            0x0003001Fu, 0x0003FFE1u, 0x0003001Eu, 0x0003FFE2u, 0x0003001Du, 0x0003FFE3u,
-            0x0003001Cu, 0x0003FFE4u, 0x0003001Bu, 0x0003FFE5u, 0x0003001Au, 0x0003FFE6u,
-            0x00030019u, 0x0003FFE7u, 0x00030018u, 0x0003FFE8u, 0x00030017u, 0x0003FFE9u,
-            0x00030016u, 0x0003FFEAu, 0x00030015u, 0x0003FFEbu, 0x00030014u, 0x0003FFEcu,
-            0x00030013u, 0x0003FFEDu, 0x00030012u, 0x0003FFEEu, 0x00030011u, 0x0003FFEFu,
-            0x00030010u, 0x0003FFF0u, 0x0003000Fu, 0x0003FFF1u, 0x0003000Eu, 0x0003FFF2u,
-        };
+            var t = new List<uint>(48);
+            AddRepeat(t,0,-1,3,8); AddRepeat(t,0,1,3,8);
+            AddRepeat(t,0,-3,4,4); AddRepeat(t,0,-2,4,4); AddRepeat(t,0,2,4,4); AddRepeat(t,0,3,4,4);
+            AddRepeat(t,0,0,3,8);
+            foreach (int v in new[] {-7,-6,-5,-4,4,5,6,7}) t.Add(Code(0,v,6));
+            return t.ToArray();
+        }
 
-        private static readonly uint[] VLCtab1 = new uint[]
+        private static uint[] BuildDcUvTable()
         {
-            0x000A0010u, 0x000AFFF0u, 0x000A0001u, 0x000AFFFFu, 0x000A0002u, 0x000AFFFEu, 0x000A0003u, 0x000AFFFDu,
-            0x000A0004u, 0x000AFFFCu, 0x000A0005u, 0x000AFFFBu, 0x000A0006u, 0x000AFFFAu, 0x000A0007u, 0x000AFFF9u,
-        };
+            var t = new List<uint>(56);
+            AddRepeat(t,0,0,2,16); AddRepeat(t,0,-1,3,8); AddRepeat(t,0,1,3,8);
+            AddRepeat(t,0,-3,4,4); AddRepeat(t,0,-2,4,4); AddRepeat(t,0,2,4,4); AddRepeat(t,0,3,4,4);
+            foreach (int v in new[] {-7,-6,-5,-4,4,5,6,7}) t.Add(Code(0,v,6));
+            return t.ToArray();
+        }
 
-        private static readonly uint[] VLCtab2 = new uint[]
-        {
-            0x000C000Bu, 0x000CFFF5u, 0x000C0008u, 0x000CFFF8u, 0x000C0004u, 0x000CFFFCu, 0x000C000Au, 0x000CFFF6u,
-            0x000C0009u, 0x000CFFF7u, 0x000C0007u, 0x000CFFF9u, 0x000C0006u, 0x000CFFFAu, 0x000C0005u, 0x000CFFFBu,
-        };
-
-        private static readonly uint[] VLCtab3 = new uint[]
-        {
-            0x000D000Au, 0x000DFFF6u, 0x000D0009u, 0x000DFFF7u, 0x000D0005u, 0x000DFFFBu, 0x000D0003u, 0x000DFFFDu,
-            0x000D0008u, 0x000DFFF8u, 0x000D0007u, 0x000DFFF9u, 0x000D0006u, 0x000DFFFAu, 0x000D0004u, 0x000DFFFCu,
-        };
-
-        private static readonly uint[] VLCtab4 = new uint[]
-        {
-            0x000E001Fu, 0x000EFFE1u, 0x000E001Eu, 0x000EFFE2u, 0x000E001Du, 0x000EFFE3u, 0x000E001Cu, 0x000EFFE4u,
-            0x000E001Bu, 0x000EFFE5u, 0x000E001Au, 0x000EFFE6u, 0x000E0019u, 0x000EFFE7u, 0x000E0018u, 0x000EFFE8u,
-        };
-
-        private static readonly uint[] VLCtab5 = new uint[]
-        {
-            0x000F0028u, 0x000FFFD8u, 0x000F0027u, 0x000FFFD9u, 0x000F0026u, 0x000FFFDAu, 0x000F0025u, 0x000FFFDBu,
-            0x000F0024u, 0x000FFFDCu, 0x000F0023u, 0x000FFFDDu, 0x000F0022u, 0x000FFFDEu, 0x000F0021u, 0x000FFFDFu,
-        };
-
-        private static readonly uint[] VLCtab6 = new uint[]
-        {
-            0x00100012u, 0x0010FFEEu, 0x00100011u, 0x0010FFEFu, 0x00100010u, 0x0010FFF0u, 0x0010000Fu, 0x0010FFF1u,
-            0x0010000Eu, 0x0010FFF2u, 0x0010000Du, 0x0010FFF3u, 0x0010000Cu, 0x0010FFF4u, 0x0010000Bu, 0x0010FFF5u,
-        };
+        private static void AddPair(List<uint> t, int run, int level, int bits) { t.Add(Code(run,level,bits+1)); t.Add(Code(run,-level,bits+1)); }
+        private static void AddTwice(List<uint> t, int run, int level, int bits) { t.Add(Code(run,level,bits+1)); t.Add(Code(run,level,bits+1)); }
+        private static void AddRepeat(List<uint> t, int run, int level, int bits, int count) { for (int i=0;i<count;i++) t.Add(Code(run,level,bits)); }
     }
 }

@@ -8,6 +8,11 @@ namespace Tool_Hazard.Forms
         public BssViewerForm()
         {
             InitializeComponent();
+            btnImportReplace.Enabled = false;
+            btnReencode.Enabled = false;
+            importImagePNGBMPToolStripMenuItem.Enabled = false;
+            btnPrev.Enabled = false;
+            btnNext.Enabled = false;
         }
 
         private string _currentBssPath = "";
@@ -40,6 +45,9 @@ namespace Tool_Hazard.Forms
             _currentFrame = 0;
             ShowFrame(_currentFrame);
 
+            btnPrev.Enabled = false;
+            btnNext.Enabled = count > 1;
+
             SetStatus($"Loaded: {Path.GetFileName(_currentBssPath)} | {count} background(s) | Type={_bssType} | Chunk={chunkSize:X}");
         }
 
@@ -50,6 +58,8 @@ namespace Tool_Hazard.Forms
             if (index >= _frames.Length) index = _frames.Length - 1;
 
             _currentFrame = index;
+            btnPrev.Enabled = index > 0;
+            btnNext.Enabled = index < _frames.Length - 1;
 
             var (w, h, _) = GetSettings();
 
@@ -66,17 +76,15 @@ namespace Tool_Hazard.Forms
 
         private static int DetectBssType(byte[] data)
         {
-            // BSSM logic:
-            // if size == 0x8000 => type 1
-            // else check DWORD at 0x7FF0 and 0x8000: if first==0 and second>0 => type 1 else type 2
             if (data.Length == 0x8000) return 1;
-            if (data.Length < 0x8004) return 1;
-
-            uint d0 = BitConverter.ToUInt32(data, 0x7FF0);
-            uint d1 = BitConverter.ToUInt32(data, 0x8000);
-
-            return (d0 == 0 && d1 > 0) ? 1 : 2;
+            if (HasBsHeader(data, 0x8000)) return 1;
+            if (data.Length >= 0x10000 && data.Length % 0x10000 == 0) return 2;
+            if (data.Length % 0x8000 == 0) return 1;
+            throw new InvalidDataException("The file is not aligned as a Resident Evil BSS container.");
         }
+
+        private static bool HasBsHeader(byte[] data, int offset) =>
+            offset + 8 <= data.Length && BitConverter.ToUInt16(data, offset + 2) == 0x3800;
 
         private void SetStatus(string text)
         {
