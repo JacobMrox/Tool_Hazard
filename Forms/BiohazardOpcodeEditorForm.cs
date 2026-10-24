@@ -103,6 +103,9 @@ namespace Tool_Hazard.Forms
 
         private static void ApplyParamsTextToInstruction(ScdInstruction inst, string text)
         {
+            if (inst.RawBytes is not null)
+                throw new InvalidOperationException("This row is preserved raw data. Choose a known opcode before editing its parameters.");
+
             // Expected: "Aot=0 SCE=1 SAT=33 X=-28032 ..."
             var parts = text.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
@@ -168,6 +171,9 @@ namespace Tool_Hazard.Forms
         }
         private string FormatParams(ScdInstruction inst)
         {
+            if (inst.RawBytes is not null)
+                return "RAW=" + Convert.ToHexString(inst.RawBytes);
+
             if (inst.Definition.Bytes == null)
                 return "";
 
@@ -259,6 +265,7 @@ namespace Tool_Hazard.Forms
 
             inst.Opcode = newOpcode;
             inst.Definition = def;
+            inst.RawBytes = null;
             inst.Parameters.Clear();
 
             foreach (var kv in def.Bytes!)
@@ -427,8 +434,8 @@ namespace Tool_Hazard.Forms
 
             _currentScdPath = ofd.FileName;
 
-            _instructions = ScdParser.Parse(
-                File.OpenRead(_currentScdPath));
+            using var stream = File.OpenRead(_currentScdPath);
+            _instructions = ScdParser.Parse(stream, _version);
 
             RefreshGrid();
             SetStatus($"Loaded {_currentScdPath}");
@@ -442,7 +449,7 @@ namespace Tool_Hazard.Forms
                 return;
             }
 
-            ScdCompiler_2.Write(_currentScdPath, _instructions);
+            SaveValidated(_currentScdPath);
         }
 
         //Save SCD AS
@@ -458,7 +465,40 @@ namespace Tool_Hazard.Forms
                 return;
 
             _currentScdPath = sfd.FileName;
-            ScdCompiler_2.Write(_currentScdPath, _instructions);
+            SaveValidated(_currentScdPath);
+        }
+
+        private void SaveValidated(string path)
+        {
+            try
+            {
+                var output = ScdCompiler_2.ToBytes(_instructions);
+
+                // The editor must be able to parse and emit the result without changing
+                // a byte before it is allowed to replace a working room procedure.
+                List<ScdInstruction> verification;
+                using (var stream = new MemoryStream(output, writable: false))
+                    verification = ScdParser.Parse(stream, _version);
+                var verified = ScdCompiler_2.ToBytes(verification);
+                if (!output.AsSpan().SequenceEqual(verified))
+                    throw new InvalidDataException("The edited SCD failed round-trip validation and was not saved.");
+
+                if (File.Exists(path))
+                    File.Copy(path, path + ".bak", overwrite: true);
+
+                var tempPath = path + ".tmp";
+                File.WriteAllBytes(tempPath, output);
+                File.Move(tempPath, path, overwrite: true);
+                SetStatus($"Saved and validated {path}");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"The SCD was not saved.\n\n{ex.Message}",
+                    "SCD validation failed",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
         }
 
         //Biohazard version select

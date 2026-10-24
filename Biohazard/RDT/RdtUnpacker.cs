@@ -11,22 +11,29 @@ namespace Tool_Hazard.Biohazard.RDT
         private readonly BioVersion _version;
         private readonly string _inputPath;
         private readonly string _outputPath;
+        private readonly bool _showDialogs;
 
         public string BasePath => _outputPath;
         public string FileName => Path.GetFileName(_inputPath);
 
-        public RdtUnpacker(BioVersion version, string inputPath, string outputPath)
+        public RdtUnpacker(BioVersion version, string inputPath, string outputPath, bool showDialogs = true)
         {
             _version = version;
             _inputPath = inputPath;
             _outputPath = outputPath;
+            _showDialogs = showDialogs;
         }
 
-        public void Unpack()
+        public bool Unpack()
         {
             try
             {
                 Directory.CreateDirectory(BasePath);
+
+                // Keep an exact, immutable base for source-preserving repacks.  The
+                // decomposed files are an editable view, not a complete description
+                // of every byte and aliasing relationship in an RDT.
+                WriteFile("_source.RDT", File.ReadAllBytes(_inputPath));
 
                 if (_version == BioVersion.Biohazard1)
                 {
@@ -140,11 +147,16 @@ namespace Tool_Hazard.Biohazard.RDT
                         WriteFile("Sound/snd0.vbx", BitConverter.GetBytes(vboff));
                 }
 
-                MessageBox.Show($"{_version} RDT unpacked successfully!", "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                if (_showDialogs)
+                    MessageBox.Show($"{_version} RDT unpacked successfully!", "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return true;
             }
             catch (Exception ex)
             {
+                if (!_showDialogs)
+                    throw;
                 MessageBox.Show($"Unpack error:\n\n{ex}", "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
             }
         }
 
@@ -210,13 +222,13 @@ namespace Tool_Hazard.Biohazard.RDT
         private void WriteMsgs(MsgLanguage lng, string fmt, MsgList list)
         {
             for (int i = 0; i < list.Count; i++)
-                WriteFile(string.Format(fmt, i), list[i].Data);
+                WriteFileAllowEmpty(string.Format(fmt, i), list[i].Data.Span);
         }
 
         private void WriteScds(string fmt, ScdProcedureList list)
         {
             for (int i = 0; i < list.Count; i++)
-                WriteFile(string.Format(fmt, i), list[i].Data.Span.ToArray());
+                WriteFileAllowEmpty(string.Format(fmt, i), list[i].Data.Span);
         }
 
         private void WriteModelTextureIndexTable(string relativePath, List<ModelTextureIndex> list)
@@ -257,6 +269,12 @@ namespace Tool_Hazard.Biohazard.RDT
         private void WriteFile(string relativePath, ReadOnlySpan<byte> data)
         {
             if (data.Length == 0) return;
+
+            WriteFileAllowEmpty(relativePath, data);
+        }
+
+        private void WriteFileAllowEmpty(string relativePath, ReadOnlySpan<byte> data)
+        {
 
             var destPath = Path.Combine(BasePath, relativePath);
             var dir = Path.GetDirectoryName(destPath);

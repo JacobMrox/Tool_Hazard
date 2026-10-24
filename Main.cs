@@ -645,8 +645,8 @@ namespace Tool_Hazard
             Directory.CreateDirectory(outputDir);
 
             var unpacker = new RdtUnpacker(BioVersion.Biohazard1, ofd.FileName, outputDir);
-            unpacker.Unpack();
-            UpdateStatus("Bio1 RDT unpacked successfully!");
+            if (unpacker.Unpack())
+                UpdateStatus("Bio1 RDT unpacked successfully!");
 
         }
         private void repackToolStripMenuItem5_Click(object sender, EventArgs e)
@@ -667,8 +667,8 @@ namespace Tool_Hazard
             }
 
             var packer = new RdtPacker(BioVersion.Biohazard1, folder);
-            packer.Pack();
-            UpdateStatus("Bio1 RDT repacked successfully!");
+            if (packer.Pack())
+                UpdateStatus("Bio1 RDT repacked successfully!");
         }
         private void Bio2RDTunpackToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -689,8 +689,8 @@ namespace Tool_Hazard
             Directory.CreateDirectory(outputDir);
 
             var unpacker = new RdtUnpacker(BioVersion.Biohazard2, ofd.FileName, outputDir);
-            unpacker.Unpack();
-            UpdateStatus("Bio2 RDT unpacked successfully!");
+            if (unpacker.Unpack())
+                UpdateStatus("Bio2 RDT unpacked successfully!");
         }
 
         private void Bio2RDTrepackToolStripMenuItem_Click_1(object sender, EventArgs e)
@@ -711,8 +711,8 @@ namespace Tool_Hazard
             }
 
             var packer = new RdtPacker(BioVersion.Biohazard2, folder);
-            packer.Pack();
-            UpdateStatus("Bio2 RDT repacked successfully!");
+            if (packer.Pack())
+                UpdateStatus("Bio2 RDT repacked successfully!");
         }
 
         //Bio3 RDT Unpack (RdtUnpacker.cs)
@@ -734,8 +734,8 @@ namespace Tool_Hazard
             Directory.CreateDirectory(outputDir);
 
             var unpacker = new RdtUnpacker(BioVersion.Biohazard3, ofd.FileName, outputDir);
-            unpacker.Unpack();
-            UpdateStatus("Bio3 RDT unpacked successfully!");
+            if (unpacker.Unpack())
+                UpdateStatus("Bio3 RDT unpacked successfully!");
         }
 
         private void Bio3RDTrepackToolStripMenuItem_Click(object sender, EventArgs e)
@@ -756,8 +756,8 @@ namespace Tool_Hazard
             }
 
             var packer = new RdtPacker(BioVersion.Biohazard3, folder);
-            packer.Pack();
-            UpdateStatus("Bio3 RDT repacked successfully!");
+            if (packer.Pack())
+                UpdateStatus("Bio3 RDT repacked successfully!");
         }
 
         //RDT Conversion menu hooks

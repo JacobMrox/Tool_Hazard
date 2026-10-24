@@ -12,21 +12,32 @@ namespace Tool_Hazard.Biohazard.RDT
         private readonly BioVersion _version;
         private readonly string _folderPath; // folder that contains header.ini and subfolders
         private readonly string _targetPath;
+        private readonly bool _showDialogs;
 
         public string BasePath => _folderPath;
         public string TargetPath => _targetPath;
 
-        public RdtPacker(BioVersion version, string folderPath)
+        public RdtPacker(BioVersion version, string folderPath, bool showDialogs = true)
         {
             _version = version;
             _folderPath = folderPath;
             _targetPath = Path.Combine(folderPath, "packed.RDT");
+            _showDialogs = showDialogs;
         }
 
-        public void Pack()
+        public bool Pack()
         {
             try
             {
+                var sourcePath = Path.Combine(BasePath, "_source.RDT");
+                if (_version != BioVersion.Biohazard1 && File.Exists(sourcePath))
+                {
+                    PackRdt2FromSource(sourcePath);
+                    if (_showDialogs)
+                        MessageBox.Show($"{_version} RDT repacked successfully!\n\n{TargetPath}", "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return true;
+                }
+
                 if (_version == BioVersion.Biohazard1)
                 {
                     var b = new Rdt1.Builder();
@@ -160,12 +171,102 @@ namespace Tool_Hazard.Biohazard.RDT
                     File.WriteAllBytes(TargetPath, rdt.Data.ToArray());
                 }
 
-                MessageBox.Show($"{_version} RDT repacked successfully!\n\n{TargetPath}", "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                if (_showDialogs)
+                    MessageBox.Show($"{_version} RDT repacked successfully!\n\n{TargetPath}", "Success!", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return true;
             }
             catch (Exception ex)
             {
+                if (!_showDialogs)
+                    throw;
                 MessageBox.Show($"Pack error:\n\n{ex}", "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
             }
+        }
+
+        private void PackRdt2FromSource(string sourcePath)
+        {
+            var source = new Rdt2(_version, sourcePath);
+            var b = source.ToBuilder();
+
+            // Header fields remain editable, but begin with the exact source values.
+            if (File.Exists(Path.Combine(BasePath, "header.ini")))
+                b.Header = ReadHeaderIni_Rdt2();
+
+            ReplaceIfPresent("block.blk", value => b.BLK = value);
+            ReplaceIfPresent("camera.rid", value => b.RID = new Rid(value));
+            ReplaceIfPresent("zone.rvd", value => b.RVD = value);
+            ReplaceIfPresent("light.lit", value => b.LIT = value);
+            ReplaceIfPresent("sprite.pri", value => b.PRI = value);
+            ReplaceIfPresent("collision.sca", value => b.SCA = value);
+            ReplaceIfPresent("floor.flr", value => b.FLR = value);
+
+            var fltPath = Path.Combine(BasePath, "floor.flt");
+            if (File.Exists(fltPath))
+            {
+                var data = File.ReadAllBytes(fltPath);
+                if (data.Length != sizeof(ushort))
+                    throw new InvalidDataException("floor.flt must contain exactly two bytes.");
+                b.FLRTerminator = BitConverter.ToUInt16(data, 0);
+            }
+
+            if (HasSequence("Script/init{0:00}.scd"))
+                b.SCDINIT = ReadScds("Script/init{0:00}.scd");
+            if (_version == BioVersion.Biohazard2 && HasSequence("Script/main{0:00}.scd"))
+                b.SCDMAIN = ReadScds("Script/main{0:00}.scd");
+
+            if (HasSequence("Message/ja{0:00}.msg"))
+                b.MSGJA = ReadMsgsPreservingPrefix(b.MSGJA, MsgLanguage.Japanese, "Message/ja{0:00}.msg");
+            if (HasSequence("Message/en{0:00}.msg"))
+                b.MSGEN = ReadMsgsPreservingPrefix(b.MSGEN, MsgLanguage.English, "Message/en{0:00}.msg");
+
+            ReplaceIfPresent("scroll.tim", value => b.TIMSCROLL = new Tim(value));
+            UpdateObjectsPreservingTable(b);
+            UpdateEffectsPreservingSource(b);
+
+            if (_version == BioVersion.Biohazard2)
+                ReplaceIfPresent("Animation/anim.rbj", value => b.RBJ = new Rbj(_version, value));
+            if (_version == BioVersion.Biohazard3)
+                ReplaceIfPresent("Effect/effect.etd", value => b.ETD = new Etd(value));
+
+            ReplaceIfPresent("Sound/snd0.edt", value => b.EDT = value);
+            ReplaceIfPresent("Sound/snd0.vh", value => b.VH = value);
+            ReplaceIfPresent("Sound/snd0.vb", value => b.VB = value);
+
+            var vbxPath = Path.Combine(BasePath, "Sound", "snd0.vbx");
+            if (File.Exists(vbxPath))
+            {
+                var data = File.ReadAllBytes(vbxPath);
+                if (data.Length != sizeof(int))
+                    throw new InvalidDataException("snd0.vbx must contain exactly four bytes.");
+                b.VBOFFSET = BitConverter.ToInt32(data, 0);
+            }
+
+            b.Header = FixCounts_Rdt2(b.Header, b);
+            var output = b.ToRdt().Data.ToArray();
+            ValidateRepackedRdt(output);
+            File.WriteAllBytes(TargetPath, output);
+        }
+
+        private void ReplaceIfPresent(string relativePath, Action<byte[]> replace)
+        {
+            var path = Path.Combine(BasePath, relativePath);
+            if (File.Exists(path))
+                replace(File.ReadAllBytes(path));
+        }
+
+        private bool HasSequence(string format) =>
+            File.Exists(Path.Combine(BasePath, string.Format(format, 0)));
+
+        private void ValidateRepackedRdt(byte[] data)
+        {
+            // Construction parses every section and catches out-of-range offsets.
+            // A second build must also be byte-stable; otherwise the room contains
+            // an inconsistent count, table, or offset that should never reach game data.
+            var parsed = new Rdt2(_version, data);
+            var rebuilt = parsed.ToBuilder().ToRdt().Data.Span;
+            if (!rebuilt.SequenceEqual(data))
+                throw new InvalidDataException("Repacked RDT failed the byte-stability validation pass.");
         }
 
         // ---------------- Count Fixups ----------------
@@ -251,6 +352,133 @@ namespace Tool_Hazard.Biohazard.RDT
 
         // ---------------- Objects (RE2/RE3) ----------------
 
+        private void UpdateObjectsPreservingTable(Rdt2.Builder b)
+        {
+            for (var i = 0; i < b.EmbeddedObjectModelTable.Count; i++)
+            {
+                var entry = b.EmbeddedObjectModelTable[i];
+                var modelIndex = entry.Model;
+                var textureIndex = entry.Texture;
+
+                var md1Path = Path.Combine(BasePath, $"Object/object{i:00}.md1");
+                if (File.Exists(md1Path))
+                {
+                    var data = File.ReadAllBytes(md1Path);
+                    var unchanged = modelIndex >= 0 &&
+                        b.EmbeddedObjectMd1[modelIndex].Data.Span.SequenceEqual(data);
+                    if (!unchanged)
+                    {
+                        if (modelIndex >= 0 && b.EmbeddedObjectModelTable.Count(x => x.Model == modelIndex) == 1)
+                        {
+                            b.EmbeddedObjectMd1[modelIndex] = new Md1(data);
+                        }
+                        else
+                        {
+                            modelIndex = b.EmbeddedObjectMd1.Count;
+                            b.EmbeddedObjectMd1.Add(new Md1(data));
+                        }
+                    }
+                }
+
+                var timPath = Path.Combine(BasePath, $"Object/object{i:00}.tim");
+                if (File.Exists(timPath))
+                {
+                    var data = File.ReadAllBytes(timPath);
+                    var unchanged = textureIndex >= 0 &&
+                        b.EmbeddedObjectTim[textureIndex].Data.Span.SequenceEqual(data);
+                    if (!unchanged)
+                    {
+                        if (textureIndex >= 0 && b.EmbeddedObjectModelTable.Count(x => x.Texture == textureIndex) == 1)
+                        {
+                            b.EmbeddedObjectTim[textureIndex] = new Tim(data);
+                        }
+                        else
+                        {
+                            textureIndex = b.EmbeddedObjectTim.Count;
+                            b.EmbeddedObjectTim.Add(new Tim(data));
+                        }
+                    }
+                }
+
+                b.EmbeddedObjectModelTable[i] = new ModelTextureIndex(modelIndex, textureIndex);
+            }
+
+            // Consecutive files after the source table are intentional additions.
+            for (var i = b.EmbeddedObjectModelTable.Count; i < byte.MaxValue; i++)
+            {
+                var md1 = ReadFile($"Object/object{i:00}.md1");
+                var tim = ReadFile($"Object/object{i:00}.tim");
+                if (md1.Length == 0 && tim.Length == 0)
+                    break;
+
+                var modelIndex = -1;
+                var textureIndex = -1;
+                if (md1.Length != 0)
+                {
+                    modelIndex = b.EmbeddedObjectMd1.Count;
+                    b.EmbeddedObjectMd1.Add(new Md1(md1));
+                }
+                if (tim.Length != 0)
+                {
+                    textureIndex = b.EmbeddedObjectTim.Count;
+                    b.EmbeddedObjectTim.Add(new Tim(tim));
+                }
+                b.EmbeddedObjectModelTable.Add(new ModelTextureIndex(modelIndex, textureIndex));
+            }
+        }
+
+        private void UpdateEffectsPreservingSource(Rdt2.Builder b)
+        {
+            var tablePath = Path.Combine(BasePath, "Effect", "effect.tbl");
+            var tableChanged = false;
+            byte[]? tableData = null;
+            if (File.Exists(tablePath))
+            {
+                tableData = File.ReadAllBytes(tablePath);
+                tableChanged = !b.EspTable.Data.Span.SequenceEqual(tableData);
+            }
+
+            var effects = b.EmbeddedEffects.Effects.ToArray().ToList();
+            var effectsChanged = false;
+            for (var id = 0; id < byte.MaxValue; id++)
+            {
+                var effPath = Path.Combine(BasePath, "Effect", $"esp{id:X2}.eff");
+                var timPath = Path.Combine(BasePath, "Effect", $"esp{id:X2}.tim");
+                if (!File.Exists(effPath) && !File.Exists(timPath))
+                    continue;
+
+                var index = effects.FindIndex(x => x.Id == id);
+                var oldEff = index >= 0 ? effects[index].Eff : new Eff();
+                var oldTim = index >= 0 ? effects[index].Tim : new Tim();
+                var newEff = File.Exists(effPath) ? new Eff(File.ReadAllBytes(effPath)) : oldEff;
+                var newTim = File.Exists(timPath) ? new Tim(File.ReadAllBytes(timPath)) : oldTim;
+
+                if (oldEff.Data.Span.SequenceEqual(newEff.Data.Span) &&
+                    oldTim.Data.Span.SequenceEqual(newTim.Data.Span))
+                    continue;
+
+                effectsChanged = true;
+                var replacement = new EmbeddedEffect((byte)id, newEff, newTim);
+                if (index >= 0)
+                    effects[index] = replacement;
+                else
+                    effects.Add(replacement);
+            }
+
+            if (tableChanged && effectsChanged)
+                throw new InvalidDataException("Both effect.tbl and individual ESP files changed. Edit one representation at a time.");
+
+            if (tableChanged)
+            {
+                b.EspTable = new EspTable(_version, tableData!);
+            }
+            else if (effectsChanged)
+            {
+                b.EmbeddedEffects = new EmbeddedEffectList(_version, effects.ToArray());
+                b.EspTable = new EspTable();
+            }
+        }
+
         private void ReadObjects(Rdt2.Builder b)
         {
             // Keep your “object00.md1/tim” convention, but compute table entries strictly.
@@ -289,10 +517,11 @@ namespace Tool_Hazard.Biohazard.RDT
         private ScdProcedureList ReadScds(string fmt)
         {
             var builder = new ScdProcedureList.Builder(_version);
-            for (int i = 0; i < 100; i++)
+            for (int i = 0; i < 512; i++)
             {
-                var data = ReadFile(string.Format(fmt, i));
-                if (data.Length == 0) break;
+                var path = Path.Combine(BasePath, string.Format(fmt, i));
+                if (!File.Exists(path)) break;
+                var data = File.ReadAllBytes(path);
                 builder.Procedures.Add(new ScdProcedure(_version, data));
             }
             return builder.ToProcedureList();
@@ -301,13 +530,51 @@ namespace Tool_Hazard.Biohazard.RDT
         private MsgList ReadMsgs(MsgLanguage lng, string fmt)
         {
             var builder = new MsgList.Builder();
-            for (int i = 0; i < 100; i++)
+            for (int i = 0; i < 512; i++)
             {
-                var data = ReadFile(string.Format(fmt, i));
-                if (data.Length == 0) break;
+                var path = Path.Combine(BasePath, string.Format(fmt, i));
+                if (!File.Exists(path)) break;
+                var data = File.ReadAllBytes(path);
                 builder.Messages.Add(new Msg(_version, lng, data));
             }
             return builder.ToMsgList();
+        }
+
+        private MsgList ReadMsgsPreservingPrefix(MsgList source, MsgLanguage lng, string fmt)
+        {
+            var messages = new List<byte[]>();
+            for (var i = 0; i < 512; i++)
+            {
+                var path = Path.Combine(BasePath, string.Format(fmt, i));
+                if (!File.Exists(path))
+                    break;
+                messages.Add(File.ReadAllBytes(path));
+            }
+
+            if (messages.Count != source.Count || source.Data.Length < sizeof(ushort))
+                return ReadMsgs(lng, fmt);
+
+            var firstOffset = BitConverter.ToUInt16(source.Data.Span.Slice(0, sizeof(ushort)));
+            var normalTableLength = messages.Count * sizeof(ushort);
+            if (firstOffset < normalTableLength || firstOffset > source.Data.Length)
+                return ReadMsgs(lng, fmt);
+
+            using var ms = new MemoryStream();
+            using var bw = new BinaryWriter(ms);
+            var offset = (int)firstOffset;
+            foreach (var message in messages)
+            {
+                bw.Write((ushort)offset);
+                offset += message.Length;
+            }
+
+            // A few retail PC rooms contain a deliberate byte between the offset
+            // table and the first message. Preserve that prefix exactly.
+            bw.Write(source.Data.Slice(normalTableLength, firstOffset - normalTableLength).Span);
+            foreach (var message in messages)
+                bw.Write(message);
+
+            return new MsgList(_version, lng, ms.ToArray());
         }
 
         // ---------------- RE1 helpers ----------------

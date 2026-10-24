@@ -18,6 +18,12 @@ namespace Tool_Hazard.Biohazard.SCD.Opcodes
 
         [JsonPropertyName("Bytes")]
         public Dictionary<string, OpcodeField>? Bytes { get; set; }
+
+        [JsonIgnore]
+        public int BinaryLength { get; set; }
+
+        [JsonIgnore]
+        public bool IsRawLayout { get; set; }
     }
 
     public class OpcodeField

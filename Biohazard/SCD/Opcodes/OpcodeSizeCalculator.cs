@@ -4,6 +4,9 @@
     {
         public static int Calculate(OpcodeDefinition def)
         {
+            if (def.BinaryLength > 0)
+                return def.BinaryLength;
+
             int size = 1; // opcode byte itself
 
             foreach (var field in def.Bytes)
