@@ -37,7 +37,7 @@
             // 
             // button1
             // 
-            button1.Location = new Point(12, 417);
+            button1.Location = new Point(12, 449);
             button1.Name = "button1";
             button1.Size = new Size(120, 23);
             button1.TabIndex = 1;
@@ -47,7 +47,7 @@
             // 
             // button2
             // 
-            button2.Location = new Point(138, 417);
+            button2.Location = new Point(138, 449);
             button2.Name = "button2";
             button2.Size = new Size(120, 23);
             button2.TabIndex = 2;
@@ -57,7 +57,7 @@
             // 
             // button4
             // 
-            button4.Location = new Point(264, 417);
+            button4.Location = new Point(264, 449);
             button4.Name = "button4";
             button4.Size = new Size(150, 23);
             button4.TabIndex = 4;
@@ -67,7 +67,7 @@
             // 
             // button5
             // 
-            button5.Location = new Point(420, 417);
+            button5.Location = new Point(420, 449);
             button5.Name = "button5";
             button5.Size = new Size(150, 23);
             button5.TabIndex = 5;
@@ -80,7 +80,7 @@
             listViewSamples.Dock = DockStyle.Top;
             listViewSamples.Location = new Point(0, 0);
             listViewSamples.Name = "listViewSamples";
-            listViewSamples.Size = new Size(582, 411);
+            listViewSamples.Size = new Size(800, 443);
             listViewSamples.TabIndex = 6;
             listViewSamples.UseCompatibleStateImageBehavior = false;
             // 
@@ -88,14 +88,14 @@
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(582, 448);
+            ClientSize = new Size(800, 480);
             Controls.Add(listViewSamples);
             Controls.Add(button5);
             Controls.Add(button4);
             Controls.Add(button2);
             Controls.Add(button1);
             Name = "VHVB_Tool";
-            Text = "VHVB_Tool";
+            Text = "RE1-3 VH/VB Player";
             ResumeLayout(false);
         }
 

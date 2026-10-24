@@ -1,12 +1,32 @@
 ﻿namespace Tool_Hazard.Forms
 {
-    public class SampleHeader { public int Index { get; set; } public int Offset { get; set; } public int Size { get; set; } }
+    using NAudio.Wave;
+
+    public class SampleHeader
+    {
+        public int Index { get; set; }
+        public int VabNumber { get; set; }
+        public int Offset { get; set; }
+        public int Size { get; set; }
+        public int SampleRate { get; set; } = 44100;
+        public int PcmSampleCount { get; set; }
+        public int LoopStartSample { get; set; } = -1;
+        public int LoopEndSample { get; set; } = -1;
+        public int ToneReferenceCount { get; set; }
+
+        public bool IsLooping => LoopStartSample >= 0 && LoopEndSample > LoopStartSample;
+        public TimeSpan Duration => SampleRate > 0
+            ? TimeSpan.FromSeconds(PcmSampleCount / (double)SampleRate)
+            : TimeSpan.Zero;
+    }
     public partial class VHVB_Tool : Form
     {
-        private string _vhPath;
-        private string _vbPath;
+        private string? _vhPath;
+        private string? _vbPath;
         private readonly PS1AudioService _audioService;
-        private List<SampleHeader> _sampleHeaders;
+        private List<SampleHeader> _sampleHeaders = new();
+        private IWavePlayer? _waveOut;
+        private WaveStream? _waveStream;
         private bool _isInitialLoad = true;
         public VHVB_Tool()
         {
@@ -30,17 +50,23 @@
             listViewSamples.View = View.Details;
             listViewSamples.GridLines = true;
             listViewSamples.FullRowSelect = true;
+            listViewSamples.MultiSelect = false;
+            listViewSamples.DoubleClick += (_, _) => PlaySelectedSample();
 
             // Add columns if they don't exist in Designer
             if (listViewSamples.Columns.Count == 0)
             {
-                listViewSamples.Columns.Add("Index", 60);
+                listViewSamples.Columns.Add("Sample", 70);
                 listViewSamples.Columns.Add("Offset", 100);
                 listViewSamples.Columns.Add("Size", 100);
+                listViewSamples.Columns.Add("Rate", 80);
+                listViewSamples.Columns.Add("Duration", 90);
+                listViewSamples.Columns.Add("Loop", 70);
+                listViewSamples.Columns.Add("Tones", 65);
             }
         }
 
-        private void SampleManagerForm_Shown(object sender, EventArgs e)
+        private void SampleManagerForm_Shown(object? sender, EventArgs e)
         {
             if (_isInitialLoad)
             {
@@ -61,17 +87,23 @@
 
             try
             {
-                string dir = Path.GetDirectoryName(_vhPath);
+                string dir = Path.GetDirectoryName(_vhPath) ?? string.Empty;
                 string name = Path.GetFileNameWithoutExtension(_vhPath);
                 string suggestedVb = Path.Combine(dir, name + ".vb");
 
-                using (OpenFileDialog ofd = new OpenFileDialog())
+                if (File.Exists(suggestedVb))
                 {
-                    ofd.Filter = "VB Voice Body File (*.vb)|*.vb|All files (*.*)|*.*";
-                    ofd.Title = "Select the corresponding VB Voice Body File";
-                    if (File.Exists(suggestedVb)) ofd.FileName = suggestedVb;
-
-                    if (ofd.ShowDialog() != DialogResult.OK) { if (closeOnCancel) this.Close(); return; }
+                    _vbPath = suggestedVb;
+                }
+                else
+                {
+                    using OpenFileDialog ofd = new OpenFileDialog
+                    {
+                        Filter = "VB Voice Body File (*.vb)|*.vb|All files (*.*)|*.*",
+                        Title = "Select the corresponding VB Voice Body File",
+                        FileName = suggestedVb
+                    };
+                    if (ofd.ShowDialog() != DialogResult.OK) { if (closeOnCancel) Close(); return; }
                     _vbPath = ofd.FileName;
                 }
             }
@@ -93,18 +125,23 @@
 
             try
             {
+                StopPlayback();
                 _sampleHeaders = _audioService.ReadVhFile(_vhPath, _vbPath);
 
                 for (int i = 0; i < _sampleHeaders.Count; i++)
                 {
                     var header = _sampleHeaders[i];
-                    var item = new ListViewItem(header.Index.ToString());
+                    var item = new ListViewItem(header.Index.ToString("D3"));
                     item.SubItems.Add($"0x{header.Offset:X8}");
                     item.SubItems.Add($"{header.Size:N0} Bytes");
+                    item.SubItems.Add($"{header.SampleRate:N0} Hz");
+                    item.SubItems.Add($"{header.Duration.TotalSeconds:0.000} s");
+                    item.SubItems.Add(header.IsLooping ? "Yes" : "No");
+                    item.SubItems.Add(header.ToneReferenceCount.ToString());
                     item.Tag = header;
                     listViewSamples.Items.Add(item);
                 }
-                this.Text = $"Sample Manager: {Path.GetFileName(_vhPath)} ({_sampleHeaders.Count} Samples)";
+                Text = $"RE1-3 VH/VB Player - {Path.GetFileName(_vhPath)} ({_sampleHeaders.Count} samples)";
             }
             catch (Exception ex)
             {
@@ -122,38 +159,66 @@
 
         private void button2_Click(object sender, EventArgs e)
         {
-            //Play Sample [in form]
-            if (listViewSamples.SelectedItems.Count == 0) return;
-            var h = listViewSamples.SelectedItems[0].Tag as SampleHeader;
-            if (h == null) return;
+            if (_waveOut != null)
+            {
+                StopPlayback();
+                return;
+            }
+
+            PlaySelectedSample();
+        }
+
+        private void PlaySelectedSample()
+        {
+            if (listViewSamples.SelectedItems.Count == 0 || string.IsNullOrEmpty(_vbPath)) return;
+            if (listViewSamples.SelectedItems[0].Tag is not SampleHeader h) return;
 
             try
             {
-                var pcm = _audioService.DecodeSampleToPcm(_vbPath, h);
-
-                // temp wav
-                string temp = Path.Combine(Path.GetTempPath(), $"ToolHazard_{Guid.NewGuid():N}.wav");
-                // NOTE: you currently hardcode 22050 in ExtractSampleToWav; keep it consistent for now.
-                // Later we’ll add per-sample rate or pitch extraction.
-                typeof(PS1AudioService)
-                    .GetMethod("WriteWavFile", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                    ?.Invoke(_audioService, new object[] { pcm, temp, 22050 });
-
-                using (var sp = new System.Media.SoundPlayer(temp))
+                StopPlayback();
+                var wavData = _audioService.CreateSampleWav(_vbPath, h);
+                var memory = new MemoryStream(wavData, writable: false);
+                _waveStream = new WaveFileReader(memory);
+                _waveOut = new WaveOutEvent();
+                _waveOut.Init(_waveStream);
+                _waveOut.PlaybackStopped += (_, _) =>
                 {
-                    sp.Play();
-                }
+                    if (!IsDisposed && IsHandleCreated)
+                        BeginInvoke(new Action(StopPlayback));
+                };
+                _waveOut.Play();
+                button2.Text = "Stop";
             }
             catch (Exception ex)
             {
+                StopPlayback();
                 MessageBox.Show($"Play failed: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private void StopPlayback()
+        {
+            try { _waveOut?.Stop(); } catch { }
+
+            _waveStream?.Dispose();
+            _waveStream = null;
+
+            _waveOut?.Dispose();
+            _waveOut = null;
+
+            button2.Text = "Play Sample";
+        }
+
+        protected override void OnFormClosed(FormClosedEventArgs e)
+        {
+            StopPlayback();
+            base.OnFormClosed(e);
         }
 
         private void button4_Click(object sender, EventArgs e)
         {
             //Extract Sample ADPCM or Wav (user can choose)
-            if (listViewSamples.SelectedItems.Count == 0) return;
+            if (listViewSamples.SelectedItems.Count == 0 || string.IsNullOrEmpty(_vbPath)) return;
             var h = listViewSamples.SelectedItems[0].Tag as SampleHeader;
             if (h == null) return;
 
@@ -185,7 +250,7 @@
         private void button5_Click(object sender, EventArgs e)
         {
             //Replace sample with ADPC or Wav (user can choose)
-            if (listViewSamples.SelectedItems.Count == 0) return;
+            if (listViewSamples.SelectedItems.Count == 0 || string.IsNullOrEmpty(_vhPath) || string.IsNullOrEmpty(_vbPath)) return;
             var h = listViewSamples.SelectedItems[0].Tag as SampleHeader;
             if (h == null) return;
 
