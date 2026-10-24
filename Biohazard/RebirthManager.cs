@@ -4,6 +4,7 @@ using SevenZipExtractor;
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Net;
+using System.Text.Json;
 
 public class RebirthManager
 {
@@ -37,11 +38,20 @@ public class RebirthManager
     private const string RE3_URL =
         "https://classicrebirth.com/index.php/download/resident-evil-3-classic-rebirth/?wpdmdl=1327&refresh=691b622263d691763402274";
 
-    private const string RE_SUR =
-        "https://classicrebirth.com/index.php/download/resident-evil-3-classic-rebirth/?wpdmdl=1327&refresh=691b622263d691763402274";
+    private const string RE_SUR_RELEASE_API =
+        "https://api.github.com/repos/JacobMrox/Gun-Survivor-Classic-Rebirth/releases/latest";
 
     // Classic Rebirth DLL
     private const string CR_DLL = "ddraw.dll";
+    private const string SURVIVOR_CR_DLL = "d3d8.dll";
+    private const string SURVIVOR_VERSION_FILE = ".gun-survivor-classic-rebirth-version";
+
+    private sealed class DownloadInfo
+    {
+        public string Url { get; init; } = string.Empty;
+        public string? Version { get; init; }
+        public string? AssetName { get; init; }
+    }
 
 
     // -------------------------------------------------------------------------
@@ -79,20 +89,71 @@ public class RebirthManager
     // Get download URL
     // -------------------------------------------------------------------------
 
-    private string GetDownloadUrl(BioVersion version)
+    private async Task<DownloadInfo> GetDownloadInfo(
+        BioVersion version,
+        bool preferEnglishPackage)
     {
-        return version switch
+        if (version != BioVersion.BiohazardSurvivor)
         {
-            BioVersion.Biohazard1 => RE1_URL,
-            BioVersion.Biohazard2 => RE2_URL,
-            BioVersion.Biohazard3 => RE3_URL,
-            BioVersion.BiohazardSurvivor => RE_SUR,
+            string url = version switch
+            {
+                BioVersion.Biohazard1 => RE1_URL,
+                BioVersion.Biohazard2 => RE2_URL,
+                BioVersion.Biohazard3 => RE3_URL,
+                _ => throw new ArgumentOutOfRangeException(
+                    nameof(version), version, "Unsupported BioVersion.")
+            };
 
-            _ => throw new ArgumentOutOfRangeException(
-                nameof(version),
-                version,
-                "Unsupported BioVersion."
-            )
+            return new DownloadInfo { Url = url };
+        }
+
+        SetStatus("Checking the latest Gun Survivor Classic Rebirth release...");
+
+        using var response = await _http.GetAsync(RE_SUR_RELEASE_API);
+        response.EnsureSuccessStatusCode();
+
+        await using var stream = await response.Content.ReadAsStreamAsync();
+        using var document = await JsonDocument.ParseAsync(stream);
+        JsonElement root = document.RootElement;
+
+        string? releaseVersion = root.TryGetProperty("tag_name", out var tag)
+            ? tag.GetString()
+            : null;
+
+        var candidates = new List<(string Name, string Url, bool English)>();
+        if (root.TryGetProperty("assets", out var assets))
+        {
+            foreach (var asset in assets.EnumerateArray())
+            {
+                string name = asset.GetProperty("name").GetString() ?? string.Empty;
+                bool supported = name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) ||
+                                 name.EndsWith(".7z", StringComparison.OrdinalIgnoreCase) ||
+                                 name.EndsWith(".rar", StringComparison.OrdinalIgnoreCase);
+                if (!supported)
+                    continue;
+
+                string? url = asset.GetProperty("browser_download_url").GetString();
+                bool english = name.Contains("-EN.", StringComparison.OrdinalIgnoreCase) ||
+                               name.Contains("English", StringComparison.OrdinalIgnoreCase);
+
+                if (!string.IsNullOrWhiteSpace(url))
+                    candidates.Add((name, url, english));
+            }
+        }
+
+        var selected = candidates.FirstOrDefault(x => x.English == preferEnglishPackage);
+        if (string.IsNullOrEmpty(selected.Url))
+            selected = candidates.FirstOrDefault();
+
+        if (string.IsNullOrEmpty(selected.Url))
+            throw new InvalidDataException(
+                "The latest Gun Survivor Classic Rebirth release has no supported ZIP, 7z, or RAR asset.");
+
+        return new DownloadInfo
+        {
+            Url = selected.Url,
+            Version = releaseVersion,
+            AssetName = selected.Name
         };
     }
 
@@ -101,10 +162,13 @@ public class RebirthManager
     // Installation detection
     // -------------------------------------------------------------------------
 
-    public bool IsInstalled(string gameDir)
+    private static string GetPatchDllName(BioVersion version) =>
+        version == BioVersion.BiohazardSurvivor ? SURVIVOR_CR_DLL : CR_DLL;
+
+    public bool IsInstalled(BioVersion version, string gameDir)
     {
         return File.Exists(
-            Path.Combine(gameDir, CR_DLL)
+            Path.Combine(gameDir, GetPatchDllName(version))
         );
     }
 
@@ -113,9 +177,20 @@ public class RebirthManager
     // Get installed DLL version
     // -------------------------------------------------------------------------
 
-    public string GetInstalledVersion(string gameDir)
+    public string GetInstalledVersion(BioVersion version, string gameDir)
     {
-        string dll = Path.Combine(gameDir, CR_DLL);
+        if (version == BioVersion.BiohazardSurvivor)
+        {
+            string marker = Path.Combine(gameDir, SURVIVOR_VERSION_FILE);
+            if (File.Exists(marker))
+            {
+                string markerVersion = File.ReadAllText(marker).Trim().Split('|')[0];
+                if (!string.IsNullOrEmpty(markerVersion))
+                    return markerVersion;
+            }
+        }
+
+        string dll = Path.Combine(gameDir, GetPatchDllName(version));
 
         if (!File.Exists(dll))
             return null;
@@ -131,6 +206,16 @@ public class RebirthManager
         }
     }
 
+    private static string? GetInstalledPackageName(string gameDir)
+    {
+        string marker = Path.Combine(gameDir, SURVIVOR_VERSION_FILE);
+        if (!File.Exists(marker))
+            return null;
+
+        string[] parts = File.ReadAllText(marker).Trim().Split('|', 2);
+        return parts.Length == 2 ? parts[1] : null;
+    }
+
 
     // -------------------------------------------------------------------------
     // Detect archive type
@@ -138,6 +223,7 @@ public class RebirthManager
     // Returns:
     // "7z"
     // "zip"
+    // "rar"
     // null = unknown/invalid
     // -------------------------------------------------------------------------
 
@@ -182,6 +268,17 @@ public class RebirthManager
                 return "7z";
             }
 
+            // RAR 4/5 signature: 52 61 72 21 1A 07
+            if (header[0] == 0x52 &&
+                header[1] == 0x61 &&
+                header[2] == 0x72 &&
+                header[3] == 0x21 &&
+                header[4] == 0x1A &&
+                header[5] == 0x07)
+            {
+                return "rar";
+            }
+
             // -------------------------------------------------------------
             // ZIP signatures:
             //
@@ -213,10 +310,10 @@ public class RebirthManager
     // -------------------------------------------------------------------------
     // Get DLL version from archive
     //
-    // Supports both ZIP and 7z.
+    // Supports ZIP, 7z, and RAR.
     // -------------------------------------------------------------------------
 
-    private string GetArchiveDllVersion(string archivePath)
+    private string GetArchiveDllVersion(BioVersion version, string archivePath)
     {
         string archiveType = GetArchiveType(archivePath);
 
@@ -247,7 +344,7 @@ public class RebirthManager
                             continue;
 
                         if (!entry.Name.Equals(
-                                CR_DLL,
+                                GetPatchDllName(version),
                                 StringComparison.OrdinalIgnoreCase))
                         {
                             continue;
@@ -255,7 +352,7 @@ public class RebirthManager
 
                         string dllPath = Path.Combine(
                             tempDir,
-                            CR_DLL
+                            GetPatchDllName(version)
                         );
 
                         entry.ExtractToFile(
@@ -275,10 +372,10 @@ public class RebirthManager
             }
 
             // =============================================================
-            // 7Z
+            // 7Z / RAR
             // =============================================================
 
-            else if (archiveType == "7z")
+            else if (archiveType == "7z" || archiveType == "rar")
             {
                 using (var archive =
                     new ArchiveFile(archivePath))
@@ -292,7 +389,7 @@ public class RebirthManager
                             Path.GetFileName(entry.FileName);
 
                         if (!fileName.Equals(
-                                CR_DLL,
+                                GetPatchDllName(version),
                                 StringComparison.OrdinalIgnoreCase))
                         {
                             continue;
@@ -300,7 +397,7 @@ public class RebirthManager
 
                         string dllPath = Path.Combine(
                             tempDir,
-                            CR_DLL
+                            GetPatchDllName(version)
                         );
 
                         entry.Extract(dllPath);
@@ -410,7 +507,7 @@ public class RebirthManager
 
                 MessageBox.Show(
                     "The downloaded file is not a recognised " +
-                    "ZIP or 7z archive.\n\n" +
+                    "ZIP, 7z, or RAR archive.\n\n" +
 
                     $"Content-Type: {contentType}\n" +
                     $"Downloaded size: {size:N0} bytes\n\n" +
@@ -473,7 +570,8 @@ public class RebirthManager
 
     public async Task Install(
         BioVersion version,
-        string gameDir)
+        string gameDir,
+        bool preferEnglishPackage = false)
     {
         SetStatus($"Preparing {version} Classic Rebirth...");
 
@@ -489,8 +587,21 @@ public class RebirthManager
             return;
         }
 
-        string url =
-            GetDownloadUrl(version);
+        DownloadInfo downloadInfo;
+        try
+        {
+            downloadInfo = await GetDownloadInfo(version, preferEnglishPackage);
+        }
+        catch (Exception ex)
+        {
+            SetStatus("Could not check the latest Classic Rebirth release.");
+            MessageBox.Show(
+                $"Could not find the latest Classic Rebirth download:\n\n{ex.Message}",
+                "Release Check Failed",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error);
+            return;
+        }
 
         string tempArchive = Path.Combine(
             Path.GetTempPath(),
@@ -507,7 +618,7 @@ public class RebirthManager
 
             bool downloaded =
                 await DownloadArchive(
-                    url,
+                    downloadInfo.Url,
                     tempArchive
                 );
 
@@ -541,22 +652,31 @@ public class RebirthManager
 
             SetStatus("Checking existing Classic Rebirth installation...");
 
-            if (IsInstalled(gameDir))
+            if (IsInstalled(version, gameDir))
             {
                 string installVer =
-                    GetInstalledVersion(gameDir);
+                    GetInstalledVersion(version, gameDir);
 
                 string archiveVer =
-                    GetArchiveDllVersion(tempArchive);
+                    !string.IsNullOrEmpty(downloadInfo.Version)
+                        ? downloadInfo.Version
+                        : GetArchiveDllVersion(version, tempArchive);
 
 
-                // Same version = nothing to do.
+                bool samePackage = version != BioVersion.BiohazardSurvivor ||
+                    string.Equals(
+                        GetInstalledPackageName(gameDir),
+                        downloadInfo.AssetName,
+                        StringComparison.OrdinalIgnoreCase);
+
+                // Same version and package variant = nothing to do.
                 if (!string.IsNullOrEmpty(installVer) &&
                     !string.IsNullOrEmpty(archiveVer) &&
                     string.Equals(
                         installVer,
                         archiveVer,
-                        StringComparison.OrdinalIgnoreCase))
+                        StringComparison.OrdinalIgnoreCase) &&
+                    samePackage)
                 {
                     SetStatus("Classic Rebirth is already up to date.");
 
@@ -576,13 +696,18 @@ public class RebirthManager
                 // Ask before replacing the installation.
                 System.Media.SystemSounds.Exclamation.Play();
 
+                string packageDetails = version == BioVersion.BiohazardSurvivor
+                    ? $"\nSelected package: {downloadInfo.AssetName}"
+                    : string.Empty;
+
                 DialogResult ask =
                     MessageBox.Show(
                         "Classic Rebirth is already installed.\n\n" +
                         $"Installed version: " +
                         $"{installVer ?? "Unknown"}\n" +
                         $"Available version: " +
-                        $"{archiveVer ?? "Unknown"}\n\n" +
+                        $"{archiveVer ?? "Unknown"}" +
+                        $"{packageDetails}\n\n" +
                         "Update to the latest version?",
                         "Classic Rebirth Installer",
                         MessageBoxButtons.YesNo,
@@ -611,6 +736,14 @@ public class RebirthManager
 
             if (!extracted)
                 return;
+
+            if (version == BioVersion.BiohazardSurvivor &&
+                !string.IsNullOrWhiteSpace(downloadInfo.Version))
+            {
+                File.WriteAllText(
+                    Path.Combine(gameDir, SURVIVOR_VERSION_FILE),
+                    $"{downloadInfo.Version.Trim()}|{downloadInfo.AssetName}");
+            }
 
 
             // -------------------------------------------------------------
@@ -654,7 +787,7 @@ public class RebirthManager
 
 
     // -------------------------------------------------------------------------
-    // Extract ZIP or 7z
+    // Extract ZIP, 7z, or RAR
     // -------------------------------------------------------------------------
 
     private bool ExtractArchive(
@@ -671,7 +804,7 @@ public class RebirthManager
             if (archiveType == null)
             {
                 MessageBox.Show(
-                    "The downloaded file is not a valid ZIP or 7z archive.",
+                    "The downloaded file is not a valid ZIP, 7z, or RAR archive.",
                     "Extraction Error",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error
@@ -758,10 +891,10 @@ public class RebirthManager
 
 
             // =============================================================
-            // 7z extraction
+            // 7z / RAR extraction
             // =============================================================
 
-            if (archiveType == "7z")
+            if (archiveType == "7z" || archiveType == "rar")
             {
                 using (var archive =
                     new ArchiveFile(archivePath))

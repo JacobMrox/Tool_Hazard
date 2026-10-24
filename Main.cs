@@ -520,6 +520,57 @@ namespace Tool_Hazard
             }
         }
 
+        // Gun Survivor Classic Rebirth Installer Menu Hook
+        private async void menuInstallSurvivorCR_Click(object sender, EventArgs e)
+        {
+            System.Media.SystemSounds.Exclamation.Play();
+
+            DialogResult askSetup = MessageBox.Show(
+                "Gun Survivor Classic Rebirth is a fan patch for the PC version of " +
+                "Resident Evil Survivor / Biohazard Gun Survivor.\n\n" +
+                "Tool Hazard will download the latest release from the " +
+                "JacobMrox/Gun-Survivor-Classic-Rebirth GitHub repository and can " +
+                "also update an existing installation.\n\n" +
+                "Would you like to proceed?",
+                "Gun Survivor Classic Rebirth Installer",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+
+            if (askSetup != DialogResult.Yes)
+                return;
+
+            DialogResult language = MessageBox.Show(
+                "Which release package would you like to install?\n\n" +
+                "Yes = English translation\n" +
+                "No = Original-language version\n" +
+                "Cancel = Abort",
+                "Choose Release Package",
+                MessageBoxButtons.YesNoCancel,
+                MessageBoxIcon.Question);
+
+            if (language == DialogResult.Cancel)
+                return;
+
+            using var dlg = new FolderBrowserDialog
+            {
+                Description = "Select Resident Evil Survivor / Biohazard Gun Survivor directory"
+            };
+
+            if (dlg.ShowDialog() != DialogResult.OK)
+                return;
+
+            bool installEnglishPackage = language == DialogResult.Yes;
+            UpdateRebirthStatus("Preparing Gun Survivor Classic Rebirth...");
+
+            var rebirth = new RebirthManager(UpdateRebirthStatus);
+            await rebirth.Install(
+                BioVersion.BiohazardSurvivor,
+                dlg.SelectedPath,
+                installEnglishPackage);
+
+            UpdateRebirthStatus("Gun Survivor Classic Rebirth operation finished.");
+        }
+
         //Classic Rebirth Website launcher menu hook
         private void websiteToolStripMenuItem_Click(object sender, EventArgs e)
         {

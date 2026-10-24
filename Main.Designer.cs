@@ -167,6 +167,9 @@
             nACNABPCToolStripMenuItem = new ToolStripMenuItem();
             tIMToolStripMenuItem4 = new ToolStripMenuItem();
             hMDToolStripMenuItem = new ToolStripMenuItem();
+            toolStripSeparator26 = new ToolStripSeparator();
+            classicRebirthToolsToolStripMenuItem3 = new ToolStripMenuItem();
+            menuInstallSurvivorCR = new ToolStripMenuItem();
             rECVBIOCV2000ToolStripMenuItem = new ToolStripMenuItem();
             aFSPS2DCToolStripMenuItem = new ToolStripMenuItem();
             aRCHDMTToolStripMenuItem = new ToolStripMenuItem();
@@ -1132,7 +1135,7 @@
             // 
             // rESURVVBIOGUNSURVToolStripMenuItem
             // 
-            rESURVVBIOGUNSURVToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { bINPS1ToolStripMenuItem, nACNABPCToolStripMenuItem, tIMToolStripMenuItem4, hMDToolStripMenuItem });
+            rESURVVBIOGUNSURVToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { bINPS1ToolStripMenuItem, nACNABPCToolStripMenuItem, tIMToolStripMenuItem4, hMDToolStripMenuItem, toolStripSeparator26, classicRebirthToolsToolStripMenuItem3 });
             rESURVVBIOGUNSURVToolStripMenuItem.Name = "rESURVVBIOGUNSURVToolStripMenuItem";
             rESURVVBIOGUNSURVToolStripMenuItem.Size = new Size(183, 24);
             rESURVVBIOGUNSURVToolStripMenuItem.Text = "RESURV/BIOGUN (2000)";
@@ -1165,6 +1168,25 @@
             hMDToolStripMenuItem.Name = "hMDToolStripMenuItem";
             hMDToolStripMenuItem.Size = new Size(158, 26);
             hMDToolStripMenuItem.Text = "HMD";
+            //
+            // toolStripSeparator26
+            //
+            toolStripSeparator26.Name = "toolStripSeparator26";
+            toolStripSeparator26.Size = new Size(255, 6);
+            //
+            // classicRebirthToolsToolStripMenuItem3
+            //
+            classicRebirthToolsToolStripMenuItem3.DropDownItems.AddRange(new ToolStripItem[] { menuInstallSurvivorCR });
+            classicRebirthToolsToolStripMenuItem3.Name = "classicRebirthToolsToolStripMenuItem3";
+            classicRebirthToolsToolStripMenuItem3.Size = new Size(258, 26);
+            classicRebirthToolsToolStripMenuItem3.Text = "Classic Rebirth";
+            //
+            // menuInstallSurvivorCR
+            //
+            menuInstallSurvivorCR.Name = "menuInstallSurvivorCR";
+            menuInstallSurvivorCR.Size = new Size(354, 26);
+            menuInstallSurvivorCR.Text = "Install/Update Gun Survivor Classic Rebirth";
+            menuInstallSurvivorCR.Click += menuInstallSurvivorCR_Click;
             // 
             // rECVBIOCV2000ToolStripMenuItem
             // 
@@ -1821,6 +1843,7 @@
         private ToolStripMenuItem menuInstallRE1CR;
         private ToolStripMenuItem menuInstallRE2CR;
         private ToolStripMenuItem menuInstallRE3CR;
+        private ToolStripMenuItem menuInstallSurvivorCR;
         private ToolStripSeparator toolStripSeparator22;
         private ToolStripMenuItem createModFolderToolStripMenuItem;
         private ToolStripSeparator toolStripSeparator23;
@@ -1828,6 +1851,8 @@
         private ToolStripSeparator toolStripSeparator24;
         private ToolStripMenuItem createModFolderToolStripMenuItem2;
         private ToolStripSeparator toolStripSeparator25;
+        private ToolStripSeparator toolStripSeparator26;
+        private ToolStripMenuItem classicRebirthToolsToolStripMenuItem3;
         private ToolStripMenuItem bMPDSToolStripMenuItem;
     }
 }
