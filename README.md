@@ -71,7 +71,7 @@ Inizialmente nato come White Day Mod Tool, si è evoluto in un toolkit completo 
 
 # Planned features
 * ~~Add Multi-Clut TIM support to the Tim/Pix Viewer.~~
-* Fix the BSS viewer (currently displays jumbled mess).
+* ~~Fix the BSS viewer (currently displays jumbled mess).~~
 * Support PCK (RE1 Backgrounds) and ADT (RE2 Backgrounds).
 * Add support for Biohazard REmake/RE0 File Formats.
 * Live HUD feature for RE1-2-3
