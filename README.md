@@ -9,15 +9,8 @@ Originally started as White Day Mod Tool, it evolved into a full-featured toolki
 Tool Hazardは、C#（.NET 8、WinForms）で書かれた、最新のオールインワン型モッディング＆リサーチユーティリティです。バイオハザード/バイオハザード1～3、ホワイトデイ（2001年）、そして一部の旧型コンソール向けに設計されています。
 
 当初はホワイトデイ・モッディングツールとして開発が始まりました。その後、Biofatに着想を得て、リバースエンジニアリング、モッディング、ファイル編集、そしてクラシックゲームアセットの保存に特化したフル機能のツールキットへと進化しました。
-<img width="402" height="282" alt="image" src="https://github.com/user-attachments/assets/978c009a-fbc2-4902-8b11-3ce1d5eeee5b" />
-<img width="402" height="282" alt="image" src="https://github.com/user-attachments/assets/65c9f714-fa4f-4bec-8173-c9d0e8b61752" />
-<img width="402" height="282" alt="image" src="https://github.com/user-attachments/assets/2a2f830b-69a0-449c-a529-fc48a1b94b46" />
-<img width="402" height="282" alt="image" src="https://github.com/user-attachments/assets/51d64407-c6dd-48fe-84f5-bd529e9040a0" />
-<img width="402" height="282" alt="image" src="https://github.com/user-attachments/assets/b282cbfd-0aaa-494c-b257-37f2ced9bd0c" />
-<img width="402" height="282" alt="image" src="https://github.com/user-attachments/assets/d2a1339e-bd60-4aa6-8670-31926c37d85b" />
-<img width="402" height="282" alt="image" src="https://github.com/user-attachments/assets/06f057fe-8604-4ade-ae1b-38ca77e9d844" />
-<img width="402" height="282" alt="image" src="https://github.com/user-attachments/assets/6fb3e73f-5bc4-4765-9f31-4ed7f1382f3d" />
-<img width="402" height="282" alt="image" src="https://github.com/user-attachments/assets/538b6a8e-1b24-4bfa-aaab-489f3acc7511" />
+
+<img width="417" height="350" alt="image" src="https://github.com/user-attachments/assets/c95839d3-aef7-4102-98e9-04ff77488d54" />
 
 
 🇸🇦 العربية
