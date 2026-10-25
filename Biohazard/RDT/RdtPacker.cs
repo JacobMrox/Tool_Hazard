@@ -243,8 +243,7 @@ namespace Tool_Hazard.Biohazard.RDT
             }
 
             b.Header = FixCounts_Rdt2(b.Header, b);
-            var output = b.ToRdt().Data.ToArray();
-            ValidateRepackedRdt(output);
+            var output = CanonicalizeAndValidateRepackedRdt(b.ToRdt().Data.ToArray());
             File.WriteAllBytes(TargetPath, output);
         }
 
@@ -258,15 +257,32 @@ namespace Tool_Hazard.Biohazard.RDT
         private bool HasSequence(string format) =>
             File.Exists(Path.Combine(BasePath, string.Format(format, 0)));
 
-        private void ValidateRepackedRdt(byte[] data)
+        private byte[] CanonicalizeAndValidateRepackedRdt(byte[] data)
         {
-            // Construction parses every section and catches out-of-range offsets.
-            // A second build must also be byte-stable; otherwise the room contains
-            // an inconsistent count, table, or offset that should never reach game data.
+            // Construction parses every section and catches out-of-range offsets. A
+            // first rebuild also normalizes tables whose physical asset order changed
+            // after an edit (for example, replacing one embedded model with a smaller
+            // one). The normalized result itself must be byte-stable before it is saved.
             var parsed = new Rdt2(_version, data);
-            var rebuilt = parsed.ToBuilder().ToRdt().Data.Span;
-            if (!rebuilt.SequenceEqual(data))
-                throw new InvalidDataException("Repacked RDT failed the byte-stability validation pass.");
+            var canonical = parsed.ToBuilder().ToRdt().Data.ToArray();
+            var validated = new Rdt2(_version, canonical).ToBuilder().ToRdt().Data.Span;
+            if (!validated.SequenceEqual(canonical))
+            {
+                var commonLength = Math.Min(validated.Length, canonical.Length);
+                var firstDifference = -1;
+                for (var i = 0; i < commonLength; i++)
+                {
+                    if (validated[i] == canonical[i])
+                        continue;
+                    firstDifference = i;
+                    break;
+                }
+                throw new InvalidDataException(
+                    $"Repacked RDT failed the byte-stability validation pass " +
+                    $"after normalization (bytes {canonical.Length}->{validated.Length}, " +
+                    $"first difference 0x{firstDifference:X}).");
+            }
+            return canonical;
         }
 
         // ---------------- Count Fixups ----------------

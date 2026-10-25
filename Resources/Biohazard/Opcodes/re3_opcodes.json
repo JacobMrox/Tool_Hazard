@@ -2451,7 +2451,7 @@
     },
     "Action": {
       "Type": "UCHAR",
-      "Description": "Animation (00 = nothing, 01 = crouch)"
+      "Description": "Item pickup animation (00 = none, 01 = standard crouching pickup)"
     }
   }
 }
@@ -2693,22 +2693,22 @@
     }
   },
   "6E": {
-    "Opcode Name": "Scd_id_set",
+    "Opcode Name": "Sca_id_set",
     "Opcode Number": "6E",
     "Opcode Length": "04 Bytes",
-    "Opcode Description": "This bytecode sets a script ID for the event.",
+    "Opcode Description": "This bytecode changes the enabled side mask for a collision entry.",
     "Bytes": {
       "Opcode": {
         "Type": "UCHAR",
         "Description": "0x6E"
       },
-      "zAlign": {
+      "CollisionId": {
         "Type": "UCHAR",
-        "Description": "Alignment byte (always 0x00)"
+        "Description": "Collision entry ID"
       },
-      "ScriptId": {
+      "Mask": {
         "Type": "USHORT",
-        "Description": "ID of the script to set"
+        "Description": "Enabled collision-side mask"
       }
     }
   },
@@ -3181,55 +3181,103 @@
     "Opcode Name": "Om_set",
     "Opcode Number": "7F",
     "Opcode Length": "40 Bytes",
-    "Opcode Description": "This bytecode sets an object model (OM) with specific parameters.",
+    "Opcode Description": "This bytecode creates and initializes an object model (OM). Use Work_set with Pos_set or Dir_set to move an existing object at runtime.",
     "Bytes": {
       "Opcode": {
         "Type": "UCHAR",
         "Description": "0x7F"
       },
       "ModelId": {
+        "Type": "UCHAR",
+        "Description": "Embedded object-model ID"
+      },
+      "Id": {
+        "Type": "UCHAR",
+        "Description": "Object ID/type"
+      },
+      "Texture": {
+        "Type": "UCHAR",
+        "Description": "Texture control value"
+      },
+      "Wait": {
+        "Type": "UCHAR",
+        "Description": "Initial wait value"
+      },
+      "Pattern": {
+        "Type": "UCHAR",
+        "Description": "Animation pattern"
+      },
+      "Floor": {
+        "Type": "UCHAR",
+        "Description": "Floor number"
+      },
+      "Super": {
+        "Type": "UCHAR",
+        "Description": "Parent/super object value"
+      },
+      "ObjectType": {
+        "Type": "UCHAR",
+        "Description": "Object type"
+      },
+      "SetFlag": {
+        "Type": "UCHAR",
+        "Description": "Object setup flags"
+      },
+      "BeFlag": {
+        "Type": "USHORT",
+        "Description": "Object behavior flags"
+      },
+      "Attribute": {
         "Type": "ULONG",
-        "Description": "ID of the object model"
+        "Description": "Object attributes and lighting flags"
       },
       "PositionX": {
-        "Type": "ULONG",
+        "Type": "SHORT",
         "Description": "X position of the model"
       },
       "PositionY": {
-        "Type": "ULONG",
+        "Type": "SHORT",
         "Description": "Y position of the model"
       },
       "PositionZ": {
-        "Type": "ULONG",
+        "Type": "SHORT",
         "Description": "Z position of the model"
       },
-      "Unknown1": {
-        "Type": "ULONG",
-        "Description": "Unknown data"
+      "DirectionX": {
+        "Type": "SHORT",
+        "Description": "X rotation of the model"
       },
-      "Unknown2": {
-        "Type": "ULONG",
-        "Description": "Unknown data"
+      "DirectionY": {
+        "Type": "SHORT",
+        "Description": "Y rotation of the model"
       },
-      "Unknown3": {
-        "Type": "ULONG",
-        "Description": "Unknown data"
+      "DirectionZ": {
+        "Type": "SHORT",
+        "Description": "Z rotation of the model"
       },
-      "Unknown4": {
-        "Type": "ULONG",
-        "Description": "Unknown data"
+      "CollisionOffsetX": {
+        "Type": "SHORT",
+        "Description": "X collision offset"
       },
-      "Unknown5": {
-        "Type": "ULONG",
-        "Description": "Unknown data"
+      "CollisionOffsetY": {
+        "Type": "SHORT",
+        "Description": "Y collision offset"
       },
-      "Unknown6": {
-        "Type": "USHORT",
-        "Description": "Unknown data"
+      "CollisionOffsetZ": {
+        "Type": "SHORT",
+        "Description": "Z collision offset"
       },
-      "Unknown7": {
-        "Type": "UCHAR",
-        "Description": "Unknown data"
+      "CollisionSizeX": {
+        "Type": "SHORT",
+        "Description": "X collision size"
+      },
+      "CollisionSizeY": {
+        "Type": "SHORT",
+        "Description": "Y collision size"
+      },
+      "CollisionSizeZ": {
+        "Type": "SHORT",
+        "Description": "Z collision size"
       }
     }
   },
