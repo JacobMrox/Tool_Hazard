@@ -22,10 +22,13 @@ namespace Tool_Hazard.Biohazard.RE4
     }
 
     /// <summary>
-    /// RE4 DAT/UDAS/MAP/DAS/DRS/DECMP archive reader/writer.
+    /// RE4 DAT/UDAS/MAP/DAS archive reader/writer with automatic byte-order
+    /// detection. DRS/DECMP are deliberately rejected until their extra
+    /// metadata can be preserved during repack.
     ///
-    /// This implementation follows the archive layout used by the original
-    /// RE4_DASYZ2_TOOL source:
+    /// Layout references (MIT licensed):
+    /// https://github.com/JADERLINK/JADERLINK_DATUDAS_TOOL
+    /// https://github.com/JADERLINK/RE4_DASYZ2_TOOL
     ///
     /// UDAS:
     ///   0x00..0x1F = UDAS top/header
@@ -84,6 +87,13 @@ namespace Tool_Hazard.Biohazard.RE4
             Directory.CreateDirectory(outputDir);
 
             string extension = Path.GetExtension(archivePath);
+
+            if (extension.Equals(".drs", StringComparison.OrdinalIgnoreCase) ||
+                extension.Equals(".decmp", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new NotSupportedException(
+                    "DRS/DECMP archives need their extra REL/E3 metadata preserved and are not yet supported by Tool Hazard's in-process RE4 archive handler.");
+            }
 
             if (extension.Equals(".udas", StringComparison.OrdinalIgnoreCase) ||
                 extension.Equals(".das", StringComparison.OrdinalIgnoreCase))
@@ -442,7 +452,7 @@ namespace Tool_Hazard.Biohazard.RE4
                 $"Finished UDAS: {datCount} DAT files",
                 100);
 
-            return extracted;
+            return extracted + datCount;
         }
 
         private static List<UdasEntry> ReadUdasEntries(
@@ -593,10 +603,14 @@ namespace Tool_Hazard.Biohazard.RE4
             string folder = Path.Combine(outputDir, baseName);
             Directory.CreateDirectory(folder);
 
+            string archiveType = Path.GetExtension(archivePath)
+                .TrimStart('.')
+                .ToUpperInvariant();
+
             List<string> index = new List<string>
             {
                 "# RE4 DAT Archive Manifest",
-                "ArchiveType=DAT",
+                "ArchiveType=" + (archiveType.Length == 0 ? "DAT" : archiveType),
                 "Endianness=" + (isBigEndian ? "BigEndian" : "LittleEndian")
             };
 
@@ -688,32 +702,45 @@ namespace Tool_Hazard.Biohazard.RE4
             if (count == 0 || count > 0x10000)
                 return false;
 
-            // Standard DAT: count + 3 header words, then offset table and
-            // four-byte extension table. E3: count followed immediately by
-            // the offset table. Test both forms.
-            ulong normalTableEnd = 0x10UL + (ulong)count * 8UL;
-            ulong e3TableEnd = 0x04UL + (ulong)count * 8UL;
-
-            if (normalTableEnd > (ulong)data.Length &&
-                e3TableEnd > (ulong)data.Length)
+            if (data.Length < 16)
                 return false;
 
-            bool normal = false;
-            bool e3 = false;
+            uint u2 = ReadUInt32(data, 4, isBigEndian);
+            uint u3 = ReadUInt32(data, 8, isBigEndian);
+            uint u4 = ReadUInt32(data, 12, isBigEndian);
+            uint tableOffset = u2 == 0 && u3 == 0 && u4 == 0 ? 0x10u : 0x04u;
+            ulong tableEnd = tableOffset + (ulong)count * 8UL;
 
-            if (normalTableEnd <= (ulong)data.Length)
+            if (tableEnd > (ulong)data.Length)
+                return false;
+
+            uint previous = 0;
+            for (uint i = 0; i < count; i++)
             {
-                uint first = ReadUInt32(data, 0x10, isBigEndian);
-                normal = first >= normalTableEnd && first <= data.Length;
+                uint offset = ReadUInt32(
+                    data,
+                    checked((int)(tableOffset + i * 4)),
+                    isBigEndian);
+
+                if (offset < tableEnd || offset > data.Length ||
+                    (i > 0 && offset < previous))
+                    return false;
+
+                previous = offset;
             }
 
-            if (e3TableEnd <= (ulong)data.Length)
+            int extensionTable = checked((int)(tableOffset + count * 4));
+            for (uint i = 0; i < count * 4; i++)
             {
-                uint first = ReadUInt32(data, 0x04, isBigEndian);
-                e3 = first >= e3TableEnd && first <= data.Length;
+                byte value = data[checked(extensionTable + (int)i)];
+                if (value != 0 &&
+                    !((value >= (byte)'A' && value <= (byte)'Z') ||
+                      (value >= (byte)'a' && value <= (byte)'z') ||
+                      (value >= (byte)'0' && value <= (byte)'9')))
+                    return false;
             }
 
-            return normal || e3;
+            return true;
         }
 
         private static int ExtractDatPayload(
@@ -801,6 +828,18 @@ namespace Tool_Hazard.Biohazard.RE4
             else
             {
                 index.Add("HasE3Header=false");
+            }
+
+            if (!IsPlausibleDatPayload(
+                    source,
+                    start,
+                    fullLength,
+                    amount,
+                    tableOffset,
+                    isBigEndian))
+            {
+                throw new InvalidDataException(
+                    "The file has a .DAT-family extension, but its header is not a supported RE4 DAT/MAP archive layout.");
             }
 
             ulong tableBytes = (ulong)amount * 8UL;
@@ -902,6 +941,47 @@ namespace Tool_Hazard.Biohazard.RE4
             }
 
             return entries.Count;
+        }
+
+        private static bool IsPlausibleDatPayload(
+            byte[] source,
+            int start,
+            uint fullLength,
+            uint count,
+            uint tableOffset,
+            bool isBigEndian)
+        {
+            ulong tableEnd = tableOffset + (ulong)count * 8UL;
+            if (tableEnd > fullLength)
+                return false;
+
+            uint previous = 0;
+            for (uint i = 0; i < count; i++)
+            {
+                uint offset = ReadUInt32(
+                    source,
+                    checked(start + (int)(tableOffset + i * 4)),
+                    isBigEndian);
+
+                if (offset < tableEnd || offset > fullLength ||
+                    (i > 0 && offset < previous))
+                    return false;
+
+                previous = offset;
+            }
+
+            int extensionTable = checked(start + (int)(tableOffset + count * 4));
+            for (uint i = 0; i < count * 4; i++)
+            {
+                byte value = source[checked(extensionTable + (int)i)];
+                if (value != 0 &&
+                    !((value >= (byte)'A' && value <= (byte)'Z') ||
+                      (value >= (byte)'a' && value <= (byte)'z') ||
+                      (value >= (byte)'0' && value <= (byte)'9')))
+                    return false;
+            }
+
+            return true;
         }
 
         private static string ReadExtension(

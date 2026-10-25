@@ -31,7 +31,7 @@
     "Opcode Name": "Evt_next",
     "Opcode Number": "02",
     "Opcode Length": "01 Bytes",
-    "Opcode Description": "This bytecode moves to the next event in the sequence.",
+    "Opcode Description": "This bytecode yields event execution until the next update. Scripted item grants use it immediately after Aot_on while the item UI completes.",
     "Bytes": {
       "Opcode": {
         "Type": "UCHAR",
@@ -2355,7 +2355,7 @@
     "Opcode Name": "Aot_on",
     "Opcode Number": "66",
     "Opcode Length": "02 Bytes",
-    "Opcode Description": "This bytecode activates the AOT for an object.",
+    "Opcode Description": "This bytecode activates an existing AOT. For a scripted item prompt, follow it with Evt_next before checking the item flag.",
     "Bytes": {
       "Opcode": {
         "Type": "UCHAR",
@@ -2447,11 +2447,11 @@
 
     "ObjNo": {
       "Type": "UCHAR",
-      "Description": "Model ID; the obj/md1 to use for this item."
+      "Description": "Model ID for a world pickup; 0x80 is used for hidden scripted grants activated through Aot_on."
     },
     "Action": {
       "Type": "UCHAR",
-      "Description": "Item pickup animation (00 = none, 01 = standard crouching pickup)"
+      "Description": "Item pickup animation (00 = none/scripted grant, 01 = standard crouching world pickup)"
     }
   }
 }

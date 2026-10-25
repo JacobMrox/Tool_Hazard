@@ -45,6 +45,15 @@ namespace Tool_Hazard
             InitializeComponent();
             UpdateStatus("Ready");
 
+            // Unified RE audio tools.
+            xWBToolStripMenuItem.Enabled = true;
+            xWBToolStripMenuItem.Text = "Biohazard Audio Player (SAP / VH-VB / XWB)";
+            xWBToolStripMenuItem.Click += (_, _) => new BiohazardAudioPlayerForm().Show(this);
+
+            var tplExplorerMenuItem = new ToolStripMenuItem("TPL Explorer (UHD refs / GC-Wii)");
+            tplExplorerMenuItem.Click += (_, _) => new TplExplorerForm().Show(this);
+            rE42005ToolStripMenuItem.DropDownItems.Add(tplExplorerMenuItem);
+
             // Sync menu check state from saved setting
             playStartupSoundToolStripMenuItem.Checked = Properties.Settings.Default.PlayStartupSound;
 
@@ -602,7 +611,7 @@ namespace Tool_Hazard
             {
                 // Just create and show the form. 
                 // The SampleManagerForm will handle prompting for files in its Shown event.
-                VHVB_Tool managerForm = new VHVB_Tool();
+                BiohazardAudioPlayerForm managerForm = new BiohazardAudioPlayerForm();
                 managerForm.Show();
             }
             catch (Exception ex)
@@ -617,7 +626,7 @@ namespace Tool_Hazard
             {
                 // Just create and show the form. 
                 // The SampleManagerForm will handle prompting for files in its Shown event.
-                VHVB_Tool managerForm = new VHVB_Tool();
+                BiohazardAudioPlayerForm managerForm = new BiohazardAudioPlayerForm();
                 managerForm.Show();
             }
             catch (Exception ex)
@@ -1827,8 +1836,7 @@ namespace Tool_Hazard
         //Biohazard 2 SAP Viewer Menu Hook
         private void sAPToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            //BiohazardSapViewerForm
-            var editor = new BiohazardSapViewerForm();
+            var editor = new BiohazardAudioPlayerForm();
             editor.Show(this);
 
         }
@@ -2008,14 +2016,14 @@ namespace Tool_Hazard
                 }
             }
         }
-        // RE4 (2005) UNIVERSAL DAT EXTRACT
+        // RE4 (2005) DAT-family archive extract (auto-detects byte order)
         private async void extractToolStripMenuItem1_Click(object sender, EventArgs e)
         {
-            // Extract DAT/UDAS/MAP/DAS/DRS/DECMP files (RE4 Big Endian) [GC/WII/X360/PS3]
+            // DAT/UDAS/MAP/DAS: little endian (2007/UHD) and big endian (GC/Wii/X360/PS3).
             using (OpenFileDialog ofd = new OpenFileDialog())
             {
-                ofd.Title = "Select RE4 Big Endian Archive [DAT/UDAS/MAP/DAS/DRS/DECMP]";
-                ofd.Filter = "RE4 Big Endian Archives (*.dat;*.udas;*.map;*.das;*.drs;*.decmp)|*.dat;*.udas;*.map;*.das;*.drs;*.decmp|All Files (*.*)|*.*";
+                ofd.Title = "Select RE4 DAT-family Archive (auto endian)";
+                ofd.Filter = "RE4 Archives (*.dat;*.udas;*.map;*.das)|*.dat;*.udas;*.map;*.das|All Files (*.*)|*.*";
                 ofd.Multiselect = false;
 
                 if (ofd.ShowDialog() == DialogResult.OK)
@@ -2053,13 +2061,13 @@ namespace Tool_Hazard
             }
         }
 
-        // RE4 (2005) UNIVERSAL DAT REPACK
+        // RE4 (2005) DAT-family archive repack
         private async void repackToolStripMenuItem7_Click(object sender, EventArgs e)
         {
-            // Repack DAT/UDAS/MAP/DAS/DRS/DECMP files (RE4 Big Endian) [GC/WII/X360/PS3]
+            // Repack using the archive type and byte order stored in repack_index.txt.
             using (FolderBrowserDialog fbd = new FolderBrowserDialog())
             {
-                fbd.Description = "Select Folder to Repack into Big Endian Archive [DAT/UDAS/MAP/DAS/DRS/DECMP]";
+                fbd.Description = "Select an extracted RE4 archive folder containing repack_index.txt";
                 fbd.ShowNewFolderButton = false;
 
                 if (fbd.ShowDialog() == DialogResult.OK)
@@ -2068,13 +2076,23 @@ namespace Tool_Hazard
                     string parentFolder = Path.GetDirectoryName(selectedFolder) ?? string.Empty;
                     string folderName = Path.GetFileName(selectedFolder);
 
-                    string defaultOutputName = folderName.Replace("_extracted", "") + ".dat";
-                    if (!defaultOutputName.Contains(".")) defaultOutputName += ".dat";
+                    string archiveExtension = ".dat";
+                    string indexPath = Path.Combine(selectedFolder, "repack_index.txt");
+                    if (File.Exists(indexPath))
+                    {
+                        string? typeLine = File.ReadLines(indexPath)
+                            .FirstOrDefault(line => line.StartsWith("ArchiveType=", StringComparison.OrdinalIgnoreCase));
+                        string archiveType = typeLine?.Substring("ArchiveType=".Length).Trim().ToLowerInvariant() ?? "dat";
+                        if (archiveType is "dat" or "udas" or "map" or "das")
+                            archiveExtension = "." + archiveType;
+                    }
+
+                    string defaultOutputName = folderName.Replace("_extracted", "") + archiveExtension;
 
                     using (SaveFileDialog sfd = new SaveFileDialog())
                     {
-                        sfd.Title = "Save Repacked Big Endian Archive";
-                        sfd.Filter = "RE4 Big Endian Archives (*.dat;*.udas;*.map;*.das;*.drs;*.decmp)|*.dat;*.udas;*.map;*.das;*.drs;*.decmp|All Files (*.*)|*.*";
+                        sfd.Title = "Save Repacked RE4 Archive";
+                        sfd.Filter = "RE4 Archives (*.dat;*.udas;*.map;*.das)|*.dat;*.udas;*.map;*.das|All Files (*.*)|*.*";
                         sfd.InitialDirectory = parentFolder;
                         sfd.FileName = defaultOutputName;
 
@@ -2123,7 +2141,7 @@ namespace Tool_Hazard
             {
                 // Just create and show the form. 
                 // The SampleManagerForm will handle prompting for files in its Shown event.
-                VHVB_Tool managerForm = new VHVB_Tool();
+                BiohazardAudioPlayerForm managerForm = new BiohazardAudioPlayerForm();
                 managerForm.Show();
             }
             catch (Exception ex)

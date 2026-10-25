@@ -1391,7 +1391,7 @@
             dATToolStripMenuItem1.DropDownItems.AddRange(new ToolStripItem[] { extractToolStripMenuItem1, repackToolStripMenuItem7 });
             dATToolStripMenuItem1.Name = "dATToolStripMenuItem1";
             dATToolStripMenuItem1.Size = new Size(314, 26);
-            dATToolStripMenuItem1.Text = "DAT (GC/WII/X360/PS3/UHD)";
+            dATToolStripMenuItem1.Text = "DAT / UDAS / MAP / DAS (Auto Endian)";
             // 
             // extractToolStripMenuItem1
             // 
