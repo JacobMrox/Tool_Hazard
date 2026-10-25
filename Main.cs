@@ -54,6 +54,12 @@ namespace Tool_Hazard
             tplExplorerMenuItem.Click += (_, _) => new TplExplorerForm().Show(this);
             rE42005ToolStripMenuItem.DropDownItems.Add(tplExplorerMenuItem);
 
+            // One viewer for the classic EMD/PLD variants; automatic format
+            // detection means the same window belongs in all three menus.
+            AddClassicModelViewerMenu(toolStripMenuItem1);
+            AddClassicModelViewerMenu(bIO2RE21998ToolStripMenuItem);
+            AddClassicModelViewerMenu(bIORE31999ToolStripMenuItem);
+
             // Sync menu check state from saved setting
             playStartupSoundToolStripMenuItem.Checked = Properties.Settings.Default.PlayStartupSound;
 
@@ -527,6 +533,14 @@ namespace Tool_Hazard
                     UpdateRebirthStatus("Resident Evil 3 Classic Rebirth operation finished.");
                 }
             }
+        }
+
+        private void AddClassicModelViewerMenu(ToolStripMenuItem parent)
+        {
+            var viewer = new ToolStripMenuItem("EMD / PLD Model Viewer");
+            viewer.Click += (_, _) => new BiohazardModelViewerForm().Show(this);
+            parent.DropDownItems.Insert(0, new ToolStripSeparator());
+            parent.DropDownItems.Insert(0, viewer);
         }
 
         // Gun Survivor Classic Rebirth Installer Menu Hook
