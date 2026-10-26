@@ -1,6 +1,9 @@
 #nullable enable
 using System.Numerics;
 using System.Runtime.InteropServices;
+using System.Globalization;
+using System.Text;
+using System.Text.Json;
 using IntelOrca.Biohazard;
 using IntelOrca.Biohazard.Model;
 
@@ -67,7 +70,13 @@ public sealed class BiohazardModelViewerForm : Form
             new ToolStripMenuItem("Replace whole mesh from native...", null, (_, _) => ReplaceMesh(false, true)),
             new ToolStripMenuItem("Replace selected part from native...", null, (_, _) => ReplaceMesh(true, true))
         });
-        menu.Items.AddRange(new ToolStripItem[] { file, view, meshMenu });
+        var animationMenu = new ToolStripMenuItem("Animation");
+        animationMenu.DropDownItems.AddRange(new ToolStripItem[] {
+            new ToolStripMenuItem("Export current animation for Blender (BVH)...", null, (_, _) => ExportBvhAnimation()),
+            new ToolStripMenuItem("Export current animation (skeletal JSON)...", null, (_, _) => ExportSkeletalAnimation()),
+            new ToolStripMenuItem("Export current native EDD + EMR...", null, (_, _) => ExportNativeAnimationBank())
+        });
+        menu.Items.AddRange(new ToolStripItem[] { file, view, meshMenu, animationMenu });
         MainMenuStrip = menu;
 
         var sidebar = new Panel { Dock = DockStyle.Right, Width = 230, Padding = new Padding(8) };
@@ -302,6 +311,131 @@ public sealed class BiohazardModelViewerForm : Form
             MessageBox.Show(this, $"Texture load failed:\n{ex.Message}", "Biohazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
+
+    private void ExportSkeletalAnimation()
+    {
+        AnimationChoice? choice = CurrentAnimation;
+        if (choice == null || _skeleton == null)
+        {
+            MessageBox.Show(this, "Select an RE1, RE2, or RE3 animation first.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+        using var dialog = new SaveFileDialog
+        {
+            Title = "Export skeletal animation",
+            Filter = "Biohazard skeletal animation (*.bhskel.json)|*.bhskel.json|JSON (*.json)|*.json",
+            FileName = $"{Path.GetFileNameWithoutExtension(_path)}_bank{choice.Bank}_anim{choice.AnimationIndex:D2}.bhskel.json"
+        };
+        if (dialog.ShowDialog(this) != DialogResult.OK) return;
+        int duration = choice.Edd.GetAnimationDuration(choice.AnimationIndex);
+        var frames = new float[duration][][];
+        for (int time = 0; time < duration; time++)
+        {
+            int keyFrame = choice.Edd.GetFrameIndex(choice.AnimationIndex, time);
+            Matrix4x4[] matrices = BuildPartTransforms(choice.Skeleton, choice.Skeleton.NumParts, keyFrame);
+            frames[time] = matrices.Select(MatrixValues).ToArray();
+        }
+        var document = new
+        {
+            format = "Tool Hazard skeletal animation",
+            version = 1,
+            sourceGame = VersionName(choice.Skeleton.Version),
+            sourceModel = Path.GetFileName(_path),
+            sourceBank = choice.Bank,
+            sourceAnimation = choice.AnimationIndex,
+            framesPerSecond = 30,
+            boneCount = choice.Skeleton.NumParts,
+            frames
+        };
+        File.WriteAllText(dialog.FileName, JsonSerializer.Serialize(document, new JsonSerializerOptions { WriteIndented = true }));
+    }
+
+    private void ExportBvhAnimation()
+    {
+        AnimationChoice? choice = CurrentAnimation;
+        if (choice == null || _skeleton == null)
+        {
+            MessageBox.Show(this, "Select an RE1, RE2, or RE3 animation first.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+        using var dialog = new SaveFileDialog
+        {
+            Title = "Export animation for Blender",
+            Filter = "Biovision Hierarchy (*.bvh)|*.bvh",
+            FileName = $"{Path.GetFileNameWithoutExtension(_path)}_bank{choice.Bank}_anim{choice.AnimationIndex:D2}.bvh"
+        };
+        if (dialog.ShowDialog(this) != DialogResult.OK) return;
+
+        Emr skeleton = choice.Skeleton;
+        var orderedBones = new List<int>();
+        var sb = new StringBuilder("HIERARCHY\n");
+        void WriteBone(int bone, int depth, bool root)
+        {
+            orderedBones.Add(bone);
+            string indent = new(' ', depth * 2);
+            sb.Append(indent).Append(root ? "ROOT " : "JOINT ").Append("bone_").Append(bone.ToString("D2")).Append('\n');
+            sb.Append(indent).Append("{\n");
+            Emr.Vector offset = root ? new Emr.Vector() : skeleton.GetRelativePosition(bone);
+            sb.Append(indent).Append("  OFFSET ").Append(BvhNumber(offset.x)).Append(' ').Append(BvhNumber(offset.y)).Append(' ').Append(BvhNumber(offset.z)).Append('\n');
+            sb.Append(indent).Append(root ? "  CHANNELS 6 Xposition Yposition Zposition Zrotation Yrotation Xrotation\n" : "  CHANNELS 3 Zrotation Yrotation Xrotation\n");
+            byte[] children = skeleton.GetArmatureParts(bone).ToArray();
+            foreach (byte child in children) WriteBone(child, depth + 1, false);
+            if (children.Length == 0)
+            {
+                sb.Append(indent).Append("  End Site\n").Append(indent).Append("  {\n")
+                    .Append(indent).Append("    OFFSET 0 0 0\n").Append(indent).Append("  }\n");
+            }
+            sb.Append(indent).Append("}\n");
+        }
+        WriteBone(0, 0, true);
+
+        int duration = choice.Edd.GetAnimationDuration(choice.AnimationIndex);
+        sb.Append("MOTION\nFrames: ").Append(duration).Append("\nFrame Time: 0.0333333333\n");
+        const double angleScale = 360.0 / 4096.0;
+        for (int time = 0; time < duration; time++)
+        {
+            int keyFrameIndex = choice.Edd.GetFrameIndex(choice.AnimationIndex, time);
+            Emr.KeyFrame frame = skeleton.KeyFrames[Math.Clamp(keyFrameIndex, 0, skeleton.KeyFrames.Length - 1)];
+            for (int i = 0; i < orderedBones.Count; i++)
+            {
+                int bone = orderedBones[i];
+                if (i == 0)
+                    sb.Append(BvhNumber(frame.Offset.x)).Append(' ').Append(BvhNumber(frame.Offset.y)).Append(' ').Append(BvhNumber(frame.Offset.z)).Append(' ');
+                Emr.Vector angle = frame.GetAngle(bone);
+                sb.Append(BvhNumber(angle.z * angleScale)).Append(' ').Append(BvhNumber(angle.y * angleScale)).Append(' ').Append(BvhNumber(angle.x * angleScale));
+                if (i + 1 != orderedBones.Count) sb.Append(' ');
+            }
+            sb.Append('\n');
+        }
+        File.WriteAllText(dialog.FileName, sb.ToString());
+    }
+
+    private static string BvhNumber(double value) => value.ToString("0.######", CultureInfo.InvariantCulture);
+
+    private void ExportNativeAnimationBank()
+    {
+        AnimationChoice? choice = CurrentAnimation;
+        if (choice == null)
+        {
+            MessageBox.Show(this, "Select an RE1, RE2, or RE3 animation first.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+        using var dialog = new SaveFileDialog
+        {
+            Title = "Export native animation bank",
+            Filter = "Biohazard animation index (*.edd)|*.edd",
+            FileName = $"{Path.GetFileNameWithoutExtension(_path)}_bank{choice.Bank}.edd"
+        };
+        if (dialog.ShowDialog(this) != DialogResult.OK) return;
+        File.WriteAllBytes(dialog.FileName, choice.Edd.Data.ToArray());
+        File.WriteAllBytes(Path.ChangeExtension(dialog.FileName, ".emr"), choice.Skeleton.Data.ToArray());
+    }
+
+    private static float[] MatrixValues(Matrix4x4 m) => new[]
+    {
+        m.M11, m.M12, m.M13, m.M14, m.M21, m.M22, m.M23, m.M24,
+        m.M31, m.M32, m.M33, m.M34, m.M41, m.M42, m.M43, m.M44
+    };
 
     private void SaveModelAs()
     {
@@ -545,14 +679,20 @@ public sealed class BiohazardModelViewerForm : Form
         public int Width { get; }
         public int Height { get; }
 
-        public SurvivorTexture(byte[] data, int offset, int width, int height)
+        public SurvivorTexture(byte[] data, IReadOnlyList<(int Offset, int Width, int Height)> surfaces)
         {
-            Width = width;
-            Height = height;
-            if (offset < 0 || offset + Width * Height * 2 > data.Length)
-                throw new InvalidDataException("The NAB embedded texture is truncated.");
+            Width = surfaces.Sum(x => x.Width);
+            Height = surfaces.Max(x => x.Height);
             _pixels = new ushort[Width * Height];
-            Buffer.BlockCopy(data, offset, _pixels, 0, _pixels.Length * 2);
+            int destinationX = 0;
+            foreach ((int offset, int width, int height) in surfaces)
+            {
+                if (offset < 0 || offset + width * height * 2 > data.Length)
+                    throw new InvalidDataException("The NAB embedded texture is truncated.");
+                for (int y = 0; y < height; y++)
+                    Buffer.BlockCopy(data, offset + y * width * 2, _pixels, (y * Width + destinationX) * 2, width * 2);
+                destinationX += width;
+            }
         }
 
         public uint GetPixel(int x, int y, int palette)
@@ -599,13 +739,28 @@ public sealed class BiohazardModelViewerForm : Form
             if (vertexCount <= 0 || triangleCount <= 0 || vertexCount != triangleCount * 3)
                 throw new InvalidDataException("This is not a supported Survivor PC NAB triangle stream.");
             int vertexEnd = checked(8 + vertexCount * VertexStride);
-            int format = BitConverter.ToInt32(data, vertexEnd + SurfaceFormatOffset);
-            int textureWidth = BitConverter.ToInt32(data, vertexEnd + SurfaceWidthOffset);
-            int textureHeight = BitConverter.ToInt32(data, vertexEnd + SurfaceHeightOffset);
-            int textureOffset = checked(vertexEnd + SurfaceDataOffset);
-            if (format != 25 || textureWidth <= 0 || textureWidth > 2048 || textureHeight <= 0 || textureHeight > 2048 ||
-                textureOffset + textureWidth * textureHeight * 2 > data.Length)
-                throw new InvalidDataException("NAB vertex or embedded texture data is truncated.");
+            var surfaces = new List<(int Offset, int Width, int Height)>();
+            int surfaceOffset = vertexEnd;
+            int groupCountOffset;
+            while (true)
+            {
+                int continuationAdjustment = surfaces.Count == 0 ? 0 : -4;
+                if (surfaceOffset + SurfaceDataOffset + continuationAdjustment > data.Length)
+                    throw new InvalidDataException("NAB surface header is truncated.");
+                int format = BitConverter.ToInt32(data, surfaceOffset + SurfaceFormatOffset + continuationAdjustment);
+                int surfaceWidth = BitConverter.ToInt32(data, surfaceOffset + SurfaceWidthOffset + continuationAdjustment);
+                int surfaceHeight = BitConverter.ToInt32(data, surfaceOffset + SurfaceHeightOffset + continuationAdjustment);
+                int surfaceData = checked(surfaceOffset + SurfaceDataOffset + continuationAdjustment);
+                if (format != 25 || surfaceWidth <= 0 || surfaceWidth > 2048 || surfaceHeight <= 0 || surfaceHeight > 2048 ||
+                    surfaceData + surfaceWidth * surfaceHeight * 2 > data.Length)
+                    throw new InvalidDataException("NAB vertex or embedded texture data is truncated.");
+                surfaces.Add((surfaceData, surfaceWidth, surfaceHeight));
+                groupCountOffset = checked(surfaceData + surfaceWidth * surfaceHeight * 2);
+                if (IsGroupTable(data, groupCountOffset, triangleCount)) break;
+                surfaceOffset = groupCountOffset;
+            }
+            int textureWidth = surfaces[0].Width;
+            int textureHeight = surfaces[0].Height;
 
             var vertices = new Vector3[vertexCount];
             var uv = new Vector2[vertexCount];
@@ -623,7 +778,6 @@ public sealed class BiohazardModelViewerForm : Form
                 uv[i] = new Vector2(u * (textureWidth - 1), v * (textureHeight - 1));
             }
 
-            int groupCountOffset = checked(textureOffset + textureWidth * textureHeight * 2);
             int groupCount = BitConverter.ToInt32(data, groupCountOffset);
             if (groupCount <= 0 || groupCount > 256)
                 throw new InvalidDataException("NAB mesh group table was not found.");
@@ -632,19 +786,32 @@ public sealed class BiohazardModelViewerForm : Form
                 throw new InvalidDataException("NAB mesh group table is truncated.");
 
             uint minimumNodePointer = uint.MaxValue;
-            var rawGroups = new (int Start, int Count, uint NodePointer)[groupCount];
+            var rawGroups = new (int Start, int Count, uint NodePointer, byte TexturePage)[groupCount];
+            var surfacePages = new Dictionary<uint, byte>();
             int expectedTriangle = 0;
             for (int i = 0; i < groupCount; i++)
             {
                 int o = groupTable + i * 32;
+                uint surfacePointer = BitConverter.ToUInt32(data, o);
                 int start = BitConverter.ToInt32(data, o + 8);
                 int count = BitConverter.ToInt32(data, o + 12);
                 uint nodePointer = BitConverter.ToUInt32(data, o + 16);
+                byte texturePage = 0;
+                if (surfacePointer != 0)
+                {
+                    if (!surfacePages.TryGetValue(surfacePointer, out texturePage))
+                    {
+                        texturePage = checked((byte)surfacePages.Count);
+                        surfacePages.Add(surfacePointer, texturePage);
+                    }
+                }
                 if (start != expectedTriangle || count <= 0 || start + count > triangleCount)
                     throw new InvalidDataException($"Invalid NAB mesh group {i}.");
+                if ((uint)texturePage >= (uint)surfaces.Count)
+                    throw new InvalidDataException($"Invalid NAB texture page for mesh group {i}.");
                 expectedTriangle += count;
                 minimumNodePointer = Math.Min(minimumNodePointer, nodePointer);
-                rawGroups[i] = (start, count, nodePointer);
+                rawGroups[i] = (start, count, nodePointer, texturePage);
             }
             if (expectedTriangle != triangleCount)
                 throw new InvalidDataException("NAB mesh groups do not cover every triangle.");
@@ -679,10 +846,27 @@ public sealed class BiohazardModelViewerForm : Form
                 uint delta = rawGroups[i].NodePointer - rootNodePointer;
                 if (delta % 0x104 != 0) throw new InvalidDataException($"Invalid NAB node pointer for group {i}.");
                 int nodeIndex = checked((int)(delta / 0x104));
-                groups[i] = new SurvivorGroup(rawGroups[i].Start, rawGroups[i].Count, nodeTransforms[nodeIndex]);
+                groups[i] = new SurvivorGroup(rawGroups[i].Start, rawGroups[i].Count, rawGroups[i].TexturePage, nodeTransforms[nodeIndex]);
             }
             return new SurvivorNab(vertices, uv, groups, triangleCount,
-                new SurvivorTexture(data, textureOffset, textureWidth, textureHeight), Path.ChangeExtension(path, ".NAC"));
+                new SurvivorTexture(data, surfaces), Path.ChangeExtension(path, ".NAC"));
+        }
+
+        private static bool IsGroupTable(byte[] data, int offset, int triangleCount)
+        {
+            if (offset < 0 || offset + 4 > data.Length) return false;
+            int count = BitConverter.ToInt32(data, offset);
+            if (count <= 0 || count > 256 || offset + 4 + count * 32 > data.Length) return false;
+            int expected = 0;
+            for (int i = 0; i < count; i++)
+            {
+                int record = offset + 4 + i * 32;
+                int start = BitConverter.ToInt32(data, record + 8);
+                int length = BitConverter.ToInt32(data, record + 12);
+                if (start != expected || length <= 0 || start + length > triangleCount) return false;
+                expected += length;
+            }
+            return expected == triangleCount;
         }
 
         private static uint FindRootNodePointer(byte[] data, int searchStart, uint lowestReferencedPointer)
@@ -725,7 +909,7 @@ public sealed class BiohazardModelViewerForm : Form
                     int source = vertexStart + i * 3;
                     int target = i * 3;
                     faces.Add(new RenderFace(new[] { target, target + 1, target + 2 },
-                        new[] { _uv[source], _uv[source + 1], _uv[source + 2] }, 0, 0));
+                        new[] { _uv[source], _uv[source + 1], _uv[source + 2] }, group.TexturePage, 0));
                 }
                 var part = new RenderPart(localVertices, faces);
                 part.ApplyTransform(group.BindTransform);
@@ -734,7 +918,7 @@ public sealed class BiohazardModelViewerForm : Form
             return result;
         }
 
-        private sealed record SurvivorGroup(int TriangleStart, int TriangleCount, Matrix4x4 BindTransform);
+        private sealed record SurvivorGroup(int TriangleStart, int TriangleCount, byte TexturePage, Matrix4x4 BindTransform);
     }
 
     private sealed record RenderFace(int[] Indices, Vector2[] UV, byte Page, int Clut);
