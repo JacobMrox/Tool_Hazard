@@ -24,6 +24,7 @@ public sealed class BiohazardModelViewerForm : Form
     private string? _path;
     private IEdd? _edd;
     private Emr? _skeleton;
+    private readonly List<AnimationChoice> _animations = new();
     private List<RenderPart> _renderParts = new();
     private int _animationTime;
     private bool _updatingTimeline;
@@ -134,14 +135,27 @@ public sealed class BiohazardModelViewerForm : Form
     {
         _edd = null;
         _skeleton = TryGetSkeleton(model);
-        try { _edd = model.GetEdd(0); } catch { }
+        _animations.Clear();
 
         _animation.BeginUpdate();
         _animation.Items.Clear();
-        if (_edd != null)
+        if (_skeleton != null)
         {
-            for (int i = 0; i < _edd.AnimationCount; i++)
-                _animation.Items.Add($"Animation {i:D2} ({_edd.GetAnimationDuration(i)} frames)");
+            for (int bank = 0; ; bank++)
+            {
+                try
+                {
+                    IEdd edd = model.GetEdd(bank);
+                    Emr keyframes = model.GetEmr(bank);
+                    Emr rig = _skeleton.WithKeyframes(keyframes);
+                    for (int i = 0; i < edd.AnimationCount; i++)
+                    {
+                        _animations.Add(new AnimationChoice(edd, rig, bank, i));
+                        _animation.Items.Add($"Bank {bank} / Animation {i:D2} ({edd.GetAnimationDuration(i)} frames)");
+                    }
+                }
+                catch { break; }
+            }
         }
         _animation.EndUpdate();
         _animation.Enabled = _animation.Items.Count != 0;
@@ -155,14 +169,23 @@ public sealed class BiohazardModelViewerForm : Form
     {
         SetPlaying(false);
         _animationTime = 0;
+        AnimationChoice? choice = CurrentAnimation;
+        if (choice != null)
+        {
+            _edd = choice.Edd;
+            _skeleton = choice.Skeleton;
+        }
         int duration = CurrentAnimationDuration;
         _timeline.Maximum = Math.Max(0, duration - 1);
         UpdateTimeline(0, duration);
         ApplyCurrentPose();
     }
 
-    private int CurrentAnimationDuration => _edd == null || _animation.SelectedIndex < 0
-        ? 0 : _edd.GetAnimationDuration(_animation.SelectedIndex);
+    private AnimationChoice? CurrentAnimation => (uint)_animation.SelectedIndex < (uint)_animations.Count
+        ? _animations[_animation.SelectedIndex] : null;
+
+    private int CurrentAnimationDuration => CurrentAnimation is AnimationChoice choice
+        ? choice.Edd.GetAnimationDuration(choice.AnimationIndex) : 0;
 
     private void SetPlaying(bool playing)
     {
@@ -192,8 +215,8 @@ public sealed class BiohazardModelViewerForm : Form
         if (_skeleton == null || _renderParts.Count == 0) return;
         int keyFrame = 0;
         int duration = CurrentAnimationDuration;
-        if (_edd != null && _animation.SelectedIndex >= 0 && duration != 0)
-            keyFrame = _edd.GetFrameIndex(_animation.SelectedIndex, Math.Clamp(_animationTime, 0, duration - 1));
+        if (CurrentAnimation is AnimationChoice choice && duration != 0)
+            keyFrame = choice.Edd.GetFrameIndex(choice.AnimationIndex, Math.Clamp(_animationTime, 0, duration - 1));
         Matrix4x4[] transforms = BuildPartTransforms(_skeleton, _renderParts.Count, keyFrame);
         for (int i = 0; i < _renderParts.Count; i++)
             _renderParts[i].ApplyTransform(transforms[i]);
@@ -258,8 +281,8 @@ public sealed class BiohazardModelViewerForm : Form
             var mesh = (Md1)converter.ConvertMesh(source, IntelOrca.Biohazard.BioVersion.Biohazard2, remap: false);
             Emr? skeleton = _skeleton ?? TryGetSkeleton(_model);
             int keyFrame = 0;
-            if (_edd != null && _animation.SelectedIndex >= 0 && CurrentAnimationDuration != 0)
-                keyFrame = _edd.GetFrameIndex(_animation.SelectedIndex, _animationTime);
+            if (CurrentAnimation is AnimationChoice choice && CurrentAnimationDuration != 0)
+                keyFrame = choice.Edd.GetFrameIndex(choice.AnimationIndex, _animationTime);
             Matrix4x4[] partTransforms = BuildPartTransforms(skeleton, mesh.NumParts, keyFrame);
             var parts = new List<RenderPart>();
             int triangles = 0;
@@ -296,12 +319,18 @@ public sealed class BiohazardModelViewerForm : Form
                 parts.Add(part);
             }
 
+            int boneCount = Math.Min(parts.Count, skeleton?.NumParts ?? parts.Count);
             _parts.Items.Clear();
-            for (int i = 0; i < parts.Count; i++) _parts.Items.Add($"Part {i:D2}", true);
+            for (int i = 0; i < parts.Count; i++)
+            {
+                bool bound = i < boneCount;
+                parts[i].Visible = bound;
+                _parts.Items.Add(bound ? $"Part {i:D2}" : $"Part {i:D2} (unbound)", bound);
+            }
             _viewport.SetModel(parts, _texture);
             _renderParts = parts;
             string texture = _texture == null ? "None" : $"{(_texturePath == "Embedded TIM" ? _texturePath : Path.GetFileName(_texturePath))} ({_texture.Width}x{_texture.Height})";
-            _details.Text = $"Game: {VersionName(_model.Version)}\r\nType: {Path.GetExtension(_path!).TrimStart('.').ToUpperInvariant()}\r\nParts: {parts.Count:N0}  Triangles: {triangles:N0}\r\nTexture: {texture}\r\nCLUT: per polygon";
+            _details.Text = $"Game: {VersionName(_model.Version)}\r\nType: {Path.GetExtension(_path!).TrimStart('.').ToUpperInvariant()}\r\nParts: {parts.Count:N0}  Bones: {boneCount:N0}  Triangles: {triangles:N0}\r\nTexture: {texture}\r\nCLUT: per polygon";
         }
         catch (Exception ex)
         {
@@ -369,6 +398,7 @@ public sealed class BiohazardModelViewerForm : Form
     };
 
     private sealed record RenderFace(int[] Indices, Vector2[] UV, byte Page, int Clut);
+    private sealed record AnimationChoice(IEdd Edd, Emr Skeleton, int Bank, int AnimationIndex);
 
     private sealed class RenderPart
     {
