@@ -34,6 +34,8 @@
             fileToolStripMenuItem = new ToolStripMenuItem();
             exitToolStripMenuItem = new ToolStripMenuItem();
             toolStripMenuItem1 = new ToolStripMenuItem();
+            classicModelViewerRE1ToolStripMenuItem = new ToolStripMenuItem();
+            classicModelViewerSeparator1 = new ToolStripSeparator();
             bSSToolStripMenuItem = new ToolStripMenuItem();
             pCKPCToolStripMenuItem = new ToolStripMenuItem();
             rDTToolStripMenuItem2 = new ToolStripMenuItem();
@@ -75,6 +77,8 @@
             pLWToolStripMenuItem3 = new ToolStripMenuItem();
             vHVBToolStripMenuItem1 = new ToolStripMenuItem();
             bIO2RE21998ToolStripMenuItem = new ToolStripMenuItem();
+            classicModelViewerRE2ToolStripMenuItem = new ToolStripMenuItem();
+            classicModelViewerSeparator2 = new ToolStripSeparator();
             bSSToolStripMenuItem1 = new ToolStripMenuItem();
             aDTPCToolStripMenuItem = new ToolStripMenuItem();
             rDTToolStripMenuItem1 = new ToolStripMenuItem();
@@ -118,6 +122,8 @@
             bGMXMLEditorToolStripMenuItem1 = new ToolStripMenuItem();
             fileEditorToolStripMenuItem1 = new ToolStripMenuItem();
             bIORE31999ToolStripMenuItem = new ToolStripMenuItem();
+            classicModelViewerRE3ToolStripMenuItem = new ToolStripMenuItem();
+            classicModelViewerSeparator3 = new ToolStripSeparator();
             rOFSToolStripMenuItem = new ToolStripMenuItem();
             ROFSunpackToolStripMenuItem = new ToolStripMenuItem();
             repackToolStripMenuItem2 = new ToolStripMenuItem();
@@ -270,12 +276,24 @@
             // toolStripMenuItem1
             // 
             toolStripMenuItem1.AutoToolTip = true;
-            toolStripMenuItem1.DropDownItems.AddRange(new ToolStripItem[] { bSSToolStripMenuItem, pCKPCToolStripMenuItem, rDTToolStripMenuItem2, eMDToolStripMenuItem2, bMPDSToolStripMenuItem, pIXToolStripMenuItem, tIMToolStripMenuItem1, pLWToolStripMenuItem2, vHVBToolStripMenuItem2, toolStripSeparator7, classicRebirthToolsToolStripMenuItem2 });
+            toolStripMenuItem1.DropDownItems.AddRange(new ToolStripItem[] { classicModelViewerRE1ToolStripMenuItem, classicModelViewerSeparator1, bSSToolStripMenuItem, pCKPCToolStripMenuItem, rDTToolStripMenuItem2, eMDToolStripMenuItem2, bMPDSToolStripMenuItem, pIXToolStripMenuItem, tIMToolStripMenuItem1, pLWToolStripMenuItem2, vHVBToolStripMenuItem2, toolStripSeparator7, classicRebirthToolsToolStripMenuItem2 });
             toolStripMenuItem1.Name = "toolStripMenuItem1";
             toolStripMenuItem1.Size = new Size(132, 24);
             toolStripMenuItem1.Text = "BIO1/RE1 (1996)";
             toolStripMenuItem1.ToolTipText = "Handle and manage file formats utilized by Biohazard / Resident Evil (1996) and its subsequent releases \"Directors Cut\" and \"Dual Shock\" (1998)";
             toolStripMenuItem1.Click += toolStripMenuItem1_Click;
+            //
+            // classicModelViewerRE1ToolStripMenuItem
+            //
+            classicModelViewerRE1ToolStripMenuItem.Name = "classicModelViewerRE1ToolStripMenuItem";
+            classicModelViewerRE1ToolStripMenuItem.Size = new Size(240, 26);
+            classicModelViewerRE1ToolStripMenuItem.Text = "EMD / PLD Model Viewer";
+            classicModelViewerRE1ToolStripMenuItem.Click += classicModelViewerToolStripMenuItem_Click;
+            //
+            // classicModelViewerSeparator1
+            //
+            classicModelViewerSeparator1.Name = "classicModelViewerSeparator1";
+            classicModelViewerSeparator1.Size = new Size(237, 6);
             // 
             // bSSToolStripMenuItem
             // 
@@ -545,12 +563,24 @@
             // 
             // bIO2RE21998ToolStripMenuItem
             // 
-            bIO2RE21998ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { bSSToolStripMenuItem1, aDTPCToolStripMenuItem, rDTToolStripMenuItem1, mD1ToolStripMenuItem, eMDToolStripMenuItem1, pLDToolStripMenuItem1, plwToolStripMenuItem1, tIMToolStripMenuItem2, vHVBToolStripMenuItem, sAPToolStripMenuItem, toolStripSeparator1, installPatch110ToolStripMenuItem, classicRebirthToolsToolStripMenuItem1 });
+            bIO2RE21998ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { classicModelViewerRE2ToolStripMenuItem, classicModelViewerSeparator2, bSSToolStripMenuItem1, aDTPCToolStripMenuItem, rDTToolStripMenuItem1, mD1ToolStripMenuItem, eMDToolStripMenuItem1, pLDToolStripMenuItem1, plwToolStripMenuItem1, tIMToolStripMenuItem2, vHVBToolStripMenuItem, sAPToolStripMenuItem, toolStripSeparator1, installPatch110ToolStripMenuItem, classicRebirthToolsToolStripMenuItem1 });
             bIO2RE21998ToolStripMenuItem.Name = "bIO2RE21998ToolStripMenuItem";
             bIO2RE21998ToolStripMenuItem.Size = new Size(132, 24);
             bIO2RE21998ToolStripMenuItem.Text = "BIO2/RE2 (1998)";
             bIO2RE21998ToolStripMenuItem.ToolTipText = "Handle and manage file formats utilized by Biohazard 2 / Resident Evil 2 (1998) and its subsequent releases such as \"Dual Shock\" (1998) and Sourcenext (2006)";
             bIO2RE21998ToolStripMenuItem.Click += bIO2RE21998ToolStripMenuItem_Click;
+            //
+            // classicModelViewerRE2ToolStripMenuItem
+            //
+            classicModelViewerRE2ToolStripMenuItem.Name = "classicModelViewerRE2ToolStripMenuItem";
+            classicModelViewerRE2ToolStripMenuItem.Size = new Size(240, 26);
+            classicModelViewerRE2ToolStripMenuItem.Text = "EMD / PLD Model Viewer";
+            classicModelViewerRE2ToolStripMenuItem.Click += classicModelViewerToolStripMenuItem_Click;
+            //
+            // classicModelViewerSeparator2
+            //
+            classicModelViewerSeparator2.Name = "classicModelViewerSeparator2";
+            classicModelViewerSeparator2.Size = new Size(237, 6);
             // 
             // bSSToolStripMenuItem1
             // 
@@ -833,12 +863,24 @@
             // 
             // bIORE31999ToolStripMenuItem
             // 
-            bIORE31999ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { rOFSToolStripMenuItem, aRDToolStripMenuItem, bSSToolStripMenuItem2, rDTToolStripMenuItem, mD2ToolStripMenuItem, eMDToolStripMenuItem, pIXToolStripMenuItem1, pLDToolStripMenuItem, pLWToolStripMenuItem, tIMToolStripMenuItem3, vBVHToolStripMenuItem, toolStripSeparator6, installPatch110ToolStripMenuItem1, classicRebirthToolsToolStripMenuItem });
+            bIORE31999ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { classicModelViewerRE3ToolStripMenuItem, classicModelViewerSeparator3, rOFSToolStripMenuItem, aRDToolStripMenuItem, bSSToolStripMenuItem2, rDTToolStripMenuItem, mD2ToolStripMenuItem, eMDToolStripMenuItem, pIXToolStripMenuItem1, pLDToolStripMenuItem, pLWToolStripMenuItem, tIMToolStripMenuItem3, vBVHToolStripMenuItem, toolStripSeparator6, installPatch110ToolStripMenuItem1, classicRebirthToolsToolStripMenuItem });
             bIORE31999ToolStripMenuItem.Name = "bIORE31999ToolStripMenuItem";
             bIORE31999ToolStripMenuItem.Size = new Size(132, 24);
             bIORE31999ToolStripMenuItem.Text = "BIO3/RE3 (1999)";
             bIORE31999ToolStripMenuItem.ToolTipText = "Handle and manage file formats utilized by Biohazard 3 / Resident Evil 3 (1999)";
             bIORE31999ToolStripMenuItem.Click += bIORE31999ToolStripMenuItem_Click;
+            //
+            // classicModelViewerRE3ToolStripMenuItem
+            //
+            classicModelViewerRE3ToolStripMenuItem.Name = "classicModelViewerRE3ToolStripMenuItem";
+            classicModelViewerRE3ToolStripMenuItem.Size = new Size(240, 26);
+            classicModelViewerRE3ToolStripMenuItem.Text = "EMD / PLD Model Viewer";
+            classicModelViewerRE3ToolStripMenuItem.Click += classicModelViewerToolStripMenuItem_Click;
+            //
+            // classicModelViewerSeparator3
+            //
+            classicModelViewerSeparator3.Name = "classicModelViewerSeparator3";
+            classicModelViewerSeparator3.Size = new Size(237, 6);
             // 
             // rOFSToolStripMenuItem
             // 
@@ -1853,5 +1895,11 @@
         private ToolStripSeparator toolStripSeparator26;
         private ToolStripMenuItem classicRebirthToolsToolStripMenuItem3;
         private ToolStripMenuItem bMPDSToolStripMenuItem;
+        private ToolStripMenuItem classicModelViewerRE1ToolStripMenuItem;
+        private ToolStripSeparator classicModelViewerSeparator1;
+        private ToolStripMenuItem classicModelViewerRE2ToolStripMenuItem;
+        private ToolStripSeparator classicModelViewerSeparator2;
+        private ToolStripMenuItem classicModelViewerRE3ToolStripMenuItem;
+        private ToolStripSeparator classicModelViewerSeparator3;
     }
 }
