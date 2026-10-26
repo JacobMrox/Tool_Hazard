@@ -12,10 +12,21 @@ public sealed class BiohazardModelViewerForm : Form
     private readonly ComboBox _mesh = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 150 };
     private readonly CheckedListBox _parts = new() { Dock = DockStyle.Fill, CheckOnClick = true };
     private readonly Label _details = new() { AutoSize = false, Dock = DockStyle.Bottom, Height = 100, Padding = new Padding(6) };
+    private readonly ComboBox _animation = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 170 };
+    private readonly Button _playPause = new() { Text = "Play", AutoSize = true };
+    private readonly TrackBar _timeline = new() { Minimum = 0, Maximum = 0, TickStyle = TickStyle.None, Width = 330, AutoSize = false, Height = 28 };
+    private readonly Label _frameLabel = new() { Text = "0 / 0", AutoSize = true, Padding = new Padding(4, 6, 0, 0) };
+    private readonly NumericUpDown _speed = new() { Minimum = 10, Maximum = 400, Value = 100, Increment = 10, Width = 62 };
+    private readonly System.Windows.Forms.Timer _animationTimer = new() { Interval = 33 };
     private ModelFile? _model;
     private TimFile? _texture;
     private string? _texturePath;
     private string? _path;
+    private IEdd? _edd;
+    private Emr? _skeleton;
+    private List<RenderPart> _renderParts = new();
+    private int _animationTime;
+    private bool _updatingTimeline;
 
     public BiohazardModelViewerForm(string? initialPath = null)
     {
@@ -38,6 +49,10 @@ public sealed class BiohazardModelViewerForm : Form
         MainMenuStrip = menu;
 
         var sidebar = new Panel { Dock = DockStyle.Right, Width = 230, Padding = new Padding(8) };
+        var playback = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 42, Padding = new Padding(6, 5, 6, 4), WrapContents = false };
+        var previous = new Button { Text = "◀", AutoSize = true };
+        var next = new Button { Text = "▶", AutoSize = true };
+        playback.Controls.AddRange(new Control[] { new Label { Text = "Animation", AutoSize = true, Padding = new Padding(0, 7, 0, 0) }, _animation, previous, _playPause, next, _timeline, _frameLabel, new Label { Text = "Speed %", AutoSize = true, Padding = new Padding(8, 7, 0, 0) }, _speed });
         var meshLabel = new Label { Text = "Mesh", Dock = DockStyle.Top, Height = 22 };
         _mesh.Dock = DockStyle.Top;
         var partsLabel = new Label { Text = "Visible parts", Dock = DockStyle.Top, Height = 28, Padding = new Padding(0, 7, 0, 0) };
@@ -49,6 +64,7 @@ public sealed class BiohazardModelViewerForm : Form
 
         Controls.Add(_viewport);
         Controls.Add(sidebar);
+        Controls.Add(playback);
         Controls.Add(menu);
 
         _mesh.SelectedIndexChanged += (_, _) => LoadSelectedMesh();
@@ -56,6 +72,17 @@ public sealed class BiohazardModelViewerForm : Form
         {
             _viewport.SetPartVisible(e.Index, e.NewValue == CheckState.Checked);
         }));
+        _animation.SelectedIndexChanged += (_, _) => SelectAnimation();
+        _playPause.Click += (_, _) => SetPlaying(!_animationTimer.Enabled);
+        previous.Click += (_, _) => StepAnimation(-1);
+        next.Click += (_, _) => StepAnimation(1);
+        _timeline.ValueChanged += (_, _) =>
+        {
+            if (_updatingTimeline) return;
+            _animationTime = _timeline.Value;
+            ApplyCurrentPose();
+        };
+        _animationTimer.Tick += (_, _) => StepAnimation(1);
 
         Shown += (_, _) =>
         {
@@ -81,6 +108,8 @@ public sealed class BiohazardModelViewerForm : Form
             ModelFile model = ModelFile.FromFile(path);
             _model = model;
             _path = path;
+            SetPlaying(false);
+            LoadAnimations(model);
             LoadDefaultTexture(model, path);
             _mesh.BeginUpdate();
             _mesh.Items.Clear();
@@ -99,6 +128,78 @@ public sealed class BiohazardModelViewerForm : Form
         {
             MessageBox.Show(this, $"Open failed:\n{ex.Message}", "Biohazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
+    }
+
+    private void LoadAnimations(ModelFile model)
+    {
+        _edd = null;
+        _skeleton = TryGetSkeleton(model);
+        try { _edd = model.GetEdd(0); } catch { }
+
+        _animation.BeginUpdate();
+        _animation.Items.Clear();
+        if (_edd != null)
+        {
+            for (int i = 0; i < _edd.AnimationCount; i++)
+                _animation.Items.Add($"Animation {i:D2} ({_edd.GetAnimationDuration(i)} frames)");
+        }
+        _animation.EndUpdate();
+        _animation.Enabled = _animation.Items.Count != 0;
+        _playPause.Enabled = _animation.Items.Count != 0;
+        _timeline.Enabled = _animation.Items.Count != 0;
+        if (_animation.Items.Count != 0) _animation.SelectedIndex = 0;
+        else UpdateTimeline(0, 0);
+    }
+
+    private void SelectAnimation()
+    {
+        SetPlaying(false);
+        _animationTime = 0;
+        int duration = CurrentAnimationDuration;
+        _timeline.Maximum = Math.Max(0, duration - 1);
+        UpdateTimeline(0, duration);
+        ApplyCurrentPose();
+    }
+
+    private int CurrentAnimationDuration => _edd == null || _animation.SelectedIndex < 0
+        ? 0 : _edd.GetAnimationDuration(_animation.SelectedIndex);
+
+    private void SetPlaying(bool playing)
+    {
+        if (playing && CurrentAnimationDuration > 1) _animationTimer.Start();
+        else _animationTimer.Stop();
+        _playPause.Text = _animationTimer.Enabled ? "Pause" : "Play";
+    }
+
+    private void StepAnimation(int delta)
+    {
+        int duration = CurrentAnimationDuration;
+        if (duration == 0) return;
+        _animationTime = (_animationTime + delta + duration) % duration;
+        ApplyCurrentPose();
+    }
+
+    private void UpdateTimeline(int time, int duration)
+    {
+        _updatingTimeline = true;
+        _timeline.Value = Math.Clamp(time, _timeline.Minimum, _timeline.Maximum);
+        _updatingTimeline = false;
+        _frameLabel.Text = duration == 0 ? "0 / 0" : $"{time + 1} / {duration}";
+    }
+
+    private void ApplyCurrentPose()
+    {
+        if (_skeleton == null || _renderParts.Count == 0) return;
+        int keyFrame = 0;
+        int duration = CurrentAnimationDuration;
+        if (_edd != null && _animation.SelectedIndex >= 0 && duration != 0)
+            keyFrame = _edd.GetFrameIndex(_animation.SelectedIndex, Math.Clamp(_animationTime, 0, duration - 1));
+        Matrix4x4[] transforms = BuildPartTransforms(_skeleton, _renderParts.Count, keyFrame);
+        for (int i = 0; i < _renderParts.Count; i++)
+            _renderParts[i].ApplyTransform(transforms[i]);
+        UpdateTimeline(_animationTime, duration);
+        _viewport.Invalidate();
+        _animationTimer.Interval = Math.Max(8, (int)Math.Round(33.333 * 100.0 / (double)_speed.Value));
     }
 
     private void PromptTexture()
@@ -128,12 +229,12 @@ public sealed class BiohazardModelViewerForm : Form
         _texturePath = null;
         try
         {
-            if (model is PldFile pld)
+            try
             {
-                _texture = pld.Tim;
+                _texture = model.GetTim(0);
                 _texturePath = "Embedded TIM";
             }
-            else
+            catch
             {
                 string path = Path.ChangeExtension(modelPath, ".tim");
                 if (!File.Exists(path)) path = Path.ChangeExtension(modelPath, ".TIM");
@@ -155,20 +256,19 @@ public sealed class BiohazardModelViewerForm : Form
             IModelMesh source = _model.GetMesh(_mesh.SelectedIndex);
             var converter = new MeshConverter();
             var mesh = (Md1)converter.ConvertMesh(source, IntelOrca.Biohazard.BioVersion.Biohazard2, remap: false);
-            Emr? skeleton = TryGetSkeleton(_model);
-            Matrix4x4[] partTransforms = BuildPartTransforms(skeleton, mesh.NumParts);
+            Emr? skeleton = _skeleton ?? TryGetSkeleton(_model);
+            int keyFrame = 0;
+            if (_edd != null && _animation.SelectedIndex >= 0 && CurrentAnimationDuration != 0)
+                keyFrame = _edd.GetFrameIndex(_animation.SelectedIndex, _animationTime);
+            Matrix4x4[] partTransforms = BuildPartTransforms(skeleton, mesh.NumParts, keyFrame);
             var parts = new List<RenderPart>();
             int triangles = 0;
             for (int i = 0; i < mesh.NumParts; i++)
             {
                 Md1.ObjectDescriptor triObject = mesh.Objects[i * 2];
                 Md1.ObjectDescriptor quadObject = mesh.Objects[i * 2 + 1];
-                Vector3[] vertices = mesh.GetPositionData(triObject)
-                    .ToArray().Select(v =>
-                    {
-                        Vector3 p = Vector3.Transform(new Vector3(v.x, v.y, v.z), partTransforms[i]);
-                        return new Vector3(p.X, -p.Y, p.Z);
-                    }).ToArray();
+                Vector3[] localVertices = mesh.GetPositionData(triObject)
+                    .ToArray().Select(v => new Vector3(v.x, v.y, v.z)).ToArray();
                 var faces = new List<RenderFace>();
                 Md1.Triangle[] tris = mesh.GetTriangles(triObject).ToArray();
                 Md1.TriangleTexture[] triTextures = mesh.GetTriangleTextures(triObject).ToArray();
@@ -191,12 +291,15 @@ public sealed class BiohazardModelViewerForm : Form
                         new[] { new Vector2(uv.u3, uv.v3), new Vector2(uv.u2, uv.v2), new Vector2(uv.u1, uv.v1) }, page, clut));
                 }
                 triangles += triObject.pri_count + quadObject.pri_count * 2;
-                parts.Add(new RenderPart(vertices, faces));
+                var part = new RenderPart(localVertices, faces);
+                part.ApplyTransform(partTransforms[i]);
+                parts.Add(part);
             }
 
             _parts.Items.Clear();
             for (int i = 0; i < parts.Count; i++) _parts.Items.Add($"Part {i:D2}", true);
             _viewport.SetModel(parts, _texture);
+            _renderParts = parts;
             string texture = _texture == null ? "None" : $"{(_texturePath == "Embedded TIM" ? _texturePath : Path.GetFileName(_texturePath))} ({_texture.Width}x{_texture.Height})";
             _details.Text = $"Game: {VersionName(_model.Version)}\r\nType: {Path.GetExtension(_path!).TrimStart('.').ToUpperInvariant()}\r\nParts: {parts.Count:N0}  Triangles: {triangles:N0}\r\nTexture: {texture}\r\nCLUT: per polygon";
         }
@@ -219,13 +322,14 @@ public sealed class BiohazardModelViewerForm : Form
         catch { return null; }
     }
 
-    private static Matrix4x4[] BuildPartTransforms(Emr? skeleton, int partCount)
+    private static Matrix4x4[] BuildPartTransforms(Emr? skeleton, int partCount, int keyFrameIndex)
     {
         var result = Enumerable.Repeat(Matrix4x4.Identity, partCount).ToArray();
         if (skeleton == null || skeleton.NumParts == 0) return result;
 
         Emr.KeyFrame[] keyFrames = skeleton.KeyFrames;
         bool hasPose = keyFrames.Length != 0;
+        int poseIndex = Math.Clamp(keyFrameIndex, 0, Math.Max(0, keyFrames.Length - 1));
         var visited = new bool[Math.Min(partCount, skeleton.NumParts)];
 
         void Visit(int partIndex, Matrix4x4 parent)
@@ -234,12 +338,12 @@ public sealed class BiohazardModelViewerForm : Form
             visited[partIndex] = true;
 
             Emr.Vector offset = partIndex == 0 && hasPose
-                ? keyFrames[0].Offset
+                ? keyFrames[poseIndex].Offset
                 : skeleton.GetRelativePosition(partIndex);
             Matrix4x4 local = Matrix4x4.Identity;
             if (hasPose)
             {
-                Emr.Vector angle = keyFrames[0].GetAngle(partIndex);
+                Emr.Vector angle = keyFrames[poseIndex].GetAngle(partIndex);
                 const float unit = MathF.PI * 2.0f / 4096.0f;
                 local = Matrix4x4.CreateRotationZ(angle.z * unit)
                     * Matrix4x4.CreateRotationY(angle.y * unit)
@@ -266,9 +370,28 @@ public sealed class BiohazardModelViewerForm : Form
 
     private sealed record RenderFace(int[] Indices, Vector2[] UV, byte Page, int Clut);
 
-    private sealed record RenderPart(Vector3[] Vertices, List<RenderFace> Faces)
+    private sealed class RenderPart
     {
+        public Vector3[] LocalVertices { get; }
+        public Vector3[] Vertices { get; private set; }
+        public List<RenderFace> Faces { get; }
         public bool Visible { get; set; } = true;
+
+        public RenderPart(Vector3[] localVertices, List<RenderFace> faces)
+        {
+            LocalVertices = localVertices;
+            Vertices = new Vector3[localVertices.Length];
+            Faces = faces;
+        }
+
+        public void ApplyTransform(Matrix4x4 transform)
+        {
+            for (int i = 0; i < LocalVertices.Length; i++)
+            {
+                Vector3 p = Vector3.Transform(LocalVertices[i], transform);
+                Vertices[i] = p;
+            }
+        }
     }
 
     private sealed class ModelViewport : Control
