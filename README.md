@@ -50,7 +50,7 @@ Inizialmente nato come White Day Mod Tool, si è evoluto in un toolkit completo 
 
 * Biohazard/Resident Evil 1-2-3:
   * Unpack/Repack RDT files (BIO1 not tested).
-  * Support for EMD/PLD editing for RE1,2,3
+  * Support for EMD/PLD viewing & editing for RE1,2,3
   * Support for Message (.MSG) file editing for RE1,2,3
   * Support for viewing PIX files and converting them to PNG and BMP and vice versa; supports both singular pix (like TITLE.PIX) and small icons pix sheets (like ITEM_ALL.PIX)
   * SCD OpCode Editor (Only Biohazard 3 tested); with drag-drop updatable opcode database in the form of .json files based on [CRE-SCD-BHS Biohazard SCD Editor](https://github.com/3lric/CRE-SCD-BHS/)
