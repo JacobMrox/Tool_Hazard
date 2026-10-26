@@ -19,6 +19,7 @@ public sealed class BiohazardModelViewerForm : Form
     private readonly NumericUpDown _speed = new() { Minimum = 10, Maximum = 400, Value = 100, Increment = 10, Width = 62 };
     private readonly System.Windows.Forms.Timer _animationTimer = new() { Interval = 33 };
     private ModelFile? _model;
+    private SurvivorNab? _survivor;
     private TimFile? _texture;
     private string? _texturePath;
     private string? _path;
@@ -31,7 +32,7 @@ public sealed class BiohazardModelViewerForm : Form
 
     public BiohazardModelViewerForm(string? initialPath = null)
     {
-        Text = "Biohazard Model Viewer - RE1 / RE2 / RE3";
+        Text = "Biohazard Model Viewer - RE1 / RE2 / RE3 / Survivor PC";
         StartPosition = FormStartPosition.CenterScreen;
         MinimumSize = new Size(760, 500);
         Size = new Size(1050, 720);
@@ -117,7 +118,7 @@ public sealed class BiohazardModelViewerForm : Form
         using var dialog = new OpenFileDialog
         {
             Title = "Open classic Biohazard model",
-            Filter = "Biohazard models (*.emd;*.pld)|*.emd;*.pld|Enemy model (*.emd)|*.emd|Player model (*.pld)|*.pld|All files (*.*)|*.*"
+            Filter = "Biohazard models (*.emd;*.pld;*.nab)|*.emd;*.pld;*.nab|Survivor PC model (*.nab)|*.nab|Enemy model (*.emd)|*.emd|Player model (*.pld)|*.pld|All files (*.*)|*.*"
         };
         if (dialog.ShowDialog(this) == DialogResult.OK) Open(dialog.FileName);
     }
@@ -126,8 +127,14 @@ public sealed class BiohazardModelViewerForm : Form
     {
         try
         {
+            if (Path.GetExtension(path).Equals(".nab", StringComparison.OrdinalIgnoreCase))
+            {
+                OpenSurvivor(path);
+                return;
+            }
             ModelFile model = ModelFile.FromFile(path);
             _model = model;
+            _survivor = null;
             _path = path;
             SetPlaying(false);
             LoadAnimations(model);
@@ -149,6 +156,36 @@ public sealed class BiohazardModelViewerForm : Form
         {
             MessageBox.Show(this, $"Open failed:\n{ex.Message}", "Biohazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
+    }
+
+    private void OpenSurvivor(string path)
+    {
+        SurvivorNab survivor = SurvivorNab.FromFile(path);
+        _survivor = survivor;
+        _model = null;
+        _path = path;
+        _texture = null;
+        _texturePath = "Embedded NAB texture";
+        SetPlaying(false);
+        _animations.Clear();
+        _animation.Items.Clear();
+        _animation.Enabled = _playPause.Enabled = _timeline.Enabled = false;
+        UpdateTimeline(0, 0);
+        _mesh.Items.Clear();
+        _mesh.Items.Add("Survivor PC mesh");
+        _mesh.SelectedIndex = 0;
+        LoadSurvivorMesh();
+        Text = $"Biohazard Model Viewer - {Path.GetFileName(path)}";
+    }
+
+    private void LoadSurvivorMesh()
+    {
+        if (_survivor == null) return;
+        _renderParts = _survivor.CreateRenderParts();
+        _parts.Items.Clear();
+        for (int i = 0; i < _renderParts.Count; i++) _parts.Items.Add($"Part {i:D2}", true);
+        _viewport.SetModel(_renderParts, _survivor.Texture);
+        _details.Text = $"Game: Resident Evil Survivor PC\r\nType: NAB + NAC\r\nParts: {_renderParts.Count:N0}  Triangles: {_survivor.TriangleCount:N0}\r\nTexture: Embedded {_survivor.Texture.Width}x{_survivor.Texture.Height} A1R5G5B5\r\nAnimation bank: {(_survivor.HasAnimationBank ? Path.GetFileName(_survivor.AnimationPath) : "Not found")}";
     }
 
     private void LoadAnimations(ModelFile model)
@@ -363,6 +400,7 @@ public sealed class BiohazardModelViewerForm : Form
 
     private void LoadSelectedMesh()
     {
+        if (_survivor != null) { LoadSurvivorMesh(); return; }
         if (_model == null || _mesh.SelectedIndex < 0) return;
         try
         {
@@ -417,7 +455,7 @@ public sealed class BiohazardModelViewerForm : Form
                 parts[i].Visible = bound;
                 _parts.Items.Add(bound ? $"Part {i:D2}" : $"Part {i:D2} (unbound)", bound);
             }
-            _viewport.SetModel(parts, _texture);
+            _viewport.SetModel(parts, _texture == null ? null : new TimTexture(_texture));
             _renderParts = parts;
             string texture = _texture == null ? "None" : $"{(_texturePath == "Embedded TIM" ? _texturePath : Path.GetFileName(_texturePath))} ({_texture.Width}x{_texture.Height})";
             _details.Text = $"Game: {VersionName(_model.Version)}\r\nType: {Path.GetExtension(_path!).TrimStart('.').ToUpperInvariant()}\r\nParts: {parts.Count:N0}  Bones: {boneCount:N0}  Triangles: {triangles:N0}\r\nTexture: {texture}\r\nCLUT: per polygon";
@@ -487,6 +525,218 @@ public sealed class BiohazardModelViewerForm : Form
         _ => version.ToString()
     };
 
+    private interface IViewerTexture
+    {
+        int Width { get; }
+        int Height { get; }
+        uint GetPixel(int x, int y, int palette);
+    }
+
+    private sealed class TimTexture(TimFile tim) : IViewerTexture
+    {
+        public int Width => tim.Width;
+        public int Height => tim.Height;
+        public uint GetPixel(int x, int y, int palette) => tim.GetPixel(x, y, palette);
+    }
+
+    private sealed class SurvivorTexture : IViewerTexture
+    {
+        private readonly ushort[] _pixels;
+        public int Width { get; }
+        public int Height { get; }
+
+        public SurvivorTexture(byte[] data, int offset, int width, int height)
+        {
+            Width = width;
+            Height = height;
+            if (offset < 0 || offset + Width * Height * 2 > data.Length)
+                throw new InvalidDataException("The NAB embedded texture is truncated.");
+            _pixels = new ushort[Width * Height];
+            Buffer.BlockCopy(data, offset, _pixels, 0, _pixels.Length * 2);
+        }
+
+        public uint GetPixel(int x, int y, int palette)
+        {
+            ushort value = _pixels[y * Width + x];
+            int r = ((value >> 10) & 31) * 255 / 31;
+            int g = ((value >> 5) & 31) * 255 / 31;
+            int b = (value & 31) * 255 / 31;
+            return 0xFF000000u | (uint)(r << 16) | (uint)(g << 8) | (uint)b;
+        }
+    }
+
+    private sealed class SurvivorNab
+    {
+        private const int VertexStride = 36;
+        private const int SurfaceFormatOffset = 360;
+        private const int SurfaceWidthOffset = 364;
+        private const int SurfaceHeightOffset = 368;
+        private const int SurfaceDataOffset = 372;
+        private readonly Vector3[] _vertices;
+        private readonly Vector2[] _uv;
+        private readonly SurvivorGroup[] _groups;
+        public int TriangleCount { get; }
+        public SurvivorTexture Texture { get; }
+        public string AnimationPath { get; }
+        public bool HasAnimationBank => File.Exists(AnimationPath);
+
+        private SurvivorNab(Vector3[] vertices, Vector2[] uv, SurvivorGroup[] groups, int triangleCount, SurvivorTexture texture, string animationPath)
+        {
+            _vertices = vertices;
+            _uv = uv;
+            _groups = groups;
+            TriangleCount = triangleCount;
+            Texture = texture;
+            AnimationPath = animationPath;
+        }
+
+        public static SurvivorNab FromFile(string path)
+        {
+            byte[] data = File.ReadAllBytes(path);
+            if (data.Length < 16) throw new InvalidDataException("NAB file is too small.");
+            int vertexCount = BitConverter.ToInt32(data, 0);
+            int triangleCount = BitConverter.ToInt32(data, 4);
+            if (vertexCount <= 0 || triangleCount <= 0 || vertexCount != triangleCount * 3)
+                throw new InvalidDataException("This is not a supported Survivor PC NAB triangle stream.");
+            int vertexEnd = checked(8 + vertexCount * VertexStride);
+            int format = BitConverter.ToInt32(data, vertexEnd + SurfaceFormatOffset);
+            int textureWidth = BitConverter.ToInt32(data, vertexEnd + SurfaceWidthOffset);
+            int textureHeight = BitConverter.ToInt32(data, vertexEnd + SurfaceHeightOffset);
+            int textureOffset = checked(vertexEnd + SurfaceDataOffset);
+            if (format != 25 || textureWidth <= 0 || textureWidth > 2048 || textureHeight <= 0 || textureHeight > 2048 ||
+                textureOffset + textureWidth * textureHeight * 2 > data.Length)
+                throw new InvalidDataException("NAB vertex or embedded texture data is truncated.");
+
+            var vertices = new Vector3[vertexCount];
+            var uv = new Vector2[vertexCount];
+            for (int i = 0; i < vertexCount; i++)
+            {
+                int o = 8 + i * VertexStride;
+                float x = BitConverter.ToSingle(data, o);
+                float y = BitConverter.ToSingle(data, o + 4);
+                float z = BitConverter.ToSingle(data, o + 8);
+                float u = BitConverter.ToSingle(data, o + 28);
+                float v = BitConverter.ToSingle(data, o + 32);
+                if (!float.IsFinite(x) || !float.IsFinite(y) || !float.IsFinite(z) || !float.IsFinite(u) || !float.IsFinite(v))
+                    throw new InvalidDataException($"Invalid NAB vertex {i}.");
+                vertices[i] = new Vector3(x, y, z);
+                uv[i] = new Vector2(u * (textureWidth - 1), v * (textureHeight - 1));
+            }
+
+            int groupCountOffset = checked(textureOffset + textureWidth * textureHeight * 2);
+            int groupCount = BitConverter.ToInt32(data, groupCountOffset);
+            if (groupCount <= 0 || groupCount > 256)
+                throw new InvalidDataException("NAB mesh group table was not found.");
+            int groupTable = groupCountOffset + 4;
+            if (groupTable + groupCount * 32 > data.Length)
+                throw new InvalidDataException("NAB mesh group table is truncated.");
+
+            uint minimumNodePointer = uint.MaxValue;
+            var rawGroups = new (int Start, int Count, uint NodePointer)[groupCount];
+            int expectedTriangle = 0;
+            for (int i = 0; i < groupCount; i++)
+            {
+                int o = groupTable + i * 32;
+                int start = BitConverter.ToInt32(data, o + 8);
+                int count = BitConverter.ToInt32(data, o + 12);
+                uint nodePointer = BitConverter.ToUInt32(data, o + 16);
+                if (start != expectedTriangle || count <= 0 || start + count > triangleCount)
+                    throw new InvalidDataException($"Invalid NAB mesh group {i}.");
+                expectedTriangle += count;
+                minimumNodePointer = Math.Min(minimumNodePointer, nodePointer);
+                rawGroups[i] = (start, count, nodePointer);
+            }
+            if (expectedTriangle != triangleCount)
+                throw new InvalidDataException("NAB mesh groups do not cover every triangle.");
+
+            uint rootNodePointer = FindRootNodePointer(data, groupTable + groupCount * 32, minimumNodePointer);
+            uint maximumNodePointer = rawGroups.Max(x => x.NodePointer);
+            int nodeCount = checked((int)((maximumNodePointer - rootNodePointer) / 0x104) + 1);
+            int rootNodeOffset = checked(data.Length - nodeCount * 0x108);
+            if (rootNodeOffset < 0) throw new InvalidDataException("NAB node table is truncated.");
+            var nodeTransforms = new Matrix4x4[nodeCount];
+            var parentIndices = new int[nodeCount];
+            for (int i = 0; i < nodeCount; i++)
+            {
+                int nodeOffset = checked(rootNodeOffset + i * 0x108);
+                Matrix4x4 rotation = ReadMatrix(data, nodeOffset + 0x40);
+                Matrix4x4 translation = ReadMatrix(data, nodeOffset + 0xC0);
+                nodeTransforms[i] = rotation * translation;
+                uint parentPointer = BitConverter.ToUInt32(data, nodeOffset + 0x100);
+                parentIndices[i] = parentPointer >= rootNodePointer && (parentPointer - rootNodePointer) % 0x104 == 0
+                    ? checked((int)((parentPointer - rootNodePointer) / 0x104))
+                    : -1;
+            }
+            for (int i = 0; i < nodeCount; i++)
+            {
+                int parent = parentIndices[i];
+                if (parent >= 0 && parent < i)
+                    nodeTransforms[i] *= nodeTransforms[parent];
+            }
+            var groups = new SurvivorGroup[groupCount];
+            for (int i = 0; i < groupCount; i++)
+            {
+                uint delta = rawGroups[i].NodePointer - rootNodePointer;
+                if (delta % 0x104 != 0) throw new InvalidDataException($"Invalid NAB node pointer for group {i}.");
+                int nodeIndex = checked((int)(delta / 0x104));
+                groups[i] = new SurvivorGroup(rawGroups[i].Start, rawGroups[i].Count, nodeTransforms[nodeIndex]);
+            }
+            return new SurvivorNab(vertices, uv, groups, triangleCount,
+                new SurvivorTexture(data, textureOffset, textureWidth, textureHeight), Path.ChangeExtension(path, ".NAC"));
+        }
+
+        private static uint FindRootNodePointer(byte[] data, int searchStart, uint lowestReferencedPointer)
+        {
+            uint pointer = lowestReferencedPointer;
+            while (pointer >= 0x104)
+            {
+                uint candidate = pointer - 0x104;
+                bool found = false;
+                for (int o = searchStart; o <= data.Length - 4; o += 4)
+                {
+                    if (BitConverter.ToUInt32(data, o) == candidate) { found = true; break; }
+                }
+                if (!found) break;
+                pointer = candidate;
+            }
+            return pointer;
+        }
+
+        private static Matrix4x4 ReadMatrix(byte[] data, int offset)
+        {
+            if (offset < 0 || offset + 64 > data.Length) throw new InvalidDataException("NAB node matrix is truncated.");
+            float F(int i) => BitConverter.ToSingle(data, offset + i * 4);
+            return new Matrix4x4(F(0), F(1), F(2), F(3), F(4), F(5), F(6), F(7),
+                F(8), F(9), F(10), F(11), F(12), F(13), F(14), F(15));
+        }
+
+        public List<RenderPart> CreateRenderParts()
+        {
+            var result = new List<RenderPart>(_groups.Length);
+            foreach (SurvivorGroup group in _groups)
+            {
+                int vertexStart = group.TriangleStart * 3;
+                int vertexCount = group.TriangleCount * 3;
+                var localVertices = new Vector3[vertexCount];
+                Array.Copy(_vertices, vertexStart, localVertices, 0, vertexCount);
+                var faces = new List<RenderFace>(group.TriangleCount);
+                for (int i = 0; i < group.TriangleCount; i++)
+                {
+                    int source = vertexStart + i * 3;
+                    int target = i * 3;
+                    faces.Add(new RenderFace(new[] { target, target + 1, target + 2 },
+                        new[] { _uv[source], _uv[source + 1], _uv[source + 2] }, 0, 0));
+                }
+                var part = new RenderPart(localVertices, faces);
+                part.ApplyTransform(group.BindTransform);
+                result.Add(part);
+            }
+            return result;
+        }
+
+        private sealed record SurvivorGroup(int TriangleStart, int TriangleCount, Matrix4x4 BindTransform);
+    }
+
     private sealed record RenderFace(int[] Indices, Vector2[] UV, byte Page, int Clut);
     private sealed record AnimationChoice(IEdd Edd, Emr Skeleton, int Bank, int AnimationIndex);
 
@@ -537,7 +787,7 @@ public sealed class BiohazardModelViewerForm : Form
         private bool _wireframe;
         private bool _smoothShading = true;
         private bool _texturesVisible = true;
-        private TimFile? _texture;
+        private IViewerTexture? _texture;
 
         public bool Wireframe { get => _wireframe; set { _wireframe = value; Invalidate(); } }
         public bool SmoothShading { get => _smoothShading; set { _smoothShading = value; Invalidate(); } }
@@ -550,7 +800,7 @@ public sealed class BiohazardModelViewerForm : Form
             SetStyle(ControlStyles.ResizeRedraw, true);
         }
 
-        public void SetModel(List<RenderPart> parts, TimFile? texture)
+        public void SetModel(List<RenderPart> parts, IViewerTexture? texture)
         {
             _parts = parts;
             _texture = texture;

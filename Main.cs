@@ -50,6 +50,12 @@ namespace Tool_Hazard
             xWBToolStripMenuItem.Text = "Biohazard Audio Player (SAP / VH-VB / XWB)";
             xWBToolStripMenuItem.Click += (_, _) => new BiohazardAudioPlayerForm().Show(this);
 
+            // Resident Evil Survivor PC stores its models and animation banks as
+            // paired NAB/NAC files. They use the unified model viewer too.
+            nACNABPCToolStripMenuItem.Enabled = true;
+            nACNABPCToolStripMenuItem.Text = "NAB / NAC Model Viewer";
+            nACNABPCToolStripMenuItem.Click += (_, _) => new BiohazardModelViewerForm().Show(this);
+
             var tplExplorerMenuItem = new ToolStripMenuItem("TPL Explorer (UHD refs / GC-Wii)");
             tplExplorerMenuItem.Click += (_, _) => new TplExplorerForm().Show(this);
             rE42005ToolStripMenuItem.DropDownItems.Add(tplExplorerMenuItem);
