@@ -74,7 +74,7 @@ public sealed class BiohazardModelViewerForm : Form
         animationMenu.DropDownItems.AddRange(new ToolStripItem[] {
             new ToolStripMenuItem("Export current animation for Blender (BVH)...", null, (_, _) => ExportBvhAnimation()),
             new ToolStripMenuItem("Export current animation (skeletal JSON)...", null, (_, _) => ExportSkeletalAnimation()),
-            new ToolStripMenuItem("Export current native EDD + EMR...", null, (_, _) => ExportNativeAnimationBank())
+            new ToolStripMenuItem("Export current native animation bank...", null, (_, _) => ExportNativeAnimationBank())
         });
         menu.Items.AddRange(new ToolStripItem[] { file, view, meshMenu, animationMenu });
         MainMenuStrip = menu;
@@ -178,12 +178,19 @@ public sealed class BiohazardModelViewerForm : Form
         SetPlaying(false);
         _animations.Clear();
         _animation.Items.Clear();
-        _animation.Enabled = _playPause.Enabled = _timeline.Enabled = false;
-        UpdateTimeline(0, 0);
+        if (survivor.HasAnimations)
+        {
+            for (int i = 0; i < survivor.SelectorCount; i++)
+                _animation.Items.Add($"Selector {i:X2} ({survivor.GetAnimationDuration(i)} frames)");
+        }
+        _animation.Enabled = _playPause.Enabled = _timeline.Enabled = _animation.Items.Count != 0;
+        if (_animation.Items.Count != 0) _animation.SelectedIndex = 0;
+        else UpdateTimeline(0, 0);
         _mesh.Items.Clear();
         _mesh.Items.Add("Survivor PC mesh");
         _mesh.SelectedIndex = 0;
         LoadSurvivorMesh();
+        if (survivor.HasAnimations) ApplyCurrentPose();
         Text = $"Biohazard Model Viewer - {Path.GetFileName(path)}";
     }
 
@@ -194,7 +201,7 @@ public sealed class BiohazardModelViewerForm : Form
         _parts.Items.Clear();
         for (int i = 0; i < _renderParts.Count; i++) _parts.Items.Add($"Part {i:D2}", true);
         _viewport.SetModel(_renderParts, _survivor.Texture);
-        _details.Text = $"Game: Resident Evil Survivor PC\r\nType: NAB + NAC\r\nParts: {_renderParts.Count:N0}  Triangles: {_survivor.TriangleCount:N0}\r\nTexture: Embedded {_survivor.Texture.Width}x{_survivor.Texture.Height} A1R5G5B5\r\nAnimation bank: {(_survivor.HasAnimationBank ? Path.GetFileName(_survivor.AnimationPath) : "Not found")}";
+        _details.Text = $"Game: Resident Evil Survivor PC\r\nType: NAB + NAC\r\nParts: {_renderParts.Count:N0}  Triangles: {_survivor.TriangleCount:N0}\r\nTexture: Embedded {_survivor.Texture.Width}x{_survivor.Texture.Height} A1R5G5B5\r\nAnimation bank: {(_survivor.HasAnimationBank ? Path.GetFileName(_survivor.AnimationPath) : "Not found")}  Selectors: {_survivor.SelectorCount}";
     }
 
     private void LoadAnimations(ModelFile model)
@@ -251,7 +258,9 @@ public sealed class BiohazardModelViewerForm : Form
         ? _animations[_animation.SelectedIndex] : null;
 
     private int CurrentAnimationDuration => CurrentAnimation is AnimationChoice choice
-        ? choice.Edd.GetAnimationDuration(choice.AnimationIndex) : 0;
+        ? choice.Edd.GetAnimationDuration(choice.AnimationIndex)
+        : _survivor != null && (uint)_animation.SelectedIndex < (uint)_survivor.SelectorCount
+            ? _survivor.GetAnimationDuration(_animation.SelectedIndex) : 0;
 
     private void SetPlaying(bool playing)
     {
@@ -278,9 +287,20 @@ public sealed class BiohazardModelViewerForm : Form
 
     private void ApplyCurrentPose()
     {
-        if (_skeleton == null || _renderParts.Count == 0) return;
-        int keyFrame = 0;
+        if (_renderParts.Count == 0) return;
         int duration = CurrentAnimationDuration;
+        if (_survivor != null)
+        {
+            if (duration != 0)
+                _survivor.ApplyPose(_renderParts, _animation.SelectedIndex, Math.Clamp(_animationTime, 0, duration - 1));
+            _viewport.RefitModel();
+            UpdateTimeline(_animationTime, duration);
+            _viewport.Invalidate();
+            _animationTimer.Interval = Math.Max(8, (int)Math.Round(33.333 * 100.0 / (double)_speed.Value));
+            return;
+        }
+        if (_skeleton == null) return;
+        int keyFrame = 0;
         if (CurrentAnimation is AnimationChoice choice && duration != 0)
             keyFrame = choice.Edd.GetFrameIndex(choice.AnimationIndex, Math.Clamp(_animationTime, 0, duration - 1));
         Matrix4x4[] transforms = BuildPartTransforms(_skeleton, _renderParts.Count, keyFrame);
@@ -314,6 +334,11 @@ public sealed class BiohazardModelViewerForm : Form
 
     private void ExportSkeletalAnimation()
     {
+        if (_survivor != null)
+        {
+            ExportSurvivorSkeletalAnimation();
+            return;
+        }
         AnimationChoice? choice = CurrentAnimation;
         if (choice == null || _skeleton == null)
         {
@@ -352,6 +377,11 @@ public sealed class BiohazardModelViewerForm : Form
 
     private void ExportBvhAnimation()
     {
+        if (_survivor != null)
+        {
+            ExportSurvivorBvhAnimation();
+            return;
+        }
         AnimationChoice? choice = CurrentAnimation;
         if (choice == null || _skeleton == null)
         {
@@ -414,6 +444,23 @@ public sealed class BiohazardModelViewerForm : Form
 
     private void ExportNativeAnimationBank()
     {
+        if (_survivor != null)
+        {
+            if (!_survivor.HasAnimationBank)
+            {
+                MessageBox.Show(this, "No matching Survivor NAC animation bank was found.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            using var nacDialog = new SaveFileDialog
+            {
+                Title = "Export native Survivor animation bank",
+                Filter = "Survivor animation bank (*.nac)|*.nac",
+                FileName = Path.GetFileName(_survivor.AnimationPath)
+            };
+            if (nacDialog.ShowDialog(this) == DialogResult.OK)
+                File.Copy(_survivor.AnimationPath, nacDialog.FileName, true);
+            return;
+        }
         AnimationChoice? choice = CurrentAnimation;
         if (choice == null)
         {
@@ -429,6 +476,104 @@ public sealed class BiohazardModelViewerForm : Form
         if (dialog.ShowDialog(this) != DialogResult.OK) return;
         File.WriteAllBytes(dialog.FileName, choice.Edd.Data.ToArray());
         File.WriteAllBytes(Path.ChangeExtension(dialog.FileName, ".emr"), choice.Skeleton.Data.ToArray());
+    }
+
+    private void ExportSurvivorSkeletalAnimation()
+    {
+        if (_survivor == null || !_survivor.HasAnimations || _animation.SelectedIndex < 0) return;
+        int selector = _animation.SelectedIndex;
+        using var dialog = new SaveFileDialog
+        {
+            Title = "Export Survivor skeletal animation",
+            Filter = "Biohazard skeletal animation (*.bhskel.json)|*.bhskel.json|JSON (*.json)|*.json",
+            FileName = $"{Path.GetFileNameWithoutExtension(_path)}_selector{selector:X2}.bhskel.json"
+        };
+        if (dialog.ShowDialog(this) != DialogResult.OK) return;
+        int duration = _survivor.GetAnimationDuration(selector);
+        var frames = new float[duration][][];
+        for (int time = 0; time < duration; time++)
+            frames[time] = _survivor.GetGlobalPose(selector, time).Select(MatrixValues).ToArray();
+        var document = new
+        {
+            format = "Tool Hazard skeletal animation",
+            version = 1,
+            sourceGame = "Biohazard Gun Survivor PC",
+            sourceModel = Path.GetFileName(_path),
+            sourceAnimation = selector,
+            framesPerSecond = 30,
+            boneCount = _survivor.NodeCount,
+            parents = Enumerable.Range(0, _survivor.NodeCount).Select(_survivor.GetParentIndex).ToArray(),
+            frames
+        };
+        File.WriteAllText(dialog.FileName, JsonSerializer.Serialize(document, new JsonSerializerOptions { WriteIndented = true }));
+    }
+
+    private void ExportSurvivorBvhAnimation()
+    {
+        if (_survivor == null || !_survivor.HasAnimations || _animation.SelectedIndex < 0) return;
+        int selector = _animation.SelectedIndex;
+        using var dialog = new SaveFileDialog
+        {
+            Title = "Export Survivor animation for Blender",
+            Filter = "Biovision Hierarchy (*.bvh)|*.bvh",
+            FileName = $"{Path.GetFileNameWithoutExtension(_path)}_selector{selector:X2}.bvh"
+        };
+        if (dialog.ShowDialog(this) != DialogResult.OK) return;
+
+        var orderedBones = new List<int>();
+        var sb = new StringBuilder("HIERARCHY\n");
+        void WriteBone(int bone, int depth, bool root)
+        {
+            orderedBones.Add(bone);
+            string indent = new(' ', depth * 2);
+            sb.Append(indent).Append(root ? "ROOT " : "JOINT ").Append("bone_").Append(bone.ToString("D2")).Append('\n');
+            sb.Append(indent).Append("{\n");
+            Matrix4x4 bind = _survivor.GetBindLocal(bone);
+            sb.Append(indent).Append("  OFFSET ").Append(BvhNumber(bind.M41)).Append(' ').Append(BvhNumber(bind.M42)).Append(' ').Append(BvhNumber(bind.M43)).Append('\n');
+            sb.Append(indent).Append(root ? "  CHANNELS 6 Xposition Yposition Zposition Zrotation Yrotation Xrotation\n" : "  CHANNELS 3 Zrotation Yrotation Xrotation\n");
+            int[] children = Enumerable.Range(0, _survivor.NodeCount).Where(x => _survivor.GetParentIndex(x) == bone).ToArray();
+            foreach (int child in children) WriteBone(child, depth + 1, false);
+            if (children.Length == 0)
+                sb.Append(indent).Append("  End Site\n").Append(indent).Append("  {\n").Append(indent).Append("    OFFSET 0 0 0\n").Append(indent).Append("  }\n");
+            sb.Append(indent).Append("}\n");
+        }
+        int root = Enumerable.Range(0, _survivor.NodeCount).FirstOrDefault(x => _survivor.GetParentIndex(x) < 0);
+        WriteBone(root, 0, true);
+        int duration = _survivor.GetAnimationDuration(selector);
+        sb.Append("MOTION\nFrames: ").Append(duration).Append("\nFrame Time: 0.0333333333\n");
+        for (int time = 0; time < duration; time++)
+        {
+            Matrix4x4[] local = _survivor.GetLocalPose(selector, time);
+            for (int i = 0; i < orderedBones.Count; i++)
+            {
+                Matrix4x4 m = local[orderedBones[i]];
+                if (i == 0) sb.Append(BvhNumber(m.M41)).Append(' ').Append(BvhNumber(m.M42)).Append(' ').Append(BvhNumber(m.M43)).Append(' ');
+                Vector3 euler = SurvivorEulerZyx(m);
+                sb.Append(BvhNumber(euler.Z)).Append(' ').Append(BvhNumber(euler.Y)).Append(' ').Append(BvhNumber(euler.X));
+                if (i + 1 != orderedBones.Count) sb.Append(' ');
+            }
+            sb.Append('\n');
+        }
+        File.WriteAllText(dialog.FileName, sb.ToString());
+    }
+
+    private static Vector3 SurvivorEulerZyx(Matrix4x4 m)
+    {
+        const float radiansToDegrees = 180f / MathF.PI;
+        float y = MathF.Asin(Math.Clamp(m.M13, -1f, 1f));
+        float cosine = MathF.Cos(y);
+        float x, z;
+        if (MathF.Abs(cosine) > 0.00001f)
+        {
+            x = MathF.Atan2(-m.M23, m.M33);
+            z = MathF.Atan2(-m.M12, m.M11);
+        }
+        else
+        {
+            x = 0;
+            z = MathF.Atan2(m.M21, m.M22);
+        }
+        return new Vector3(x * radiansToDegrees, y * radiansToDegrees, z * radiansToDegrees);
     }
 
     private static float[] MatrixValues(Matrix4x4 m) => new[]
@@ -715,16 +860,26 @@ public sealed class BiohazardModelViewerForm : Form
         private readonly Vector3[] _vertices;
         private readonly Vector2[] _uv;
         private readonly SurvivorGroup[] _groups;
+        private readonly int[] _parentIndices;
+        private readonly Matrix4x4[] _bindLocalTransforms;
+        private readonly SurvivorAnimationBank? _animationBank;
         public int TriangleCount { get; }
         public SurvivorTexture Texture { get; }
         public string AnimationPath { get; }
         public bool HasAnimationBank => File.Exists(AnimationPath);
+        public bool HasAnimations => _animationBank != null && _animationBank.SelectorCount != 0;
+        public int SelectorCount => _animationBank?.SelectorCount ?? 0;
 
-        private SurvivorNab(Vector3[] vertices, Vector2[] uv, SurvivorGroup[] groups, int triangleCount, SurvivorTexture texture, string animationPath)
+        private SurvivorNab(Vector3[] vertices, Vector2[] uv, SurvivorGroup[] groups, int[] parentIndices,
+            Matrix4x4[] bindLocalTransforms, int triangleCount, SurvivorTexture texture, string animationPath,
+            SurvivorAnimationBank? animationBank)
         {
             _vertices = vertices;
             _uv = uv;
             _groups = groups;
+            _parentIndices = parentIndices;
+            _bindLocalTransforms = bindLocalTransforms;
+            _animationBank = animationBank;
             TriangleCount = triangleCount;
             Texture = texture;
             AnimationPath = animationPath;
@@ -818,17 +973,21 @@ public sealed class BiohazardModelViewerForm : Form
 
             uint rootNodePointer = FindRootNodePointer(data, groupTable + groupCount * 32, minimumNodePointer);
             uint maximumNodePointer = rawGroups.Max(x => x.NodePointer);
-            int nodeCount = checked((int)((maximumNodePointer - rootNodePointer) / 0x104) + 1);
+            int minimumNodeCount = checked((int)((maximumNodePointer - rootNodePointer) / 0x104) + 1);
+            int nodeCount = FindNodeCount(data, rootNodePointer, minimumNodeCount, groupTable + groupCount * 32);
+            rootNodePointer = checked(rootNodePointer - (uint)((nodeCount - minimumNodeCount) * 0x104));
             int rootNodeOffset = checked(data.Length - nodeCount * 0x108);
             if (rootNodeOffset < 0) throw new InvalidDataException("NAB node table is truncated.");
             var nodeTransforms = new Matrix4x4[nodeCount];
+            var bindLocalTransforms = new Matrix4x4[nodeCount];
             var parentIndices = new int[nodeCount];
             for (int i = 0; i < nodeCount; i++)
             {
                 int nodeOffset = checked(rootNodeOffset + i * 0x108);
                 Matrix4x4 rotation = ReadMatrix(data, nodeOffset + 0x40);
                 Matrix4x4 translation = ReadMatrix(data, nodeOffset + 0xC0);
-                nodeTransforms[i] = rotation * translation;
+                bindLocalTransforms[i] = rotation * translation;
+                nodeTransforms[i] = bindLocalTransforms[i];
                 uint parentPointer = BitConverter.ToUInt32(data, nodeOffset + 0x100);
                 parentIndices[i] = parentPointer >= rootNodePointer && (parentPointer - rootNodePointer) % 0x104 == 0
                     ? checked((int)((parentPointer - rootNodePointer) / 0x104))
@@ -846,10 +1005,14 @@ public sealed class BiohazardModelViewerForm : Form
                 uint delta = rawGroups[i].NodePointer - rootNodePointer;
                 if (delta % 0x104 != 0) throw new InvalidDataException($"Invalid NAB node pointer for group {i}.");
                 int nodeIndex = checked((int)(delta / 0x104));
-                groups[i] = new SurvivorGroup(rawGroups[i].Start, rawGroups[i].Count, rawGroups[i].TexturePage, nodeTransforms[nodeIndex]);
+                groups[i] = new SurvivorGroup(rawGroups[i].Start, rawGroups[i].Count, rawGroups[i].TexturePage, nodeIndex, nodeTransforms[nodeIndex]);
             }
-            return new SurvivorNab(vertices, uv, groups, triangleCount,
-                new SurvivorTexture(data, surfaces), Path.ChangeExtension(path, ".NAC"));
+            string animationPath = Path.ChangeExtension(path, ".NAC");
+            SurvivorAnimationBank? animationBank = File.Exists(animationPath)
+                ? SurvivorAnimationBank.TryLoad(data, animationPath, rootNodeOffset, nodeCount, rootNodePointer)
+                : null;
+            return new SurvivorNab(vertices, uv, groups, parentIndices, bindLocalTransforms, triangleCount,
+                new SurvivorTexture(data, surfaces), animationPath, animationBank);
         }
 
         private static bool IsGroupTable(byte[] data, int offset, int triangleCount)
@@ -886,6 +1049,31 @@ public sealed class BiohazardModelViewerForm : Form
             return pointer;
         }
 
+        private static int FindNodeCount(byte[] data, uint rootNodePointer, int minimum, int contentEnd)
+        {
+            for (int count = minimum; count <= 256; count++)
+            {
+                int rootOffset = data.Length - count * 0x108;
+                int qCount = count - 1;
+                int qStart = rootOffset - 0x1C - qCount * 0x1B0;
+                if (qStart < contentEnd || qStart + 0x60 > data.Length) continue;
+                int selectors = BitConverter.ToInt32(data, qStart + 0x0C);
+                if (selectors <= 0 || selectors > 256) continue;
+                bool valid = true;
+                for (int q = 0; q < qCount; q++)
+                {
+                    int header = qStart + q * 0x1B0;
+                    if (BitConverter.ToInt32(data, header) != 4 || BitConverter.ToInt32(data, header + 0x0C) != selectors)
+                    {
+                        valid = false;
+                        break;
+                    }
+                }
+                if (valid) return count;
+            }
+            return minimum;
+        }
+
         private static Matrix4x4 ReadMatrix(byte[] data, int offset)
         {
             if (offset < 0 || offset + 64 > data.Length) throw new InvalidDataException("NAB node matrix is truncated.");
@@ -918,7 +1106,179 @@ public sealed class BiohazardModelViewerForm : Form
             return result;
         }
 
-        private sealed record SurvivorGroup(int TriangleStart, int TriangleCount, byte TexturePage, Matrix4x4 BindTransform);
+        public int GetAnimationDuration(int selector) => _animationBank?.GetDuration(selector) ?? 0;
+
+        public int NodeCount => _bindLocalTransforms.Length;
+        public int GetParentIndex(int node) => _parentIndices[node];
+        public Matrix4x4 GetBindLocal(int node) => _bindLocalTransforms[node];
+
+        public Matrix4x4[] GetLocalPose(int selector, int frame)
+        {
+            Matrix4x4[] local = (Matrix4x4[])_bindLocalTransforms.Clone();
+            _animationBank?.ApplyLocalPose(selector, frame, local);
+            return local;
+        }
+
+        public Matrix4x4[] GetGlobalPose(int selector, int frame)
+        {
+            Matrix4x4[] local = GetLocalPose(selector, frame);
+            var global = new Matrix4x4[local.Length];
+            for (int i = 0; i < local.Length; i++)
+            {
+                int parent = _parentIndices[i];
+                global[i] = parent >= 0 && parent < i ? local[i] * global[parent] : local[i];
+            }
+            return global;
+        }
+
+        public void ApplyPose(List<RenderPart> parts, int selector, int frame)
+        {
+            if (_animationBank == null) return;
+            Matrix4x4[] global = GetGlobalPose(selector, frame);
+            for (int i = 0; i < parts.Count && i < _groups.Length; i++)
+                parts[i].ApplyTransform(global[_groups[i].NodeIndex]);
+        }
+
+        private sealed class SurvivorAnimationBank
+        {
+            private const int QHeaderSize = 0x60;
+            private const int SelectorPairSize = 8;
+            private const int QDiskSize = 0x1B0;
+            private readonly Track[][] _selectors;
+            public int SelectorCount => _selectors.Length;
+
+            private SurvivorAnimationBank(Track[][] selectors) => _selectors = selectors;
+
+            public static SurvivorAnimationBank? TryLoad(byte[] nab, string nacPath, int rootNodeOffset, int nodeCount, uint rootNodePointer)
+            {
+                int qCount = nodeCount - 1;
+                if (qCount <= 0) return null;
+                int qStart = rootNodeOffset - 0x1C - qCount * QDiskSize;
+                if (qStart < 0) return null;
+                int selectorCount = BitConverter.ToInt32(nab, qStart + 0x0C);
+                if (selectorCount <= 0 || selectorCount > 256) return null;
+
+                byte[] nac = File.ReadAllBytes(nacPath);
+                if (nac.Length < 8) return null;
+                int recordCount = BitConverter.ToInt32(nac, 0);
+                int commandCountOffset = checked(4 + recordCount * 0x70);
+                if (recordCount <= 0 || commandCountOffset + 4 > nac.Length) return null;
+                int commandCount = BitConverter.ToInt32(nac, commandCountOffset);
+                int commandOffset = commandCountOffset + 4;
+                if (commandCount <= 0 || commandOffset + commandCount * 8 != nac.Length) return null;
+
+                var poses = new Pose[recordCount];
+                for (int i = 0; i < recordCount; i++)
+                {
+                    int o = 4 + i * 0x70;
+                    poses[i] = new Pose(BitConverter.ToSingle(nac, o + 0x24), BitConverter.ToSingle(nac, o + 0x28),
+                        BitConverter.ToSingle(nac, o + 0x2C), BitConverter.ToSingle(nac, o + 0x14),
+                        BitConverter.ToSingle(nac, o + 0x18), BitConverter.ToSingle(nac, o + 0x1C));
+                }
+
+                var selectors = new Track[selectorCount][];
+                for (int selector = 0; selector < selectorCount; selector++)
+                {
+                    var tracks = new List<Track>();
+                    for (int q = 0; q < qCount; q++)
+                    {
+                        int header = qStart + q * QDiskSize;
+                        if (BitConverter.ToInt32(nab, header) != 4 || BitConverter.ToInt32(nab, header + 0x0C) != selectorCount)
+                            return null;
+                        int nodeIndex = q + 1;
+                        int pair = header + QHeaderSize + selector * SelectorPairSize;
+                        int cursor = BitConverter.ToInt32(nab, pair + 4) + 1;
+                        Track? track = ReadTrack(nac, commandOffset, commandCount, poses, nodeIndex, cursor);
+                        if (track != null) tracks.Add(track);
+                    }
+                    selectors[selector] = tracks.ToArray();
+                }
+                return new SurvivorAnimationBank(selectors);
+            }
+
+            private static Track? ReadTrack(byte[] nac, int commandOffset, int commandCount, Pose[] poses, int nodeIndex, int cursor)
+            {
+                var keys = new List<(Pose Pose, int Duration)>();
+                var visited = new HashSet<int>();
+                for (int budget = 0; budget < 4096 && (uint)cursor < (uint)commandCount && visited.Add(cursor); budget++)
+                {
+                    int o = commandOffset + cursor * 8;
+                    uint command = BitConverter.ToUInt32(nac, o);
+                    uint record = BitConverter.ToUInt32(nac, o + 4);
+                    if ((command & 0x80000000u) != 0)
+                    {
+                        int jump = (int)(command & 0xFFFF);
+                        if ((uint)jump >= (uint)commandCount || visited.Contains(jump)) break;
+                        cursor = jump;
+                        continue;
+                    }
+                    if (record >= poses.Length) break;
+                    int duration = Math.Max(1, (int)(command >> 16)) * 2;
+                    keys.Add((poses[record], duration));
+                    cursor++;
+                }
+                return keys.Count == 0 ? null : new Track(nodeIndex, keys);
+            }
+
+            public int GetDuration(int selector) => (uint)selector < (uint)_selectors.Length
+                ? Math.Max(1, _selectors[selector].Select(x => x.Duration).DefaultIfEmpty(1).Max()) : 0;
+
+            public void ApplyLocalPose(int selector, int frame, Matrix4x4[] local)
+            {
+                if ((uint)selector >= (uint)_selectors.Length) return;
+                foreach (Track track in _selectors[selector])
+                    if ((uint)track.NodeIndex < (uint)local.Length) local[track.NodeIndex] = track.Sample(frame).ToMatrix();
+            }
+
+            private readonly record struct Pose(float X, float Y, float Z, float RX, float RY, float RZ)
+            {
+                public Matrix4x4 ToMatrix()
+                {
+                    const float unit = MathF.PI * 2 / 4096f;
+                    return Matrix4x4.CreateRotationZ(RZ * unit) * Matrix4x4.CreateRotationY(-RY * unit)
+                        * Matrix4x4.CreateRotationX(-RX * unit) * Matrix4x4.CreateTranslation(X, Y, -Z);
+                }
+
+                public static Pose Lerp(Pose a, Pose b, float t) => new(
+                    a.X + ((b.X - a.X) * t), a.Y + ((b.Y - a.Y) * t), a.Z + ((b.Z - a.Z) * t),
+                    LerpAngle(a.RX, b.RX, t), LerpAngle(a.RY, b.RY, t), LerpAngle(a.RZ, b.RZ, t));
+
+                private static float LerpAngle(float a, float b, float t)
+                {
+                    float delta = (b - a + 2048f) % 4096f - 2048f;
+                    return a + delta * t;
+                }
+            }
+
+            private sealed class Track
+            {
+                private readonly (Pose Pose, int Duration)[] _keys;
+                public int NodeIndex { get; }
+                public int Duration { get; }
+
+                public Track(int nodeIndex, List<(Pose Pose, int Duration)> keys)
+                {
+                    NodeIndex = nodeIndex;
+                    _keys = keys.ToArray();
+                    Duration = Math.Max(1, _keys.Skip(1).Sum(x => x.Duration));
+                }
+
+                public Pose Sample(int frame)
+                {
+                    if (_keys.Length == 1) return _keys[0].Pose;
+                    int remaining = Math.Clamp(frame, 0, Duration - 1);
+                    for (int i = 0; i < _keys.Length - 1; i++)
+                    {
+                        int span = _keys[i + 1].Duration;
+                        if (remaining < span) return Pose.Lerp(_keys[i].Pose, _keys[i + 1].Pose, remaining / (float)span);
+                        remaining -= span;
+                    }
+                    return _keys[^1].Pose;
+                }
+            }
+        }
+
+        private sealed record SurvivorGroup(int TriangleStart, int TriangleCount, byte TexturePage, int NodeIndex, Matrix4x4 BindTransform);
     }
 
     private sealed record RenderFace(int[] Indices, Vector2[] UV, byte Page, int Clut);
@@ -1002,6 +1362,15 @@ public sealed class BiohazardModelViewerForm : Form
         {
             if ((uint)index < (uint)_parts.Count) _parts[index].Visible = visible;
             Invalidate();
+        }
+
+        public void RefitModel()
+        {
+            Vector3[] all = _parts.Where(x => x.Visible).SelectMany(x => x.Vertices).ToArray();
+            if (all.Length == 0) return;
+            Vector3 min = all.Aggregate(Vector3.Min), max = all.Aggregate(Vector3.Max);
+            _center = (min + max) / 2;
+            _radius = Math.Max(1, Vector3.Distance(min, max) / 2);
         }
 
         public void ResetCamera() { _yaw = -0.55f; _pitch = 0.25f; _zoom = 1; Invalidate(); }
