@@ -39,14 +39,34 @@ public sealed class BiohazardModelViewerForm : Form
         var menu = new MenuStrip();
         var file = new ToolStripMenuItem("File");
         var open = new ToolStripMenuItem("Open...", null, (_, _) => PromptOpen()) { ShortcutKeys = Keys.Control | Keys.O };
+        var saveAs = new ToolStripMenuItem("Save model as...", null, (_, _) => SaveModelAs()) { ShortcutKeys = Keys.Control | Keys.Shift | Keys.S };
         var openTexture = new ToolStripMenuItem("Load TIM texture...", null, (_, _) => PromptTexture());
         var clearTexture = new ToolStripMenuItem("Clear texture", null, (_, _) => { _texture = null; _texturePath = null; LoadSelectedMesh(); });
         var exit = new ToolStripMenuItem("Exit", null, (_, _) => Close());
-        file.DropDownItems.AddRange(new ToolStripItem[] { open, new ToolStripSeparator(), openTexture, clearTexture, new ToolStripSeparator(), exit });
+        file.DropDownItems.AddRange(new ToolStripItem[] { open, saveAs, new ToolStripSeparator(), openTexture, clearTexture, new ToolStripSeparator(), exit });
         var view = new ToolStripMenuItem("View");
+        var smooth = new ToolStripMenuItem("Smooth shading") { CheckOnClick = true, Checked = true };
+        smooth.CheckedChanged += (_, _) => _viewport.SmoothShading = smooth.Checked;
+        var textures = new ToolStripMenuItem("Show textures") { CheckOnClick = true, Checked = true };
+        textures.CheckedChanged += (_, _) => _viewport.TexturesVisible = textures.Checked;
+        view.DropDownItems.AddRange(new ToolStripItem[] { smooth, textures, new ToolStripSeparator() });
         view.DropDownItems.Add(new ToolStripMenuItem("Reset camera", null, (_, _) => _viewport.ResetCamera()) { ShortcutKeys = Keys.Control | Keys.R });
         view.DropDownItems.Add(new ToolStripMenuItem("Toggle wireframe", null, (_, _) => _viewport.Wireframe = !_viewport.Wireframe) { ShortcutKeys = Keys.Control | Keys.W });
-        menu.Items.AddRange(new ToolStripItem[] { file, view });
+        var meshMenu = new ToolStripMenuItem("Mesh");
+        meshMenu.DropDownItems.AddRange(new ToolStripItem[] {
+            new ToolStripMenuItem("Export whole mesh (OBJ)...", null, (_, _) => ExportMesh(false, false)),
+            new ToolStripMenuItem("Export selected part (OBJ)...", null, (_, _) => ExportMesh(true, false)),
+            new ToolStripSeparator(),
+            new ToolStripMenuItem("Export whole mesh (native)...", null, (_, _) => ExportMesh(false, true)),
+            new ToolStripMenuItem("Export selected part (native)...", null, (_, _) => ExportMesh(true, true)),
+            new ToolStripSeparator(),
+            new ToolStripMenuItem("Replace whole mesh from OBJ...", null, (_, _) => ReplaceMesh(false, false)),
+            new ToolStripMenuItem("Replace selected part from OBJ...", null, (_, _) => ReplaceMesh(true, false)),
+            new ToolStripSeparator(),
+            new ToolStripMenuItem("Replace whole mesh from native...", null, (_, _) => ReplaceMesh(false, true)),
+            new ToolStripMenuItem("Replace selected part from native...", null, (_, _) => ReplaceMesh(true, true))
+        });
+        menu.Items.AddRange(new ToolStripItem[] { file, view, meshMenu });
         MainMenuStrip = menu;
 
         var sidebar = new Panel { Dock = DockStyle.Right, Width = 230, Padding = new Padding(8) };
@@ -246,6 +266,76 @@ public sealed class BiohazardModelViewerForm : Form
         }
     }
 
+    private void SaveModelAs()
+    {
+        if (_model == null || _path == null) return;
+        using var dialog = new SaveFileDialog { FileName = Path.GetFileName(_path), Filter = "Biohazard model (*.emd;*.pld)|*.emd;*.pld|All files (*.*)|*.*" };
+        if (dialog.ShowDialog(this) == DialogResult.OK) _model.Save(dialog.FileName);
+    }
+
+    private int SelectedPartIndex()
+    {
+        int index = _parts.SelectedIndex;
+        if (index < 0) MessageBox.Show(this, "Select a part in the Visible parts list first.", "Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        return index;
+    }
+
+    private IModelMesh? GetEditableMesh(bool selectedPart)
+    {
+        if (_model == null || _mesh.SelectedIndex < 0) return null;
+        IModelMesh source = _model.GetMesh(_mesh.SelectedIndex);
+        if (!selectedPart) return source;
+        int selected = SelectedPartIndex();
+        if (selected < 0 || selected >= source.NumParts) return null;
+        IModelMeshBuilder builder = source.ToBuilder();
+        for (int i = builder.Count - 1; i >= 0; i--) if (i != selected) builder.RemoveAt(i);
+        return builder.ToMesh();
+    }
+
+    private void ExportMesh(bool selectedPart, bool native)
+    {
+        IModelMesh? export = GetEditableMesh(selectedPart);
+        if (export == null) return;
+        string ext = native ? NativeExtension(export.Version) : "obj";
+        using var dialog = new SaveFileDialog { FileName = selectedPart ? $"part_{_parts.SelectedIndex:D2}.{ext}" : $"mesh.{ext}", Filter = native ? $"Native mesh (*.{ext})|*.{ext}|All files (*.*)|*.*" : "Wavefront OBJ (*.obj)|*.obj" };
+        if (dialog.ShowDialog(this) != DialogResult.OK) return;
+        if (native) File.WriteAllBytes(dialog.FileName, export.Data.ToArray());
+        else new ObjExporter().Export(export, dialog.FileName, TexturePages);
+    }
+
+    private void ReplaceMesh(bool selectedPart, bool native)
+    {
+        if (_model == null || _mesh.SelectedIndex < 0) return;
+        IModelMesh current = _model.GetMesh(_mesh.SelectedIndex);
+        string ext = native ? NativeExtension(current.Version) : "obj";
+        using var dialog = new OpenFileDialog { Filter = native ? $"Native mesh (*.{ext})|*.{ext}|All files (*.*)|*.*" : "Wavefront OBJ (*.obj)|*.obj" };
+        if (dialog.ShowDialog(this) != DialogResult.OK) return;
+        try
+        {
+            IModelMesh incoming = native ? ReadNativeMesh(current.Version, dialog.FileName) : new ObjImporter().Import(current.Version, dialog.FileName, TexturePages);
+            IModelMesh replacement = incoming;
+            if (selectedPart)
+            {
+                int selected = SelectedPartIndex();
+                if (selected < 0 || selected >= current.NumParts || incoming.NumParts == 0) return;
+                IModelMeshBuilder target = current.ToBuilder();
+                target[selected] = incoming.ToBuilder()[0];
+                replacement = target.ToMesh();
+            }
+            _model.SetMesh(_mesh.SelectedIndex, replacement);
+            LoadSelectedMesh();
+        }
+        catch (Exception ex) { MessageBox.Show(this, $"Mesh replacement failed:\n{ex.Message}", "Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+    }
+
+    private int TexturePages => Math.Max(1, (_texture?.Width ?? 256) / 128);
+    private static string NativeExtension(BioVersion version) => version switch { BioVersion.Biohazard1 => "tmd", BioVersion.Biohazard2 => "md1", _ => "md2" };
+    private static IModelMesh ReadNativeMesh(BioVersion version, string path)
+    {
+        byte[] data = File.ReadAllBytes(path);
+        return version switch { BioVersion.Biohazard1 => new Tmd(data), BioVersion.Biohazard2 => new Md1(data), _ => new Md2(data) };
+    }
+
     private void LoadDefaultTexture(ModelFile model, string modelPath)
     {
         _texture = null;
@@ -404,6 +494,7 @@ public sealed class BiohazardModelViewerForm : Form
     {
         public Vector3[] LocalVertices { get; }
         public Vector3[] Vertices { get; private set; }
+        public Vector3[] Normals { get; private set; }
         public List<RenderFace> Faces { get; }
         public bool Visible { get; set; } = true;
 
@@ -411,6 +502,7 @@ public sealed class BiohazardModelViewerForm : Form
         {
             LocalVertices = localVertices;
             Vertices = new Vector3[localVertices.Length];
+            Normals = new Vector3[localVertices.Length];
             Faces = faces;
         }
 
@@ -421,6 +513,16 @@ public sealed class BiohazardModelViewerForm : Form
                 Vector3 p = Vector3.Transform(LocalVertices[i], transform);
                 Vertices[i] = p;
             }
+            Array.Clear(Normals, 0, Normals.Length);
+            foreach (RenderFace face in Faces)
+            {
+                if (face.Indices.Any(i => (uint)i >= (uint)Vertices.Length)) continue;
+                Vector3 n = Vector3.Cross(Vertices[face.Indices[1]] - Vertices[face.Indices[0]], Vertices[face.Indices[2]] - Vertices[face.Indices[0]]);
+                if (n.LengthSquared() == 0) continue;
+                n = Vector3.Normalize(n);
+                foreach (int index in face.Indices) Normals[index] += n;
+            }
+            for (int i = 0; i < Normals.Length; i++) if (Normals[i].LengthSquared() != 0) Normals[i] = Vector3.Normalize(Normals[i]);
         }
     }
 
@@ -433,9 +535,13 @@ public sealed class BiohazardModelViewerForm : Form
         private Vector3 _center;
         private float _radius = 1;
         private bool _wireframe;
+        private bool _smoothShading = true;
+        private bool _texturesVisible = true;
         private TimFile? _texture;
 
         public bool Wireframe { get => _wireframe; set { _wireframe = value; Invalidate(); } }
+        public bool SmoothShading { get => _smoothShading; set { _smoothShading = value; Invalidate(); } }
+        public bool TexturesVisible { get => _texturesVisible; set { _texturesVisible = value; Invalidate(); } }
 
         public ModelViewport()
         {
@@ -500,15 +606,19 @@ public sealed class BiohazardModelViewerForm : Form
                 RenderPart part = _parts[partIndex];
                 if (!part.Visible) continue;
                 Vector3[] transformed = part.Vertices.Select(v => Vector3.Transform(v - _center, rotation)).ToArray();
+                Vector3[] normals = part.Normals.Select(n => n.LengthSquared() == 0 ? Vector3.UnitZ : Vector3.Normalize(Vector3.TransformNormal(n, rotation))).ToArray();
                 foreach (RenderFace face in part.Faces)
                 {
                     if (face.Indices.Any(i => (uint)i >= (uint)transformed.Length)) continue;
                     Vector3 a = transformed[face.Indices[0]], b = transformed[face.Indices[1]], c = transformed[face.Indices[2]];
                     Vector3 normal = Vector3.Normalize(Vector3.Cross(b - a, c - a));
                     float light = Math.Clamp(0.25f + Math.Abs(Vector3.Dot(normal, Vector3.Normalize(new Vector3(-0.4f, -0.7f, -1)))) * 0.75f, 0, 1);
+                    float[] lights = face.Indices.Select(i => SmoothShading
+                        ? Math.Clamp(0.25f + Math.Abs(Vector3.Dot(normals[i], Vector3.Normalize(new Vector3(-0.4f, -0.7f, -1)))) * 0.75f, 0, 1)
+                        : light).ToArray();
                     Vector3[] screen = face.Indices.Select(i => new Vector3(Width / 2f + transformed[i].X * scale,
                         Height / 2f + transformed[i].Y * scale, transformed[i].Z)).ToArray();
-                    RasterTriangle(pixels, depth, screen, face, light, ColorFromPart(partIndex));
+                    RasterTriangle(pixels, depth, screen, face, lights, ColorFromPart(partIndex));
                 }
             }
 
@@ -524,7 +634,7 @@ public sealed class BiohazardModelViewerForm : Form
                 new Point(10, Height - 26), Color.Silver);
         }
 
-        private void RasterTriangle(int[] pixels, float[] depth, Vector3[] p, RenderFace face, float light, Color fallback)
+        private void RasterTriangle(int[] pixels, float[] depth, Vector3[] p, RenderFace face, float[] lights, Color fallback)
         {
             if (Wireframe)
             {
@@ -537,7 +647,6 @@ public sealed class BiohazardModelViewerForm : Form
             int maxX = Math.Clamp((int)MathF.Ceiling(p.Max(v => v.X)), 0, Width - 1);
             int minY = Math.Clamp((int)MathF.Floor(p.Min(v => v.Y)), 0, Height - 1);
             int maxY = Math.Clamp((int)MathF.Ceiling(p.Max(v => v.Y)), 0, Height - 1);
-            Color flat = Color.FromArgb(255, (int)(fallback.R * light), (int)(fallback.G * light), (int)(fallback.B * light));
 
             for (int y = minY; y <= maxY; y++)
             for (int x = minX; x <= maxX; x++)
@@ -550,9 +659,11 @@ public sealed class BiohazardModelViewerForm : Form
                 float z = w0 * p[0].Z + w1 * p[1].Z + w2 * p[2].Z;
                 int index = y * Width + x;
                 if (z >= depth[index]) continue;
+                float light = w0 * lights[0] + w1 * lights[1] + w2 * lights[2];
+                Color flat = Color.FromArgb(255, (int)(fallback.R * light), (int)(fallback.G * light), (int)(fallback.B * light));
 
                 Color color = flat;
-                if (_texture != null)
+                if (_texture != null && TexturesVisible)
                 {
                     int u = (int)MathF.Round(w0 * face.UV[0].X + w1 * face.UV[1].X + w2 * face.UV[2].X) + face.Page * 128;
                     int v = (int)MathF.Round(w0 * face.UV[0].Y + w1 * face.UV[1].Y + w2 * face.UV[2].Y);
