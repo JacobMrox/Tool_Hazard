@@ -91,4 +91,4 @@ This is to be compiled in Visual Studio 2026. For compiled ready-to-use release,
 * Leo2236 for providing lots of tools for the Resident Evil/Biohazard community including source codes, some of which were used in this project.
 * [Gemini-Loboto3](https://github.com/Gemini-Loboto3): for his immense work and contribution to the RE Community, some of my work which is based or inspired by his work, including the File Editor.
 * Jader-Link for his [RE4 GCA DAT Tool](https://github.com/JADERLINK/RE4-2007-GCA-TOOL).
-* * Trigger17: Survivor NAB/NAC format research.
+* [Trigger17](https://github.com/Trigger117): Survivor NAB/NAC format research.
