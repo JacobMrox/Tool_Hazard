@@ -70,13 +70,19 @@ public sealed class BiohazardModelViewerForm : Form
             new ToolStripMenuItem("Replace whole mesh from native...", null, (_, _) => ReplaceMesh(false, true)),
             new ToolStripMenuItem("Replace selected part from native...", null, (_, _) => ReplaceMesh(true, true))
         });
+        var textureMenu = new ToolStripMenuItem("Texture");
+        textureMenu.DropDownItems.AddRange(new ToolStripItem[] {
+            new ToolStripMenuItem("View texture...", null, (_, _) => ViewTexture()),
+            new ToolStripMenuItem("Export texture image...", null, (_, _) => ExportTexture()),
+            new ToolStripMenuItem("Replace/import texture image...", null, (_, _) => ReplaceTextureImage())
+        });
         var animationMenu = new ToolStripMenuItem("Animation");
         animationMenu.DropDownItems.AddRange(new ToolStripItem[] {
             new ToolStripMenuItem("Export current animation for Blender (BVH)...", null, (_, _) => ExportBvhAnimation()),
             new ToolStripMenuItem("Export current animation (skeletal JSON)...", null, (_, _) => ExportSkeletalAnimation()),
             new ToolStripMenuItem("Export current native animation bank...", null, (_, _) => ExportNativeAnimationBank())
         });
-        menu.Items.AddRange(new ToolStripItem[] { file, view, meshMenu, animationMenu });
+        menu.Items.AddRange(new ToolStripItem[] { file, view, meshMenu, textureMenu, animationMenu });
         MainMenuStrip = menu;
 
         var sidebar = new Panel { Dock = DockStyle.Right, Width = 230, Padding = new Padding(8) };
@@ -332,6 +338,150 @@ public sealed class BiohazardModelViewerForm : Form
         }
     }
 
+    private IViewerTexture? CurrentTexture
+    {
+        get
+        {
+            if (_survivor != null) return _survivor.Texture;
+            return _texture == null ? null : new TimTexture(_texture);
+        }
+    }
+
+    private Bitmap? CreateTextureBitmap()
+    {
+        IViewerTexture? texture = CurrentTexture;
+        if (texture == null) return null;
+        int palettes = Math.Max(1, texture.PaletteCount);
+        var bitmap = new Bitmap(texture.Width, checked(texture.Height * palettes), System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+        for (int palette = 0; palette < palettes; palette++)
+            for (int y = 0; y < texture.Height; y++)
+                for (int x = 0; x < texture.Width; x++)
+                    bitmap.SetPixel(x, palette * texture.Height + y, Color.FromArgb(unchecked((int)texture.GetPixel(x, y, palette))));
+        return bitmap;
+    }
+
+    private void ViewTexture()
+    {
+        using Bitmap? bitmap = CreateTextureBitmap();
+        if (bitmap == null)
+        {
+            MessageBox.Show(this, "The current model has no texture loaded.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+        var preview = new Form { Text = $"Texture atlas - {CurrentTexture!.PaletteCount} CLUT(s), {CurrentTexture.Width}x{CurrentTexture.Height} each", StartPosition = FormStartPosition.CenterParent,
+            ClientSize = new Size(Math.Clamp(bitmap.Width * 2, 480, 1100), Math.Clamp(bitmap.Height * 2, 360, 800)) };
+        var picture = new PictureBox { Dock = DockStyle.Fill, BackColor = Color.FromArgb(32, 32, 32), SizeMode = PictureBoxSizeMode.Zoom,
+            Image = new Bitmap(bitmap) };
+        preview.FormClosed += (_, _) => picture.Image?.Dispose();
+        preview.Controls.Add(picture);
+        preview.Show(this);
+    }
+
+    private void ExportTexture()
+    {
+        using Bitmap? bitmap = CreateTextureBitmap();
+        if (bitmap == null)
+        {
+            MessageBox.Show(this, "The current model has no texture loaded.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+        using var dialog = new SaveFileDialog { Title = "Export texture image", Filter = "PNG image (*.png)|*.png|Bitmap image (*.bmp)|*.bmp",
+            FileName = Path.GetFileNameWithoutExtension(_path ?? "texture") + "_texture.png" };
+        if (dialog.ShowDialog(this) != DialogResult.OK) return;
+        bitmap.Save(dialog.FileName, Path.GetExtension(dialog.FileName).Equals(".bmp", StringComparison.OrdinalIgnoreCase)
+            ? System.Drawing.Imaging.ImageFormat.Bmp : System.Drawing.Imaging.ImageFormat.Png);
+    }
+
+    private void ReplaceTextureImage()
+    {
+        using var dialog = new OpenFileDialog { Title = "Replace texture from PNG/BMP", Filter = "Images (*.png;*.bmp)|*.png;*.bmp|All files (*.*)|*.*" };
+        if (dialog.ShowDialog(this) != DialogResult.OK) return;
+        try
+        {
+            using var bitmap = new Bitmap(dialog.FileName);
+            if (_survivor != null)
+            {
+                _survivor.Texture.Replace(bitmap, _survivor.Data);
+                _survivor.CommitTextureEdits();
+                LoadSurvivorMesh();
+            }
+            else
+            {
+                if (_texture == null || _model == null) throw new InvalidOperationException("Load a TIM texture before importing an image.");
+                ImportTimAtlas(_texture, bitmap);
+                if (string.Equals(_texturePath, "Embedded TIM", StringComparison.Ordinal))
+                    _model.SetTim(0, _texture);
+                else if (!string.IsNullOrWhiteSpace(_texturePath))
+                    _texture.Save(_texturePath);
+                LoadSelectedMesh();
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, $"Texture replacement failed:\n{ex.Message}", Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private static void ImportTimAtlas(TimFile tim, Bitmap bitmap)
+    {
+        if (bitmap.Width != tim.Width || bitmap.Height % tim.Height != 0)
+            throw new InvalidDataException($"Expected {tim.Width}x{tim.Height} for one CLUT, or a vertical multiple of that height for a CLUT atlas.");
+        int suppliedCluts = bitmap.Height / tim.Height;
+        if (suppliedCluts > tim.ClutCount)
+            throw new InvalidDataException($"The image contains {suppliedCluts} CLUT layers, but this TIM has {tim.ClutCount}.");
+        if (!tim.HasCluts)
+        {
+            for (int y = 0; y < tim.Height; y++)
+                for (int x = 0; x < tim.Width; x++)
+                    tim.SetPixel(x, y, 0, unchecked((uint)bitmap.GetPixel(x, y).ToArgb()));
+            return;
+        }
+
+        // The first layer defines the shared pixel indices. Remaining layers
+        // recolour those same indices, which is how multi-CLUT TIMs work.
+        ushort[] firstPalette = BuildTimPalette(bitmap, new Rectangle(0, 0, tim.Width, tim.Height), tim.ColoursPerClut);
+        tim.SetPalette(0, firstPalette);
+        for (int y = 0; y < tim.Height; y++)
+            for (int x = 0; x < tim.Width; x++)
+                tim.SetPixel(x, y, 0, unchecked((uint)bitmap.GetPixel(x, y).ToArgb()));
+
+        for (int clut = 1; clut < suppliedCluts; clut++)
+        {
+            var sums = new long[tim.ColoursPerClut, 4];
+            var counts = new int[tim.ColoursPerClut];
+            for (int y = 0; y < tim.Height; y++)
+                for (int x = 0; x < tim.Width; x++)
+                {
+                    int index = tim.GetRawPixel(x, y);
+                    Color c = bitmap.GetPixel(x, clut * tim.Height + y);
+                    sums[index, 0] += c.A; sums[index, 1] += c.R; sums[index, 2] += c.G; sums[index, 3] += c.B; counts[index]++;
+                }
+            ushort[] palette = tim.GetPalette(clut);
+            for (int i = 0; i < palette.Length; i++)
+                if (counts[i] != 0)
+                {
+                    Color c = Color.FromArgb((int)(sums[i, 0] / counts[i]), (int)(sums[i, 1] / counts[i]),
+                        (int)(sums[i, 2] / counts[i]), (int)(sums[i, 3] / counts[i]));
+                    palette[i] = TimFile.Convert32to16(unchecked((uint)c.ToArgb()));
+                }
+            tim.SetPalette(clut, palette);
+        }
+    }
+
+    private static ushort[] BuildTimPalette(Bitmap bitmap, Rectangle area, int capacity)
+    {
+        var result = new ushort[capacity];
+        var seen = new HashSet<ushort>();
+        int next = 1; // PS1 palette entry zero remains transparent.
+        for (int y = area.Top; y < area.Bottom && next < capacity; y++)
+            for (int x = area.Left; x < area.Right && next < capacity; x++)
+            {
+                ushort colour = TimFile.Convert32to16(unchecked((uint)bitmap.GetPixel(x, y).ToArgb()));
+                if (colour != 0 && seen.Add(colour)) result[next++] = colour;
+            }
+        return result;
+    }
+
     private void ExportSkeletalAnimation()
     {
         if (_survivor != null)
@@ -584,6 +734,17 @@ public sealed class BiohazardModelViewerForm : Form
 
     private void SaveModelAs()
     {
+        if (_survivor != null && _path != null)
+        {
+            using var survivorDialog = new SaveFileDialog { FileName = Path.GetFileName(_path), Filter = "Survivor model (*.nab)|*.nab" };
+            if (survivorDialog.ShowDialog(this) == DialogResult.OK)
+            {
+                _survivor.Save(survivorDialog.FileName);
+                if (_survivor.HasAnimationBank)
+                    File.Copy(_survivor.AnimationPath, Path.ChangeExtension(survivorDialog.FileName, ".NAC"), true);
+            }
+            return;
+        }
         if (_model == null || _path == null) return;
         using var dialog = new SaveFileDialog { FileName = Path.GetFileName(_path), Filter = "Biohazard model (*.emd;*.pld)|*.emd;*.pld|All files (*.*)|*.*" };
         if (dialog.ShowDialog(this) == DialogResult.OK) _model.Save(dialog.FileName);
@@ -610,6 +771,33 @@ public sealed class BiohazardModelViewerForm : Form
 
     private void ExportMesh(bool selectedPart, bool native)
     {
+        if (_survivor != null)
+        {
+            int selected = selectedPart ? SelectedPartIndex() : -1;
+            if (selectedPart && selected < 0) return;
+            if (native && !selectedPart)
+            {
+                using var nabDialog = new SaveFileDialog { FileName = Path.GetFileName(_path), Filter = "Survivor model (*.nab)|*.nab" };
+                if (nabDialog.ShowDialog(this) == DialogResult.OK)
+                {
+                    _survivor.Save(nabDialog.FileName);
+                    if (_survivor.HasAnimationBank)
+                        File.Copy(_survivor.AnimationPath, Path.ChangeExtension(nabDialog.FileName, ".NAC"), true);
+                }
+                return;
+            }
+            IModelMesh survivorMesh = _survivor.ToMd2(selected);
+            string extension = native ? "md2" : "obj";
+            using var survivorDialog = new SaveFileDialog
+            {
+                FileName = selectedPart ? $"survivor_part_{selected:D2}.{extension}" : $"{Path.GetFileNameWithoutExtension(_path)}.{extension}",
+                Filter = native ? "RE3-compatible mesh (*.md2)|*.md2" : "Wavefront OBJ (*.obj)|*.obj"
+            };
+            if (survivorDialog.ShowDialog(this) != DialogResult.OK) return;
+            if (native) File.WriteAllBytes(survivorDialog.FileName, survivorMesh.Data.ToArray());
+            else new ObjExporter().Export(survivorMesh, survivorDialog.FileName, Math.Max(1, _survivor.Texture.Width / 128));
+            return;
+        }
         IModelMesh? export = GetEditableMesh(selectedPart);
         if (export == null) return;
         string ext = native ? NativeExtension(export.Version) : "obj";
@@ -621,6 +809,11 @@ public sealed class BiohazardModelViewerForm : Form
 
     private void ReplaceMesh(bool selectedPart, bool native)
     {
+        if (_survivor != null)
+        {
+            ReplaceSurvivorMesh(selectedPart, native);
+            return;
+        }
         if (_model == null || _mesh.SelectedIndex < 0) return;
         IModelMesh current = _model.GetMesh(_mesh.SelectedIndex);
         string ext = native ? NativeExtension(current.Version) : "obj";
@@ -642,6 +835,48 @@ public sealed class BiohazardModelViewerForm : Form
             LoadSelectedMesh();
         }
         catch (Exception ex) { MessageBox.Show(this, $"Mesh replacement failed:\n{ex.Message}", "Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+    }
+
+    private void ReplaceSurvivorMesh(bool selectedPart, bool native)
+    {
+        if (_survivor == null) return;
+        using var dialog = new OpenFileDialog
+        {
+            Filter = native
+                ? "Supported native model (*.nab;*.emd;*.pld;*.md2)|*.nab;*.emd;*.pld;*.md2|All files (*.*)|*.*"
+                : "Wavefront OBJ (*.obj)|*.obj"
+        };
+        if (dialog.ShowDialog(this) != DialogResult.OK) return;
+        try
+        {
+            int selected = selectedPart ? SelectedPartIndex() : -1;
+            if (selectedPart && selected < 0) return;
+            string extension = Path.GetExtension(dialog.FileName).ToLowerInvariant();
+            if (extension == ".nab")
+            {
+                SurvivorNab incoming = SurvivorNab.FromFile(dialog.FileName);
+                _survivor.ReplaceWith(incoming, selected);
+            }
+            else
+            {
+                IModelMesh incoming;
+                Emr? incomingSkeleton = null;
+                if (extension is ".emd" or ".pld")
+                {
+                    ModelFile model = ModelFile.FromFile(dialog.FileName);
+                    incoming = model.GetMesh(0);
+                    incomingSkeleton = TryGetSkeleton(model);
+                }
+                else if (extension == ".md2") incoming = new Md2(File.ReadAllBytes(dialog.FileName));
+                else incoming = new ObjImporter().Import(BioVersion.Biohazard3, dialog.FileName, Math.Max(1, _survivor.Texture.Width / 128));
+                _survivor.ReplaceFromClassic(incoming, incomingSkeleton, selected);
+            }
+            LoadSurvivorMesh();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, $"Survivor mesh replacement failed:\n{ex.Message}", "Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
 
     private int TexturePages => Math.Max(1, (_texture?.Width ?? 256) / 128);
@@ -808,6 +1043,7 @@ public sealed class BiohazardModelViewerForm : Form
     {
         int Width { get; }
         int Height { get; }
+        int PaletteCount { get; }
         uint GetPixel(int x, int y, int palette);
     }
 
@@ -815,17 +1051,21 @@ public sealed class BiohazardModelViewerForm : Form
     {
         public int Width => tim.Width;
         public int Height => tim.Height;
+        public int PaletteCount => tim.ClutCount;
         public uint GetPixel(int x, int y, int palette) => tim.GetPixel(x, y, palette);
     }
 
     private sealed class SurvivorTexture : IViewerTexture
     {
         private readonly ushort[] _pixels;
+        private readonly (int Offset, int Width, int Height)[] _surfaces;
         public int Width { get; }
         public int Height { get; }
+        public int PaletteCount => 1;
 
         public SurvivorTexture(byte[] data, IReadOnlyList<(int Offset, int Width, int Height)> surfaces)
         {
+            _surfaces = surfaces.ToArray();
             Width = surfaces.Sum(x => x.Width);
             Height = surfaces.Max(x => x.Height);
             _pixels = new ushort[Width * Height];
@@ -848,6 +1088,28 @@ public sealed class BiohazardModelViewerForm : Form
             int b = (value & 31) * 255 / 31;
             return 0xFF000000u | (uint)(r << 16) | (uint)(g << 8) | (uint)b;
         }
+
+        public void Replace(Bitmap bitmap, byte[] data)
+        {
+            if (bitmap.Width != Width || bitmap.Height != Height)
+                throw new InvalidDataException($"The replacement must be exactly {Width}x{Height} pixels (the exported atlas size).");
+            int sourceX = 0;
+            foreach ((int offset, int width, int height) in _surfaces)
+            {
+                for (int y = 0; y < height; y++)
+                for (int x = 0; x < width; x++)
+                {
+                    Color color = bitmap.GetPixel(sourceX + x, y);
+                    ushort value = (ushort)(((color.R * 31 / 255) << 10) | ((color.G * 31 / 255) << 5) | (color.B * 31 / 255));
+                    int pixel = y * Width + sourceX + x;
+                    _pixels[pixel] = value;
+                    int destination = offset + (y * width + x) * 2;
+                    data[destination] = (byte)value;
+                    data[destination + 1] = (byte)(value >> 8);
+                }
+                sourceX += width;
+            }
+        }
     }
 
     private sealed class SurvivorNab
@@ -857,24 +1119,32 @@ public sealed class BiohazardModelViewerForm : Form
         private const int SurfaceWidthOffset = 364;
         private const int SurfaceHeightOffset = 368;
         private const int SurfaceDataOffset = 372;
-        private readonly Vector3[] _vertices;
-        private readonly Vector2[] _uv;
-        private readonly SurvivorGroup[] _groups;
+        private byte[] _data;
+        private Vector3[] _vertices;
+        private Vector3[] _normals;
+        private Vector2[] _uv;
+        private SurvivorGroup[] _groups;
+        private readonly int _originalVertexEnd;
+        private readonly int _originalGroupCountOffset;
+        private byte[] _suffix;
         private readonly int[] _parentIndices;
         private readonly Matrix4x4[] _bindLocalTransforms;
         private readonly SurvivorAnimationBank? _animationBank;
-        public int TriangleCount { get; }
+        public int TriangleCount { get; private set; }
+        public byte[] Data => _data;
         public SurvivorTexture Texture { get; }
         public string AnimationPath { get; }
         public bool HasAnimationBank => File.Exists(AnimationPath);
         public bool HasAnimations => _animationBank != null && _animationBank.SelectorCount != 0;
         public int SelectorCount => _animationBank?.SelectorCount ?? 0;
 
-        private SurvivorNab(Vector3[] vertices, Vector2[] uv, SurvivorGroup[] groups, int[] parentIndices,
+        private SurvivorNab(byte[] data, Vector3[] vertices, Vector3[] normals, Vector2[] uv, SurvivorGroup[] groups, int[] parentIndices,
             Matrix4x4[] bindLocalTransforms, int triangleCount, SurvivorTexture texture, string animationPath,
-            SurvivorAnimationBank? animationBank)
+            SurvivorAnimationBank? animationBank, int originalVertexEnd, int originalGroupCountOffset)
         {
+            _data = data;
             _vertices = vertices;
+            _normals = normals;
             _uv = uv;
             _groups = groups;
             _parentIndices = parentIndices;
@@ -883,6 +1153,9 @@ public sealed class BiohazardModelViewerForm : Form
             TriangleCount = triangleCount;
             Texture = texture;
             AnimationPath = animationPath;
+            _originalVertexEnd = originalVertexEnd;
+            _originalGroupCountOffset = originalGroupCountOffset;
+            _suffix = data.AsSpan(originalVertexEnd).ToArray();
         }
 
         public static SurvivorNab FromFile(string path)
@@ -918,6 +1191,7 @@ public sealed class BiohazardModelViewerForm : Form
             int textureHeight = surfaces[0].Height;
 
             var vertices = new Vector3[vertexCount];
+            var normals = new Vector3[vertexCount];
             var uv = new Vector2[vertexCount];
             for (int i = 0; i < vertexCount; i++)
             {
@@ -930,6 +1204,7 @@ public sealed class BiohazardModelViewerForm : Form
                 if (!float.IsFinite(x) || !float.IsFinite(y) || !float.IsFinite(z) || !float.IsFinite(u) || !float.IsFinite(v))
                     throw new InvalidDataException($"Invalid NAB vertex {i}.");
                 vertices[i] = new Vector3(x, y, z);
+                normals[i] = new Vector3(BitConverter.ToSingle(data, o + 12), BitConverter.ToSingle(data, o + 16), BitConverter.ToSingle(data, o + 20));
                 uv[i] = new Vector2(u * (textureWidth - 1), v * (textureHeight - 1));
             }
 
@@ -1011,8 +1286,8 @@ public sealed class BiohazardModelViewerForm : Form
             SurvivorAnimationBank? animationBank = File.Exists(animationPath)
                 ? SurvivorAnimationBank.TryLoad(data, animationPath, rootNodeOffset, nodeCount, rootNodePointer)
                 : null;
-            return new SurvivorNab(vertices, uv, groups, parentIndices, bindLocalTransforms, triangleCount,
-                new SurvivorTexture(data, surfaces), animationPath, animationBank);
+            return new SurvivorNab(data, vertices, normals, uv, groups, parentIndices, bindLocalTransforms, triangleCount,
+                new SurvivorTexture(data, surfaces), animationPath, animationBank, vertexEnd, groupCountOffset);
         }
 
         private static bool IsGroupTable(byte[] data, int offset, int triangleCount)
@@ -1082,6 +1357,331 @@ public sealed class BiohazardModelViewerForm : Form
                 F(8), F(9), F(10), F(11), F(12), F(13), F(14), F(15));
         }
 
+        public void Save(string path) => File.WriteAllBytes(path, _data);
+
+        public void CommitTextureEdits()
+        {
+            int vertexEnd = checked(8 + _vertices.Length * VertexStride);
+            _suffix = _data.AsSpan(vertexEnd).ToArray();
+        }
+
+        public Md2 ToMd2(int selectedGroup = -1)
+        {
+            var builder = new Md2.Builder();
+            IEnumerable<int> indices = selectedGroup >= 0 ? new[] { selectedGroup } : Enumerable.Range(0, _groups.Length);
+            foreach (int groupIndex in indices)
+            {
+                SurvivorGroup group = _groups[groupIndex];
+                var part = new Md2.Builder.Part();
+                int first = group.TriangleStart * 3;
+                for (int triangle = 0; triangle < group.TriangleCount; triangle++)
+                {
+                    int source = first + triangle * 3;
+                    if (part.Positions.Count > 252) throw new InvalidDataException($"Survivor part {groupIndex} exceeds the MD2 8-bit vertex limit.");
+                    byte baseIndex = (byte)part.Positions.Count;
+                    for (int corner = 0; corner < 3; corner++)
+                    {
+                        Vector3 p = _vertices[source + corner];
+                        Vector3 n = _normals[source + corner];
+                        part.Positions.Add(new Md2.Vector(ToShort(p.X), ToShort(p.Y), ToShort(p.Z)));
+                        Vector3 unitNormal = n.LengthSquared() == 0 ? Vector3.UnitY : Vector3.Normalize(n);
+                        part.Normals.Add(new Md2.Vector(ToShort(unitNormal.X * 4096), ToShort(unitNormal.Y * 4096), ToShort(unitNormal.Z * 4096)));
+                    }
+                    Vector2 a = _uv[source], b = _uv[source + 1], c = _uv[source + 2];
+                    part.Triangles.Add(new Md2.Triangle
+                    {
+                        v0 = baseIndex, v1 = (byte)(baseIndex + 1), v2 = (byte)(baseIndex + 2),
+                        tu0 = ToByte(a.X), tv0 = ToByte(a.Y), tu1 = ToByte(b.X), tv1 = ToByte(b.Y),
+                        tu2 = ToByte(c.X), tv2 = ToByte(c.Y), page = group.TexturePage, visible = 120
+                    });
+                }
+                builder.Parts.Add(part);
+            }
+            return builder.ToMesh();
+        }
+
+        public void ReplaceWith(SurvivorNab incoming, int selectedGroup)
+        {
+            if (selectedGroup < 0)
+            {
+                ApplyParts(incoming.GetParts().ToArray());
+                return;
+            }
+            SurvivorPart[] parts = GetParts().ToArray();
+            SurvivorPart replacement = incoming.GetParts().FirstOrDefault()
+                ?? throw new InvalidDataException("The incoming NAB contains no mesh groups.");
+            parts[selectedGroup] = replacement with { NodeIndex = parts[selectedGroup].NodeIndex, TexturePage = parts[selectedGroup].TexturePage };
+            ApplyParts(parts);
+        }
+
+        public void ReplaceFromClassic(IModelMesh incoming, Emr? skeleton, int selectedGroup)
+        {
+            var converter = new MeshConverter();
+            Md2 md2 = (Md2)converter.ConvertMesh(incoming, BioVersion.Biohazard3, remap: false);
+            Matrix4x4[] sourceTransforms = BuildPartTransforms(skeleton, md2.NumParts, 0);
+            SurvivorPart[] source = ReadMd2Parts(md2, sourceTransforms);
+            if (source.Length == 0) throw new InvalidDataException("The incoming mesh has no parts.");
+            SurvivorPart[] target = GetParts().ToArray();
+            if (selectedGroup >= 0)
+            {
+                target[selectedGroup] = FitPartToTarget(source[0], target[selectedGroup]);
+                ApplyParts(target);
+                return;
+            }
+
+            Vector3[] targetGlobalVertices = target.SelectMany(x =>
+            {
+                Matrix4x4 global = GetBindGlobal(x.NodeIndex);
+                return x.Vertices.Select(v => Vector3.Transform(v, global));
+            }).ToArray();
+
+            // Classic and Survivor models do not share an axis convention or a mesh
+            // part order.  Try every orthogonal axis/sign mapping, and for each one
+            // solve a unique minimum-cost body-part assignment.  This preserves a
+            // stable anatomical mapping instead of stacking unrelated numbered parts.
+            (int[] map, int permutation, int signs) = FindPartMapping(source, target);
+            Vector3[] orientedVertices = source.SelectMany(p => p.Vertices.Select(v => Orient(v, permutation, signs))).ToArray();
+            Vector3 sourceCenter = Average(orientedVertices);
+            Vector3 targetCenter = Average(targetGlobalVertices);
+            float scale = GetHeight(targetGlobalVertices) / GetHeight(orientedVertices);
+            for (int t = 0; t < target.Length; t++)
+                target[t] = FitPartToTarget(source[map[t]], target[t], sourceCenter, targetCenter, scale, permutation, signs);
+            ApplyParts(target);
+        }
+
+        private SurvivorPart FitPartToTarget(SurvivorPart source, SurvivorPart target)
+        {
+            Vector3 sourceCenter = PartCenter(source);
+            Vector3 targetCenter = PartCenterGlobal(target);
+            float sourceRadius = Math.Max(1, source.Vertices.Max(v => Vector3.Distance(v, sourceCenter)));
+            Matrix4x4 targetGlobal = GetBindGlobal(target.NodeIndex);
+            Matrix4x4.Invert(targetGlobal, out Matrix4x4 inverseTarget);
+            Vector3[] currentGlobal = target.Vertices.Select(v => Vector3.Transform(v, targetGlobal)).ToArray();
+            float targetRadius = Math.Max(1, currentGlobal.Max(v => Vector3.Distance(v, targetCenter)));
+            float scale = targetRadius / sourceRadius;
+            Vector3[] vertices = source.Vertices.Select(v => Vector3.Transform(((v - sourceCenter) * scale) + targetCenter, inverseTarget)).ToArray();
+            Vector3[] normals = source.Normals.Select(n => Vector3.Normalize(Vector3.TransformNormal(n, inverseTarget))).ToArray();
+            return new SurvivorPart(vertices, normals, source.UV, target.TexturePage, target.NodeIndex);
+        }
+
+        private SurvivorPart FitPartToTarget(SurvivorPart source, SurvivorPart target,
+            Vector3 sourceCenter, Vector3 targetCenter, float scale, int permutation, int signs)
+        {
+            Matrix4x4.Invert(GetBindGlobal(target.NodeIndex), out Matrix4x4 inverseTarget);
+            Vector3[] vertices = source.Vertices
+                .Select(v => Vector3.Transform(((Orient(v, permutation, signs) - sourceCenter) * scale) + targetCenter, inverseTarget))
+                .ToArray();
+            Vector3[] normals = source.Normals.Select(n =>
+            {
+                Vector3 value = Vector3.TransformNormal(Orient(n, permutation, signs), inverseTarget);
+                return value.LengthSquared() == 0 ? Vector3.UnitY : Vector3.Normalize(value);
+            }).ToArray();
+            return new SurvivorPart(vertices, normals, source.UV, target.TexturePage, target.NodeIndex);
+        }
+
+        private (int[] Map, int Permutation, int Signs) FindPartMapping(SurvivorPart[] source, SurvivorPart[] target)
+        {
+            Vector3[] targetCenters = target.Select(PartCenterGlobal).ToArray();
+            NormalizeCenters(targetCenters);
+            float bestCost = float.PositiveInfinity;
+            int[] bestMap = new int[target.Length];
+            int bestPermutation = 0, bestSigns = 0;
+            for (int permutation = 0; permutation < 6; permutation++)
+            for (int signs = 0; signs < 8; signs++)
+            {
+                Vector3[] sourceCenters = source.Select(p => Orient(PartCenter(p), permutation, signs)).ToArray();
+                NormalizeCenters(sourceCenters);
+                (float cost, int[] map) = AssignParts(sourceCenters, targetCenters);
+                if (cost >= bestCost) continue;
+                bestCost = cost; bestMap = map; bestPermutation = permutation; bestSigns = signs;
+            }
+            return (bestMap, bestPermutation, bestSigns);
+        }
+
+        private static (float Cost, int[] Map) AssignParts(Vector3[] source, Vector3[] target)
+        {
+            if (source.Length < target.Length)
+                throw new InvalidDataException($"The source has {source.Length} mesh parts, but Survivor requires {target.Length}.");
+            int limit = 1 << source.Length;
+            var costs = Enumerable.Repeat(float.PositiveInfinity, limit).ToArray();
+            var previous = new int[limit];
+            var chosen = new int[limit];
+            costs[0] = 0;
+            for (int mask = 0; mask < limit; mask++)
+            {
+                int t = System.Numerics.BitOperations.PopCount((uint)mask);
+                if (t >= target.Length || !float.IsFinite(costs[mask])) continue;
+                for (int s = 0; s < source.Length; s++)
+                {
+                    int bit = 1 << s;
+                    if ((mask & bit) != 0) continue;
+                    int next = mask | bit;
+                    float cost = costs[mask] + Vector3.DistanceSquared(source[s], target[t]);
+                    if (cost >= costs[next]) continue;
+                    costs[next] = cost; previous[next] = mask; chosen[next] = s;
+                }
+            }
+            int finalMask = -1;
+            float best = float.PositiveInfinity;
+            for (int mask = 0; mask < limit; mask++)
+                if (System.Numerics.BitOperations.PopCount((uint)mask) == target.Length && costs[mask] < best)
+                { best = costs[mask]; finalMask = mask; }
+            if (finalMask < 0) throw new InvalidDataException("Could not map the source body parts to the Survivor skeleton.");
+            var map = new int[target.Length];
+            for (int t = target.Length - 1; t >= 0; t--)
+            { map[t] = chosen[finalMask]; finalMask = previous[finalMask]; }
+            return (best, map);
+        }
+
+        private static Vector3 Orient(Vector3 value, int permutation, int signs)
+        {
+            float[] v = { value.X, value.Y, value.Z };
+            int[,] p = { { 0, 1, 2 }, { 0, 2, 1 }, { 1, 0, 2 }, { 1, 2, 0 }, { 2, 0, 1 }, { 2, 1, 0 } };
+            return new Vector3(v[p[permutation, 0]] * ((signs & 1) == 0 ? 1 : -1),
+                v[p[permutation, 1]] * ((signs & 2) == 0 ? 1 : -1),
+                v[p[permutation, 2]] * ((signs & 4) == 0 ? 1 : -1));
+        }
+
+        private static float GetHeight(IEnumerable<Vector3> vertices)
+        {
+            bool any = false;
+            float min = float.MaxValue, max = float.MinValue;
+            foreach (Vector3 vertex in vertices)
+            {
+                any = true;
+                min = Math.Min(min, vertex.Y);
+                max = Math.Max(max, vertex.Y);
+            }
+            return any ? Math.Max(1, max - min) : 1;
+        }
+
+        private Matrix4x4 GetBindGlobal(int node)
+        {
+            Matrix4x4 result = _bindLocalTransforms[node];
+            int parent = _parentIndices[node];
+            while (parent >= 0)
+            {
+                result *= _bindLocalTransforms[parent];
+                parent = _parentIndices[parent];
+            }
+            return result;
+        }
+
+        private Vector3 PartCenterGlobal(SurvivorPart part)
+        {
+            Matrix4x4 global = GetBindGlobal(part.NodeIndex);
+            return Average(part.Vertices.Select(v => Vector3.Transform(v, global)));
+        }
+
+        private static Vector3 PartCenter(SurvivorPart part) => Average(part.Vertices);
+        private static Vector3 Average(IEnumerable<Vector3> values)
+        {
+            Vector3 total = Vector3.Zero; int count = 0;
+            foreach (Vector3 value in values) { total += value; count++; }
+            return count == 0 ? Vector3.Zero : total / count;
+        }
+
+        private static void NormalizeCenters(Vector3[] centers)
+        {
+            if (centers.Length == 0) return;
+            Vector3 min = centers.Aggregate(Vector3.Min), max = centers.Aggregate(Vector3.Max);
+            Vector3 center = (min + max) / 2;
+            Vector3 size = max - min;
+            for (int i = 0; i < centers.Length; i++)
+                centers[i] = new Vector3((centers[i].X - center.X) / Math.Max(1, size.X), (centers[i].Y - center.Y) / Math.Max(1, size.Y), (centers[i].Z - center.Z) / Math.Max(1, size.Z));
+        }
+
+        private SurvivorPart[] ReadMd2Parts(Md2 mesh, Matrix4x4[] transforms)
+        {
+            var result = new SurvivorPart[mesh.NumParts];
+            for (int partIndex = 0; partIndex < mesh.NumParts; partIndex++)
+            {
+                Md2.ObjectDescriptor obj = mesh.Objects[partIndex];
+                Md2.Vector[] positions = mesh.GetPositionData(obj).ToArray();
+                Md2.Vector[] normals = mesh.GetNormalData(obj).ToArray();
+                var vertices = new List<Vector3>(); var outNormals = new List<Vector3>(); var uv = new List<Vector2>();
+                void Add(byte index, byte u, byte v)
+                {
+                    Md2.Vector p = positions[index]; Md2.Vector n = normals[index];
+                    vertices.Add(Vector3.Transform(new Vector3(p.x, p.y, p.z), transforms[Math.Min(partIndex, transforms.Length - 1)]));
+                    Vector3 normal = Vector3.TransformNormal(new Vector3(n.x, n.y, n.z), transforms[Math.Min(partIndex, transforms.Length - 1)]);
+                    outNormals.Add(normal.LengthSquared() == 0 ? Vector3.UnitY : Vector3.Normalize(normal));
+                    uv.Add(new Vector2(u, v));
+                }
+                foreach (Md2.Triangle triangle in mesh.GetTriangles(obj))
+                {
+                    Add(triangle.v0, triangle.tu0, triangle.tv0); Add(triangle.v1, triangle.tu1, triangle.tv1); Add(triangle.v2, triangle.tu2, triangle.tv2);
+                }
+                foreach (Md2.Quad quad in mesh.GetQuads(obj))
+                {
+                    Add(quad.v0, quad.tu0, quad.tv0); Add(quad.v1, quad.tu1, quad.tv1); Add(quad.v2, quad.tu2, quad.tv2);
+                    Add(quad.v3, quad.tu3, quad.tv3); Add(quad.v2, quad.tu2, quad.tv2); Add(quad.v1, quad.tu1, quad.tv1);
+                }
+                result[partIndex] = new SurvivorPart(vertices.ToArray(), outNormals.ToArray(), uv.ToArray(), 0, 0);
+            }
+            return result;
+        }
+
+        private IEnumerable<SurvivorPart> GetParts()
+        {
+            foreach (SurvivorGroup group in _groups)
+            {
+                int first = group.TriangleStart * 3, count = group.TriangleCount * 3;
+                yield return new SurvivorPart(_vertices.AsSpan(first, count).ToArray(), _normals.AsSpan(first, count).ToArray(),
+                    _uv.AsSpan(first, count).ToArray(), group.TexturePage, group.NodeIndex);
+            }
+        }
+
+        private void ApplyParts(SurvivorPart[] parts)
+        {
+            if (parts.Length != _groups.Length) throw new InvalidDataException($"Expected {_groups.Length} Survivor mesh parts, found {parts.Length}.");
+            var vertices = new List<Vector3>(); var normals = new List<Vector3>(); var uv = new List<Vector2>();
+            var groups = new SurvivorGroup[parts.Length];
+            int triangleStart = 0;
+            for (int i = 0; i < parts.Length; i++)
+            {
+                SurvivorPart part = parts[i];
+                if (part.Vertices.Length == 0 || part.Vertices.Length % 3 != 0 || part.Normals.Length != part.Vertices.Length || part.UV.Length != part.Vertices.Length)
+                    throw new InvalidDataException($"Replacement part {i} is not a valid triangle stream.");
+                int triangles = part.Vertices.Length / 3;
+                groups[i] = new SurvivorGroup(triangleStart, triangles, part.TexturePage, part.NodeIndex, GetBindGlobal(part.NodeIndex));
+                triangleStart += triangles;
+                vertices.AddRange(part.Vertices);
+                normals.AddRange(part.Normals.Select(n => (n.LengthSquared() == 0 ? Vector3.UnitY : Vector3.Normalize(n)) * 4096f));
+                uv.AddRange(part.UV);
+            }
+            _vertices = vertices.ToArray(); _normals = normals.ToArray(); _uv = uv.ToArray(); _groups = groups;
+            TriangleCount = triangleStart;
+            _data = SerializeMesh();
+        }
+
+        private byte[] SerializeMesh()
+        {
+            int vertexEnd = 8 + _vertices.Length * VertexStride;
+            byte[] result = new byte[vertexEnd + _suffix.Length];
+            BitConverter.GetBytes(_vertices.Length).CopyTo(result, 0);
+            BitConverter.GetBytes(TriangleCount).CopyTo(result, 4);
+            for (int i = 0; i < _vertices.Length; i++)
+            {
+                int o = 8 + i * VertexStride; Vector3 p = _vertices[i]; Vector3 n = _normals[i]; Vector2 t = _uv[i];
+                WriteFloat(result, o, p.X); WriteFloat(result, o + 4, p.Y); WriteFloat(result, o + 8, p.Z);
+                WriteFloat(result, o + 12, n.X); WriteFloat(result, o + 16, n.Y); WriteFloat(result, o + 20, n.Z);
+                WriteFloat(result, o + 28, t.X / Math.Max(1, Texture.Width - 1)); WriteFloat(result, o + 32, t.Y / Math.Max(1, Texture.Height - 1));
+            }
+            _suffix.CopyTo(result, vertexEnd);
+            int groupTable = vertexEnd + (_originalGroupCountOffset - _originalVertexEnd) + 4;
+            for (int i = 0; i < _groups.Length; i++)
+            {
+                BitConverter.GetBytes(_groups[i].TriangleStart).CopyTo(result, groupTable + i * 32 + 8);
+                BitConverter.GetBytes(_groups[i].TriangleCount).CopyTo(result, groupTable + i * 32 + 12);
+            }
+            return result;
+        }
+
+        private static void WriteFloat(byte[] data, int offset, float value) => BitConverter.GetBytes(value).CopyTo(data, offset);
+        private static short ToShort(float value) => (short)Math.Clamp(MathF.Round(value), short.MinValue, short.MaxValue);
+        private static byte ToByte(float value) => (byte)Math.Clamp(MathF.Round(value), byte.MinValue, byte.MaxValue);
+
         public List<RenderPart> CreateRenderParts()
         {
             var result = new List<RenderPart>(_groups.Length);
@@ -1099,7 +1699,9 @@ public sealed class BiohazardModelViewerForm : Form
                     faces.Add(new RenderFace(new[] { target, target + 1, target + 2 },
                         new[] { _uv[source], _uv[source + 1], _uv[source + 2] }, group.TexturePage, 0));
                 }
-                var part = new RenderPart(localVertices, faces);
+                var localNormals = new Vector3[vertexCount];
+                Array.Copy(_normals, vertexStart, localNormals, 0, vertexCount);
+                var part = new RenderPart(localVertices, faces, localNormals);
                 part.ApplyTransform(group.BindTransform);
                 result.Add(part);
             }
@@ -1279,6 +1881,7 @@ public sealed class BiohazardModelViewerForm : Form
         }
 
         private sealed record SurvivorGroup(int TriangleStart, int TriangleCount, byte TexturePage, int NodeIndex, Matrix4x4 BindTransform);
+        private sealed record SurvivorPart(Vector3[] Vertices, Vector3[] Normals, Vector2[] UV, byte TexturePage, int NodeIndex);
     }
 
     private sealed record RenderFace(int[] Indices, Vector2[] UV, byte Page, int Clut);
@@ -1287,14 +1890,16 @@ public sealed class BiohazardModelViewerForm : Form
     private sealed class RenderPart
     {
         public Vector3[] LocalVertices { get; }
+        public Vector3[]? LocalNormals { get; }
         public Vector3[] Vertices { get; private set; }
         public Vector3[] Normals { get; private set; }
         public List<RenderFace> Faces { get; }
         public bool Visible { get; set; } = true;
 
-        public RenderPart(Vector3[] localVertices, List<RenderFace> faces)
+        public RenderPart(Vector3[] localVertices, List<RenderFace> faces, Vector3[]? localNormals = null)
         {
             LocalVertices = localVertices;
+            LocalNormals = localNormals;
             Vertices = new Vector3[localVertices.Length];
             Normals = new Vector3[localVertices.Length];
             Faces = faces;
@@ -1306,6 +1911,15 @@ public sealed class BiohazardModelViewerForm : Form
             {
                 Vector3 p = Vector3.Transform(LocalVertices[i], transform);
                 Vertices[i] = p;
+            }
+            if (LocalNormals != null && LocalNormals.Length == Normals.Length)
+            {
+                for (int i = 0; i < Normals.Length; i++)
+                {
+                    Vector3 normal = Vector3.TransformNormal(LocalNormals[i], transform);
+                    Normals[i] = normal.LengthSquared() == 0 ? Vector3.UnitY : Vector3.Normalize(normal);
+                }
+                return;
             }
             Array.Clear(Normals, 0, Normals.Length);
             foreach (RenderFace face in Faces)

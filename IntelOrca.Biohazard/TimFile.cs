@@ -91,6 +91,9 @@
         };
 
         public int Height => _imageHeight;
+        public int ClutCount => _pixelFormat == PaletteFormat16bpp ? 1 : _numCluts;
+        public int ColoursPerClut => _pixelFormat == PaletteFormat16bpp ? 0x10000 : _coloursPerClut;
+        public bool HasCluts => _pixelFormat != PaletteFormat16bpp;
 
         public TimFile(int width, int height, int bpp)
         {
