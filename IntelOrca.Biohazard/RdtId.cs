@@ -1,6 +1,6 @@
 ﻿using System.Globalization;
 
-namespace IntelOrca.Biohazard
+namespace Tool_Hazard.IntelOrca.Biohazard
 {
     public readonly struct RdtId : IEquatable<RdtId>, IComparable<RdtId>
     {

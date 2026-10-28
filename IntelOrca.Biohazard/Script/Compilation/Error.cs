@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace IntelOrca.Biohazard.Script.Compilation
+namespace Tool_Hazard.IntelOrca.Biohazard.Script.Compilation
 {
     [DebuggerDisplay("{Path}({Line},{Column}): error {ErrorCodeString}: {Message}")]
     public readonly struct Error

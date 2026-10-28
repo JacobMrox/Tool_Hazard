@@ -1,7 +1,7 @@
 ﻿using System.Globalization;
 using System.Text;
 
-namespace IntelOrca.Biohazard
+namespace Tool_Hazard.IntelOrca.Biohazard
 {
     public sealed class BioString
     {

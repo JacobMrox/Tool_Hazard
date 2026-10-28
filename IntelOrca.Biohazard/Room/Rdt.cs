@@ -1,4 +1,7 @@
-﻿namespace IntelOrca.Biohazard.Room
+﻿using IntelOrca.Biohazard.Room;
+using Tool_Hazard.IntelOrca.Biohazard;
+
+namespace Tool_Hazard.IntelOrca.Biohazard.Room
 {
     public static class Rdt
     {

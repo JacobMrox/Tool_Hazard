@@ -1,6 +1,6 @@
 ﻿using IntelOrca.Biohazard.Model;
 
-namespace IntelOrca.Biohazard.Extensions
+namespace Tool_Hazard.IntelOrca.Biohazard.Extensions
 {
     public static class EmrExtensions
     {

@@ -4,8 +4,9 @@ using System.Runtime.InteropServices;
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
-using IntelOrca.Biohazard;
 using IntelOrca.Biohazard.Model;
+using Tool_Hazard.IntelOrca.Biohazard;
+using Tool_Hazard.IntelOrca.Biohazard.Model;
 
 namespace Tool_Hazard.Forms;
 

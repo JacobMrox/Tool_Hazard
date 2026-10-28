@@ -1,5 +1,6 @@
-﻿using IntelOrca.Biohazard.Extensions;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
+using Tool_Hazard.IntelOrca.Biohazard;
+using Tool_Hazard.IntelOrca.Biohazard.Extensions;
 
 namespace IntelOrca.Biohazard.Model
 {

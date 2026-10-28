@@ -1,4 +1,6 @@
-﻿namespace IntelOrca.Biohazard.Model
+﻿using Tool_Hazard.IntelOrca.Biohazard;
+
+namespace Tool_Hazard.IntelOrca.Biohazard.Model
 {
     public interface IEdd
     {

@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace IntelOrca.Biohazard
+namespace Tool_Hazard.IntelOrca.Biohazard
 {
     /// <summary>
     /// Represents a .VB sound data file from Resident Evil 3.

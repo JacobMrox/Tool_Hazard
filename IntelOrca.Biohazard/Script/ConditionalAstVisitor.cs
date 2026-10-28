@@ -1,7 +1,7 @@
-﻿using IntelOrca.Biohazard.Script.Opcodes;
-using System.Text;
+﻿using System.Text;
+using Tool_Hazard.IntelOrca.Biohazard.Script.Opcodes;
 
-namespace IntelOrca.Biohazard.Script
+namespace Tool_Hazard.IntelOrca.Biohazard.Script
 {
     public abstract class ConditionalAstVisitor : ScriptAstVisitor
     {

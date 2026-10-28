@@ -1,9 +1,11 @@
 ﻿//Adapted from https://raw.githubusercontent.com/biorand/biohazard-utils/refs/heads/master/src/scd/Program.cs
 //Using Intel Orca's Biohazard Net libraries
-using IntelOrca.Biohazard;
-using IntelOrca.Biohazard.Extensions;
 using IntelOrca.Biohazard.Room;
 using IntelOrca.Biohazard.Script;
+using Tool_Hazard.IntelOrca.Biohazard;
+using Tool_Hazard.IntelOrca.Biohazard.Extensions;
+using Tool_Hazard.IntelOrca.Biohazard.Room;
+using Tool_Hazard.IntelOrca.Biohazard.Script;
 //using Biohazard.Script;
 
 public static class ScdService

@@ -1,4 +1,4 @@
-﻿namespace IntelOrca.Biohazard.Script.Compilation
+﻿namespace Tool_Hazard.IntelOrca.Biohazard.Script.Compilation
 {
     public class ErrorList
     {

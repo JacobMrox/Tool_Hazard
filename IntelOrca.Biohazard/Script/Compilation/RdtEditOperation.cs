@@ -1,8 +1,11 @@
-﻿using IntelOrca.Biohazard.Extensions;
-using IntelOrca.Biohazard.Model;
+﻿using IntelOrca.Biohazard.Model;
 using IntelOrca.Biohazard.Room;
+using Tool_Hazard.IntelOrca.Biohazard;
+using Tool_Hazard.IntelOrca.Biohazard.Extensions;
+using Tool_Hazard.IntelOrca.Biohazard.Room;
+using Tool_Hazard.IntelOrca.Biohazard.Script;
 
-namespace IntelOrca.Biohazard.Script.Compilation
+namespace Tool_Hazard.IntelOrca.Biohazard.Script.Compilation
 {
     public interface IRdtEditOperation
     {

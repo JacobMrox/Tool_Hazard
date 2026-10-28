@@ -1,3 +1,5 @@
+using Tool_Hazard.IntelOrca.Biohazard.Script.Compilation;
+
 namespace IntelOrca.Biohazard.Script.Compilation
 {
     public partial class ScdCompiler : IScdGenerator

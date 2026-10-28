@@ -1,8 +1,10 @@
 ﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
+using Tool_Hazard.IntelOrca.Biohazard;
+using Tool_Hazard.IntelOrca.Biohazard.Extensions;
 
-namespace IntelOrca.Biohazard.Script
+namespace Tool_Hazard.IntelOrca.Biohazard.Script
 {
     public class ScriptDecompiler : BioScriptVisitor
     {

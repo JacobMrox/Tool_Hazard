@@ -3,6 +3,8 @@
 using IntelOrca.Biohazard;
 using IntelOrca.Biohazard.Room;
 using System.Text;
+using Tool_Hazard.IntelOrca.Biohazard;
+using Tool_Hazard.IntelOrca.Biohazard.Room;
 
 namespace Tool_Hazard.Biohazard.RDT
 {

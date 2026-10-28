@@ -1,7 +1,8 @@
 ﻿using System.Globalization;
 using System.Text;
+using Tool_Hazard.IntelOrca.Biohazard;
 
-namespace IntelOrca.Biohazard.Room
+namespace Tool_Hazard.IntelOrca.Biohazard.Room
 {
     public readonly struct Msg
     {

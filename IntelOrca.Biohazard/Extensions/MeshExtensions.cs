@@ -1,6 +1,8 @@
 ﻿using IntelOrca.Biohazard.Model;
+using Tool_Hazard.IntelOrca.Biohazard;
+using Tool_Hazard.IntelOrca.Biohazard.Model;
 
-namespace IntelOrca.Biohazard.Extensions
+namespace Tool_Hazard.IntelOrca.Biohazard.Extensions
 {
     public static class MeshExtensions
     {

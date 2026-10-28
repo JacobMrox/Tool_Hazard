@@ -4,7 +4,7 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace IntelOrca.Biohazard
+namespace Tool_Hazard.IntelOrca.Biohazard
 {
     internal static class Prs
     {

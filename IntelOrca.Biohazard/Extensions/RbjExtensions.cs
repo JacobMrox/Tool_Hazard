@@ -1,6 +1,6 @@
-﻿using IntelOrca.Biohazard.Room;
+﻿using Tool_Hazard.IntelOrca.Biohazard.Room;
 
-namespace IntelOrca.Biohazard.Extensions
+namespace Tool_Hazard.IntelOrca.Biohazard.Extensions
 {
     public static class RbjExtensions
     {

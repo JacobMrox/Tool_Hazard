@@ -1,6 +1,9 @@
-﻿using static IntelOrca.Biohazard.Model.Md2;
+﻿using IntelOrca.Biohazard.Model;
+using Tool_Hazard.IntelOrca.Biohazard;
+using Tool_Hazard.IntelOrca.Biohazard.Extensions;
+using static IntelOrca.Biohazard.Model.Md2;
 
-namespace IntelOrca.Biohazard.Model
+namespace Tool_Hazard.IntelOrca.Biohazard.Model
 {
     public class ObjImporter
     {

@@ -1,6 +1,7 @@
 ﻿using System.Runtime.InteropServices;
+using Tool_Hazard.IntelOrca.Biohazard;
 
-namespace IntelOrca.Biohazard.Extensions
+namespace Tool_Hazard.IntelOrca.Biohazard.Extensions
 {
     public static class TimFileExtensions
     {

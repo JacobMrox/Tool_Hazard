@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
 
-namespace IntelOrca.Biohazard
+namespace Tool_Hazard.IntelOrca.Biohazard
 {
     public class Program
     {

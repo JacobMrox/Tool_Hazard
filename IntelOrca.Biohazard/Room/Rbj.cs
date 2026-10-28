@@ -1,7 +1,9 @@
-﻿using IntelOrca.Biohazard.Extensions;
-using IntelOrca.Biohazard.Model;
+﻿using IntelOrca.Biohazard.Model;
+using Tool_Hazard.IntelOrca.Biohazard;
+using Tool_Hazard.IntelOrca.Biohazard.Extensions;
+using Tool_Hazard.IntelOrca.Biohazard.Model;
 
-namespace IntelOrca.Biohazard.Room
+namespace Tool_Hazard.IntelOrca.Biohazard.Room
 {
     public readonly struct Rbj
     {

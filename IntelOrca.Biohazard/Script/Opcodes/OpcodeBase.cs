@@ -1,4 +1,4 @@
-﻿namespace IntelOrca.Biohazard.Script.Opcodes
+﻿namespace Tool_Hazard.IntelOrca.Biohazard.Script.Opcodes
 {
     public abstract class OpcodeBase
     {

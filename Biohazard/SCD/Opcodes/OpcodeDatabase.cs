@@ -1,6 +1,6 @@
-using IntelOrca.Biohazard;
-using IntelOrca.Biohazard.Script;
 using System.Text.Json;
+using Tool_Hazard.IntelOrca.Biohazard;
+using Tool_Hazard.IntelOrca.Biohazard.Script;
 
 namespace Tool_Hazard.Biohazard.SCD.Opcodes
 {

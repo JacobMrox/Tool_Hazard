@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace IntelOrca.Biohazard.Script.Compilation
+namespace Tool_Hazard.IntelOrca.Biohazard.Script.Compilation
 {
     [DebuggerDisplay("{Kind} | {Text}")]
     internal readonly struct Token

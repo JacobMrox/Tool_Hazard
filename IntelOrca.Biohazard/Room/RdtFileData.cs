@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace IntelOrca.Biohazard.Room
+namespace Tool_Hazard.IntelOrca.Biohazard.Room
 {
     /// <summary>
     /// Represents the data in the RDT file which is a concatenated sequence

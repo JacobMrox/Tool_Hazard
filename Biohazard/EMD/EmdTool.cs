@@ -1,6 +1,7 @@
-﻿using IntelOrca.Biohazard;
-using IntelOrca.Biohazard.BioRand;
+﻿using IntelOrca.Biohazard.BioRand;
 using IntelOrca.Biohazard.Model;
+using Tool_Hazard.IntelOrca.Biohazard;
+using Tool_Hazard.IntelOrca.Biohazard.Model;
 
 namespace Tool_Hazard.Biohazard.emd
 {

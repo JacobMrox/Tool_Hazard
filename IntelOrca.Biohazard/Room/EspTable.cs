@@ -1,7 +1,8 @@
-﻿using IntelOrca.Biohazard.Extensions;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
+using Tool_Hazard.IntelOrca.Biohazard;
+using Tool_Hazard.IntelOrca.Biohazard.Extensions;
 
-namespace IntelOrca.Biohazard.Room
+namespace Tool_Hazard.IntelOrca.Biohazard.Room
 {
     public readonly struct EspTable
     {

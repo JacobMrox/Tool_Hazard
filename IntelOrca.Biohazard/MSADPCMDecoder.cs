@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace IntelOrca.Biohazard
+namespace Tool_Hazard.IntelOrca.Biohazard
 {
     public class MSADPCMDecoder
     {

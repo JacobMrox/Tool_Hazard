@@ -1,4 +1,7 @@
-﻿namespace IntelOrca.Biohazard.Model
+﻿using Tool_Hazard.IntelOrca.Biohazard.Extensions;
+using Tool_Hazard.IntelOrca.Biohazard.Model;
+
+namespace IntelOrca.Biohazard.Model
 {
     public sealed partial class Edd2
     {

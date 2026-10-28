@@ -1,5 +1,8 @@
 ﻿using IntelOrca.Biohazard.Model;
 using System.Diagnostics;
+using Tool_Hazard.IntelOrca.Biohazard;
+using Tool_Hazard.IntelOrca.Biohazard.Extensions;
+using Tool_Hazard.IntelOrca.Biohazard.Room;
 
 namespace IntelOrca.Biohazard.Room
 {

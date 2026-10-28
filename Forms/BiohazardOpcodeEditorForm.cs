@@ -1,7 +1,7 @@
-﻿using IntelOrca.Biohazard;
-using System.Data;
+﻿using System.Data;
 using Tool_Hazard.Biohazard.SCD;
 using Tool_Hazard.Biohazard.SCD.Opcodes;
+using Tool_Hazard.IntelOrca.Biohazard;
 
 namespace Tool_Hazard.Forms
 {

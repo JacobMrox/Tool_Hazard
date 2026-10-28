@@ -1,4 +1,5 @@
 ﻿using System.Drawing.Imaging;
+using Tool_Hazard.IntelOrca.Biohazard;
 
 namespace IntelOrca.Biohazard.BioRand
 {

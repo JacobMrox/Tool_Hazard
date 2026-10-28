@@ -1,7 +1,9 @@
-﻿using System.Diagnostics;
+﻿using IntelOrca.Biohazard.Model;
+using System.Diagnostics;
 using System.Text;
+using Tool_Hazard.IntelOrca.Biohazard;
 
-namespace IntelOrca.Biohazard.Model
+namespace Tool_Hazard.IntelOrca.Biohazard.Model
 {
     public class ObjExporter
     {

@@ -1,4 +1,4 @@
-﻿namespace IntelOrca.Biohazard.Model
+﻿namespace Tool_Hazard.IntelOrca.Biohazard.Model
 {
     public interface IModelMeshBuilder
     {

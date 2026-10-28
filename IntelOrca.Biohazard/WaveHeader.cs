@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace IntelOrca.Biohazard
+namespace Tool_Hazard.IntelOrca.Biohazard
 {
     [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 44)]
     public struct WaveHeader

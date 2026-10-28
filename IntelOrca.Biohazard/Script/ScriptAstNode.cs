@@ -1,4 +1,6 @@
-﻿namespace IntelOrca.Biohazard.Script
+﻿using Tool_Hazard.IntelOrca.Biohazard;
+
+namespace Tool_Hazard.IntelOrca.Biohazard.Script
 {
     public class ScriptAstNode : IScriptAstNode
     {

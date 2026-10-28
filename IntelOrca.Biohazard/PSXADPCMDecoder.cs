@@ -1,4 +1,6 @@
-﻿namespace IntelOrca.Biohazard
+﻿using Tool_Hazard.IntelOrca.Biohazard.Extensions;
+
+namespace Tool_Hazard.IntelOrca.Biohazard
 {
     internal class PSXADPCMDecoder
     {

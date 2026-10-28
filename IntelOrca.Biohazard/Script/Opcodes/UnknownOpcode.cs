@@ -1,6 +1,8 @@
 ﻿using System.Diagnostics;
+using Tool_Hazard.IntelOrca.Biohazard;
+using Tool_Hazard.IntelOrca.Biohazard.Script;
 
-namespace IntelOrca.Biohazard.Script.Opcodes
+namespace Tool_Hazard.IntelOrca.Biohazard.Script.Opcodes
 {
     [DebuggerDisplay("{Opcode} Offset = {Offset}  Length = {Length}")]
     public class UnknownOpcode : OpcodeBase

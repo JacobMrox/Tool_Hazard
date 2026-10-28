@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace IntelOrca.Biohazard
+namespace Tool_Hazard.IntelOrca.Biohazard
 {
     public class FileRepository : IDisposable
     {

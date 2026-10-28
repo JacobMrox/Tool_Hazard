@@ -1,7 +1,8 @@
 ﻿using NVorbis;
 using System.Runtime.InteropServices;
+using Tool_Hazard.IntelOrca.Biohazard.Extensions;
 
-namespace IntelOrca.Biohazard
+namespace Tool_Hazard.IntelOrca.Biohazard
 {
     public class WaveformBuilder
     {

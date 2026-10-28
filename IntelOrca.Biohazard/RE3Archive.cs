@@ -1,8 +1,9 @@
 ﻿using System.Buffers;
 using System.Diagnostics;
 using System.Text;
+using Tool_Hazard.IntelOrca.Biohazard.Extensions;
 
-namespace IntelOrca.Biohazard
+namespace Tool_Hazard.IntelOrca.Biohazard
 {
     public class RE3Archive : IDisposable
     {

@@ -1,6 +1,8 @@
-﻿using IntelOrca.Biohazard.Extensions;
-using IntelOrca.Biohazard.Model;
+﻿using IntelOrca.Biohazard.Model;
 using System.Runtime.InteropServices;
+using Tool_Hazard.IntelOrca.Biohazard;
+using Tool_Hazard.IntelOrca.Biohazard.Extensions;
+using Tool_Hazard.IntelOrca.Biohazard.Room;
 
 namespace IntelOrca.Biohazard.Room
 {

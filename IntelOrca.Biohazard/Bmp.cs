@@ -1,6 +1,6 @@
-﻿using IntelOrca.Biohazard.Extensions;
+﻿using Tool_Hazard.IntelOrca.Biohazard.Extensions;
 
-namespace IntelOrca.Biohazard
+namespace Tool_Hazard.IntelOrca.Biohazard
 {
     public readonly struct Bmp
     {

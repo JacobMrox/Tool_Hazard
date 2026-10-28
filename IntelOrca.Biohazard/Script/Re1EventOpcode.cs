@@ -1,4 +1,4 @@
-﻿namespace IntelOrca.Biohazard.Script
+﻿namespace Tool_Hazard.IntelOrca.Biohazard.Script
 {
     internal enum Re1EventOpcode : byte
     {

@@ -1,4 +1,6 @@
-﻿namespace IntelOrca.Biohazard.Script
+﻿using Tool_Hazard.IntelOrca.Biohazard.Extensions;
+
+namespace Tool_Hazard.IntelOrca.Biohazard.Script
 {
     internal class BioCvConstantTable : IConstantTable
     {

@@ -1,5 +1,6 @@
-﻿using IntelOrca.Biohazard.Model;
-using System.Text;
+﻿using System.Text;
+using Tool_Hazard.IntelOrca.Biohazard.Model;
+using Tool_Hazard.IntelOrca.Biohazard.Script.Compilation;
 
 namespace IntelOrca.Biohazard.Script.Compilation
 {

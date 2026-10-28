@@ -1,4 +1,6 @@
-﻿namespace IntelOrca.Biohazard.Script.Opcodes
+﻿using Tool_Hazard.IntelOrca.Biohazard;
+
+namespace Tool_Hazard.IntelOrca.Biohazard.Script.Opcodes
 {
     public interface IDoorAotSetOpcode : IAot
     {

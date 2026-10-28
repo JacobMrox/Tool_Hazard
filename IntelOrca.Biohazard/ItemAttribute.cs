@@ -1,4 +1,4 @@
-﻿namespace IntelOrca.Biohazard
+﻿namespace Tool_Hazard.IntelOrca.Biohazard
 {
     [Flags]
     public enum ItemAttribute

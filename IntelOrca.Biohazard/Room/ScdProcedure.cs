@@ -1,4 +1,6 @@
-﻿namespace IntelOrca.Biohazard.Room
+﻿using Tool_Hazard.IntelOrca.Biohazard;
+
+namespace Tool_Hazard.IntelOrca.Biohazard.Room
 {
     public readonly struct ScdProcedure
     {

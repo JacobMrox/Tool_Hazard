@@ -1,7 +1,10 @@
 ﻿using IntelOrca.Biohazard.Room;
 using IntelOrca.Biohazard.Script;
+using Tool_Hazard.IntelOrca.Biohazard;
+using Tool_Hazard.IntelOrca.Biohazard.Room;
+using Tool_Hazard.IntelOrca.Biohazard.Script;
 
-namespace IntelOrca.Biohazard.Extensions
+namespace Tool_Hazard.IntelOrca.Biohazard.Extensions
 {
     public static class RdtExtensions
     {

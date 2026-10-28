@@ -1,4 +1,8 @@
 ﻿using IntelOrca.Biohazard.Room;
+using Tool_Hazard.IntelOrca.Biohazard;
+using Tool_Hazard.IntelOrca.Biohazard.Room;
+using Tool_Hazard.IntelOrca.Biohazard.Script;
+using Tool_Hazard.IntelOrca.Biohazard.Script.Compilation;
 
 namespace IntelOrca.Biohazard.Script.Compilation
 {
@@ -352,7 +356,7 @@ namespace IntelOrca.Biohazard.Script.Compilation
                     }
                     else
                     {
-                        var b = new Room.ScdEventList.Builder();
+                        var b = new ScdEventList.Builder();
                         foreach (var p in _procedures)
                         {
                             b.Events.Add(new ScdEvent(p));
@@ -375,8 +379,8 @@ namespace IntelOrca.Biohazard.Script.Compilation
                         _procData.AddRange(p);
                     }
 
-                    var output = _procData.ToArray();
-                    _editOperations.Add(new ScdRdtEditOperation(_currScriptKind.Value, new Room.ScdProcedureList(_version!.Value, output)));
+                var output = _procData.ToArray();
+                _editOperations.Add(new ScdRdtEditOperation(_currScriptKind.Value, new Tool_Hazard.IntelOrca.Biohazard.Room.ScdProcedureList(_version!.Value, output)));
                 }
             }
         }

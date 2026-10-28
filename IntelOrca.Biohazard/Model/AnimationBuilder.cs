@@ -1,6 +1,8 @@
-﻿using EmrFrame = IntelOrca.Biohazard.Model.Emr.Builder.Keyframe;
+﻿using IntelOrca.Biohazard.Model;
+using Tool_Hazard.IntelOrca.Biohazard;
+using EmrFrame = IntelOrca.Biohazard.Model.Emr.Builder.Keyframe;
 
-namespace IntelOrca.Biohazard.Model
+namespace Tool_Hazard.IntelOrca.Biohazard.Model
 {
     public sealed class AnimationBuilder
     {

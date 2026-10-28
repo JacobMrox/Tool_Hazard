@@ -14,6 +14,7 @@ using Tool_Hazard.Forms;
 using Tool_Hazard.Nintendo;
 using Tool_Hazard.Sony_PS1;
 using Tool_Hazard.White_Day;
+using Tool_Hazard.IntelOrca.Biohazard;
 
 namespace Tool_Hazard
 {

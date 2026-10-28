@@ -4,6 +4,8 @@ using IntelOrca.Biohazard;
 using IntelOrca.Biohazard.Model;
 using IntelOrca.Biohazard.Room;
 using System.Runtime.InteropServices;
+using Tool_Hazard.IntelOrca.Biohazard;
+using Tool_Hazard.IntelOrca.Biohazard.Room;
 
 namespace Tool_Hazard.Biohazard.RDT
 {

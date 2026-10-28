@@ -1,6 +1,6 @@
 ﻿using System.Collections;
 
-namespace IntelOrca.Biohazard.Room
+namespace Tool_Hazard.IntelOrca.Biohazard.Room
 {
     internal class OffsetTracker : IEnumerable<int>
     {

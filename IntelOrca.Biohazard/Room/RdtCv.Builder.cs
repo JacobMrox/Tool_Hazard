@@ -1,4 +1,7 @@
-﻿namespace IntelOrca.Biohazard.Room
+﻿using Tool_Hazard.IntelOrca.Biohazard.Extensions;
+using Tool_Hazard.IntelOrca.Biohazard.Room;
+
+namespace IntelOrca.Biohazard.Room
 {
     public partial class RdtCv
     {

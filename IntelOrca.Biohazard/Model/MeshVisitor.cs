@@ -1,6 +1,7 @@
-﻿using System.Runtime.InteropServices;
+﻿using IntelOrca.Biohazard.Model;
+using System.Runtime.InteropServices;
 
-namespace IntelOrca.Biohazard.Model
+namespace Tool_Hazard.IntelOrca.Biohazard.Model
 {
     public abstract class MeshVisitor
     {

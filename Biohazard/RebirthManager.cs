@@ -1,10 +1,10 @@
 ﻿using System;
-using IntelOrca.Biohazard;
 using SevenZipExtractor;
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Net;
 using System.Text.Json;
+using Tool_Hazard.IntelOrca.Biohazard;
 
 public class RebirthManager
 {

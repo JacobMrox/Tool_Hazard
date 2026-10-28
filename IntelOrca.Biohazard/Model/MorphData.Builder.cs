@@ -1,4 +1,7 @@
-﻿namespace IntelOrca.Biohazard.Model
+﻿using Tool_Hazard.IntelOrca.Biohazard;
+using Tool_Hazard.IntelOrca.Biohazard.Extensions;
+
+namespace IntelOrca.Biohazard.Model
 {
     public sealed partial class MorphData
     {

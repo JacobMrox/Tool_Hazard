@@ -1,6 +1,8 @@
-﻿using IntelOrca.Biohazard.Room;
+﻿using IntelOrca.Biohazard.Script;
+using Tool_Hazard.IntelOrca.Biohazard;
+using Tool_Hazard.IntelOrca.Biohazard.Room;
 
-namespace IntelOrca.Biohazard.Script
+namespace Tool_Hazard.IntelOrca.Biohazard.Script
 {
     public class ScdReader
     {

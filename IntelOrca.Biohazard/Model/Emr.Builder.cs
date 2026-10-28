@@ -1,4 +1,6 @@
 ﻿using System.Diagnostics;
+using Tool_Hazard.IntelOrca.Biohazard;
+using Tool_Hazard.IntelOrca.Biohazard.Extensions;
 
 namespace IntelOrca.Biohazard.Model
 {

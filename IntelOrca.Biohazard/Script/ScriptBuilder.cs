@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace IntelOrca.Biohazard.Script
+namespace Tool_Hazard.IntelOrca.Biohazard.Script
 {
     internal class ScriptBuilder
     {

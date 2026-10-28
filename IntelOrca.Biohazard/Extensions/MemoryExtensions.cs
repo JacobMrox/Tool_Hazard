@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace IntelOrca.Biohazard.Extensions
+namespace Tool_Hazard.IntelOrca.Biohazard.Extensions
 {
     public static class MemoryExtensions
     {

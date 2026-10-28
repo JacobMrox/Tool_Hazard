@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace IntelOrca.Biohazard.Script
+namespace Tool_Hazard.IntelOrca.Biohazard.Script
 {
     [DebuggerDisplay("{DebuggerDisplay}")]
     public class SubroutineAstNode : BasicBlockAstNode

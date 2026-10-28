@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
+using Tool_Hazard.IntelOrca.Biohazard;
 
-namespace IntelOrca.Biohazard.Script.Opcodes
+namespace Tool_Hazard.IntelOrca.Biohazard.Script.Opcodes
 {
     [DebuggerDisplay("door_aot_set_4p")]
     public class DoorAotSet4pOpcode : OpcodeBase, IDoorAotSetOpcode

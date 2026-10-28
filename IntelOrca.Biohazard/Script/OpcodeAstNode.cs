@@ -1,7 +1,7 @@
-﻿using IntelOrca.Biohazard.Script.Opcodes;
-using System.Diagnostics;
+﻿using System.Diagnostics;
+using Tool_Hazard.IntelOrca.Biohazard.Script.Opcodes;
 
-namespace IntelOrca.Biohazard.Script
+namespace Tool_Hazard.IntelOrca.Biohazard.Script
 {
     [DebuggerDisplay("{Opcode}")]
     public class OpcodeAstNode : IScriptAstNode

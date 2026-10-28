@@ -1,4 +1,4 @@
-﻿namespace IntelOrca.Biohazard.Room
+﻿namespace Tool_Hazard.IntelOrca.Biohazard.Room
 {
     public static class RdtFileChunkKinds
     {

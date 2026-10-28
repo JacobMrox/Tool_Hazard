@@ -1,5 +1,5 @@
-﻿using IntelOrca.Biohazard;
-using System.Drawing.Imaging;
+﻿using System.Drawing.Imaging;
+using Tool_Hazard.IntelOrca.Biohazard;
 
 namespace Tool_Hazard.Sony_PS1
 {

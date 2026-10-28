@@ -1,6 +1,6 @@
-﻿using IntelOrca.Biohazard.Script.Opcodes;
+﻿using Tool_Hazard.IntelOrca.Biohazard.Script.Opcodes;
 
-namespace IntelOrca.Biohazard
+namespace Tool_Hazard.IntelOrca.Biohazard
 {
     public struct DoorEntrance
     {
