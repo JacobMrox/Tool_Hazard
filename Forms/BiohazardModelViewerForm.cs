@@ -1101,8 +1101,10 @@ public sealed class BiohazardModelViewerForm : Form
                 for (int x = 0; x < width; x++)
                 {
                     Color color = bitmap.GetPixel(sourceX + x, y);
-                    ushort value = (ushort)(((color.R * 31 / 255) << 10) | ((color.G * 31 / 255) << 5) | (color.B * 31 / 255));
                     int pixel = y * Width + sourceX + x;
+                    // Preserve the original A1 transparency bit. The viewer displays
+                    // RGB only, but the game uses this bit when rendering the texture.
+                    ushort value = (ushort)((_pixels[pixel] & 0x8000) | ((color.R * 31 / 255) << 10) | ((color.G * 31 / 255) << 5) | (color.B * 31 / 255));
                     _pixels[pixel] = value;
                     int destination = offset + (y * width + x) * 2;
                     data[destination] = (byte)value;
