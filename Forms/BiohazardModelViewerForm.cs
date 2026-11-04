@@ -352,6 +352,17 @@ public sealed class BiohazardModelViewerForm : Form
     {
         IViewerTexture? texture = CurrentTexture;
         if (texture == null) return null;
+        if (_survivor == null && _texture != null && _texture.HasCluts)
+        {
+            var pages = GetTimAtlasPages(_texture);
+            var atlas = new Bitmap(checked(pages.Count * 128), texture.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+            for (int page = 0; page < pages.Count; page++)
+                for (int y = 0; y < texture.Height; y++)
+                    for (int x = 0; x < 128; x++)
+                        if (pages[page].X + x < texture.Width)
+                            atlas.SetPixel(page * 128 + x, y, Color.FromArgb(unchecked((int)texture.GetPixel(pages[page].X + x, y, pages[page].Clut))));
+            return atlas;
+        }
         int palettes = Math.Max(1, texture.PaletteCount);
         var bitmap = new Bitmap(texture.Width, checked(texture.Height * palettes), System.Drawing.Imaging.PixelFormat.Format32bppArgb);
         for (int palette = 0; palette < palettes; palette++)
@@ -359,6 +370,25 @@ public sealed class BiohazardModelViewerForm : Form
                 for (int x = 0; x < texture.Width; x++)
                     bitmap.SetPixel(x, palette * texture.Height + y, Color.FromArgb(unchecked((int)texture.GetPixel(x, y, palette))));
         return bitmap;
+    }
+
+    private List<(int X, int Clut)> GetTimAtlasPages(TimFile tim)
+    {
+        var pages = new HashSet<(int X, int Clut)>();
+        foreach (RenderFace face in _renderParts.SelectMany(part => part.Faces))
+        {
+            int clut = face.Clut >= 0 && face.Clut < tim.ClutCount ? face.Clut : face.Page;
+            if (clut < 0 || clut >= tim.ClutCount) continue;
+            int first = (int)MathF.Floor(face.UV.Min(uv => uv.X)) + face.Page * 128;
+            int last = (int)MathF.Ceiling(face.UV.Max(uv => uv.X)) + face.Page * 128;
+            for (int u = first; u <= last; u++)
+            {
+                int wrapped = ((u % tim.Width) + tim.Width) % tim.Width;
+                pages.Add((wrapped / 128 * 128, clut));
+            }
+        }
+        if (pages.Count == 0) pages.Add((0, 0));
+        return pages.OrderBy(p => p.Clut).ThenBy(p => p.X).ToList();
     }
 
     private void ViewTexture()
@@ -369,7 +399,7 @@ public sealed class BiohazardModelViewerForm : Form
             MessageBox.Show(this, "The current model has no texture loaded.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
             return;
         }
-        var preview = new Form { Text = $"Texture atlas - {CurrentTexture!.PaletteCount} CLUT(s), {CurrentTexture.Width}x{CurrentTexture.Height} each", StartPosition = FormStartPosition.CenterParent,
+        var preview = new Form { Text = $"Texture atlas - {bitmap.Width}x{bitmap.Height}", StartPosition = FormStartPosition.CenterParent,
             ClientSize = new Size(Math.Clamp(bitmap.Width * 2, 480, 1100), Math.Clamp(bitmap.Height * 2, 360, 800)) };
         var picture = new PictureBox { Dock = DockStyle.Fill, BackColor = Color.FromArgb(32, 32, 32), SizeMode = PictureBoxSizeMode.Zoom,
             Image = new Bitmap(bitmap) };
@@ -409,7 +439,8 @@ public sealed class BiohazardModelViewerForm : Form
             else
             {
                 if (_texture == null || _model == null) throw new InvalidOperationException("Load a TIM texture before importing an image.");
-                ImportTimAtlas(_texture, bitmap);
+                if (_texture.HasCluts) ImportTimPages(_texture, bitmap, GetTimAtlasPages(_texture));
+                else ImportTimAtlas(_texture, bitmap);
                 if (string.Equals(_texturePath, "Embedded TIM", StringComparison.Ordinal))
                     _model.SetTim(0, _texture);
                 else if (!string.IsNullOrWhiteSpace(_texturePath))
@@ -422,6 +453,288 @@ public sealed class BiohazardModelViewerForm : Form
             MessageBox.Show(this, $"Texture replacement failed:\n{ex.Message}", Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
+
+    private void ImportTimPages(TimFile tim, Bitmap bitmap, List<(int X, int Clut)> pages)
+    {
+        if (bitmap.Width != pages.Count * 128 || bitmap.Height != tim.Height)
+            throw new InvalidDataException($"Expected an atlas of {pages.Count * 128}x{tim.Height}. Export the current texture to obtain the correct layout.");
+
+        // TIM palettes share pixel indices across pages and CLUTs. Do not silently
+        // change those indices or average conflicting colours during import.
+        var colours = new Dictionary<(int Clut, int Index), ushort>();
+        var originalPalettes = pages.Select(p => p.Clut).Distinct().ToDictionary(c => c, tim.GetPalette);
+        for (int page = 0; page < pages.Count; page++)
+            for (int y = 0; y < tim.Height; y++)
+                for (int x = 0; x < 128 && pages[page].X + x < tim.Width; x++)
+                {
+                    int sourceX = pages[page].X + x;
+                    var key = (pages[page].Clut, (int)tim.GetRawPixel(sourceX, y));
+                    Color color = bitmap.GetPixel(page * 128 + x, y);
+                    // Preserve the exact original PS1 colour when an exported pixel
+                    // is unchanged, including its semi-transparency bit.
+                    ushort value = unchecked((uint)color.ToArgb()) == tim.GetPixel(sourceX, y, key.Clut)
+                        ? originalPalettes[key.Clut][key.Item2]
+                        : TimFile.Convert32to16(unchecked((uint)color.ToArgb()));
+                    if (colours.TryGetValue(key, out ushort existing) && existing != value)
+                    {
+                        if (MessageBox.Show(this, "This image needs new pixel indices and fewer colours to fit the TIM palette. Rebuild the displayed pages using nearest palette colours? Colours may change, and other meshes or CLUTs using the same pixels may be affected. Keep a backup of the model and texture.\n\nFor higher-quality textures, Classic Rebirth can load PNGs; HD Loader can dump and load WebP textures.",
+                            "Import indexed texture", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
+                            QuantizeTimPages(tim, bitmap, pages);
+                        else
+                            throw new OperationCanceledException("Texture import cancelled; no changes were made.");
+                        return;
+                    }
+                    colours[key] = value;
+                }
+        foreach (var group in colours.GroupBy(x => x.Key.Clut))
+        {
+            ushort[] palette = tim.GetPalette(group.Key);
+            foreach (var entry in group) palette[entry.Key.Index] = entry.Value;
+            tim.SetPalette(group.Key, palette);
+        }
+    }
+
+    private static void QuantizeTimPages(TimFile tim, Bitmap bitmap, List<(int X, int Clut)> pages)
+    {
+        if (pages.GroupBy(p => p.X).All(g => g.Select(p => p.Clut).Distinct().Count() == 1))
+        {
+            QuantizeIndependentTimPages(tim, bitmap, pages);
+            return;
+        }
+        int[] cluts = pages.Select(p => p.Clut).Distinct().OrderBy(c => c).ToArray();
+        ushort[][] palettes = cluts.Select(tim.GetPalette).ToArray();
+        int count = checked(tim.Width * tim.Height);
+        var pixels = new ushort[count][];
+        var covered = new bool[count];
+        var written = new bool[count][];
+        for (int page = 0; page < pages.Count; page++)
+        {
+            int palette = Array.IndexOf(cluts, pages[page].Clut);
+            for (int y = 0; y < tim.Height; y++)
+                for (int x = 0; x < 128 && pages[page].X + x < tim.Width; x++)
+                {
+                    int sx = pages[page].X + x, pos = y * tim.Width + sx;
+                    if (!covered[pos])
+                    {
+                        covered[pos] = true;
+                        int oldIndex = tim.GetRawPixel(sx, y);
+                        pixels[pos] = palettes.Select(p => p[oldIndex]).ToArray();
+                        written[pos] = new bool[cluts.Length];
+                    }
+                    uint argb = unchecked((uint)bitmap.GetPixel(page * 128 + x, y).ToArgb());
+                    ushort color = argb == tim.GetPixel(sx, y, pages[page].Clut)
+                        ? palettes[palette][tim.GetRawPixel(sx, y)] : TimFile.Convert32to16(argb);
+                    if (written[pos][palette] && pixels[pos][palette] != color)
+                        throw new InvalidDataException("The image contains different colours for the same texture pixel and CLUT on overlapping pages.");
+                    pixels[pos][palette] = color;
+                    written[pos][palette] = true;
+                }
+        }
+
+        // Entries used by pixels outside the atlas must remain unchanged.
+        var reserved = new bool[tim.ColoursPerClut];
+        reserved[0] = true;
+        for (int pos = 0; pos < count; pos++)
+            if (!covered[pos]) reserved[tim.GetRawPixel(pos % tim.Width, pos / tim.Width)] = true;
+
+        var histogram = new Dictionary<string, int>();
+        foreach (ushort[]? pixel in pixels)
+            if (pixel != null)
+            {
+                string key = new string(pixel.Select(c => (char)c).ToArray());
+                histogram.TryGetValue(key, out int n);
+                histogram[key] = n + 1;
+            }
+
+        // Weighted median-cut over the combined CLUT colours. A single index is
+        // shared by every CLUT, so colours must be quantized as tuples.
+        var boxes = new List<List<KeyValuePair<string, int>>> { histogram.ToList() };
+        int free = reserved.Count(r => !r);
+        while (boxes.Count < free)
+        {
+            int bestBox = -1, bestChannel = -1, bestRange = 0;
+            for (int b = 0; b < boxes.Count; b++)
+                for (int channel = 0; channel < cluts.Length * 4; channel++)
+                {
+                    int min = 255, max = 0;
+                    foreach (var entry in boxes[b])
+                    {
+                        int v = TimChannel(entry.Key[channel / 4], channel % 4);
+                        min = Math.Min(min, v); max = Math.Max(max, v);
+                    }
+                    int range = max - min;
+                    if (boxes[b].Count > 1 && range > bestRange) { bestBox = b; bestChannel = channel; bestRange = range; }
+                }
+            if (bestBox < 0) break;
+            var sorted = boxes[bestBox].OrderBy(e => TimChannel(e.Key[bestChannel / 4], bestChannel % 4)).ToList();
+            int half = sorted.Sum(e => (long)e.Value) > int.MaxValue ? int.MaxValue : (int)(sorted.Sum(e => (long)e.Value) / 2);
+            int sum = 0, split = 0;
+            while (split < sorted.Count - 1 && sum < half) sum += sorted[split++].Value;
+            split = Math.Clamp(split, 1, sorted.Count - 1);
+            boxes[bestBox] = sorted.GetRange(0, split);
+            boxes.Add(sorted.GetRange(split, sorted.Count - split));
+        }
+
+        var candidates = new List<(int Index, ushort[] Colors)>();
+        for (int i = 0; i < reserved.Length; i++)
+            if (reserved[i]) candidates.Add((i, palettes.Select(p => p[i]).ToArray()));
+        int slot = 0;
+        foreach (var box in boxes.Take(free))
+        {
+            while (reserved[slot]) slot++;
+            var colors = new ushort[cluts.Length];
+            long total = box.Sum(e => (long)e.Value);
+            for (int c = 0; c < cluts.Length; c++)
+            {
+                int[] average = new int[4];
+                for (int ch = 0; ch < 4; ch++)
+                    average[ch] = (int)((box.Sum(e => (long)TimChannel(e.Key[c], ch) * e.Value) + total / 2) / total);
+                colors[c] = (ushort)((average[0] >= 16 ? 0x8000 : 0) | (average[1] << 10) | (average[2] << 5) | average[3]);
+            }
+            candidates.Add((slot++, colors));
+        }
+        var mapping = new Dictionary<string, int>(histogram.Count);
+        foreach (string key in histogram.Keys)
+        {
+            long best = long.MaxValue;
+            int bestIndex = 0;
+            foreach (var candidate in candidates)
+            {
+                long distance = 0;
+                for (int c = 0; c < cluts.Length; c++)
+                    for (int ch = 0; ch < 4; ch++)
+                    {
+                        int delta = TimChannel(key[c], ch) - TimChannel(candidate.Colors[c], ch);
+                        distance += (long)delta * delta * (ch == 0 ? 4 : 1);
+                    }
+                if (distance < best) { best = distance; bestIndex = candidate.Index; }
+            }
+            mapping.Add(key, bestIndex);
+        }
+        foreach (var candidate in candidates)
+            if (!reserved[candidate.Index])
+                for (int c = 0; c < cluts.Length; c++) palettes[c][candidate.Index] = candidate.Colors[c];
+        for (int c = 0; c < cluts.Length; c++) tim.SetPalette(cluts[c], palettes[c]);
+        for (int pos = 0; pos < count; pos++)
+            if (covered[pos])
+                tim.SetRawPixel(pos % tim.Width, pos / tim.Width, (byte)mapping[new string(pixels[pos].Select(c => (char)c).ToArray())]);
+    }
+
+    private static void QuantizeIndependentTimPages(TimFile tim, Bitmap bitmap, List<(int X, int Clut)> pages)
+    {
+        var covered = new bool[tim.Width * tim.Height];
+        foreach (var page in pages)
+            for (int y = 0; y < tim.Height; y++)
+                for (int x = page.X; x < Math.Min(page.X + 128, tim.Width); x++)
+                    covered[y * tim.Width + x] = true;
+
+        var reserved = new bool[tim.ColoursPerClut];
+        reserved[0] = true;
+        for (int i = 0; i < covered.Length; i++)
+            if (!covered[i]) reserved[tim.GetRawPixel(i % tim.Width, i / tim.Width)] = true;
+
+        // Calculate all palettes and assignments before changing the TIM.
+        var newPalettes = new Dictionary<int, ushort[]>();
+        var assignments = new Dictionary<int, byte>();
+        foreach (int clut in pages.Select(p => p.Clut).Distinct())
+        {
+            ushort[] palette = tim.GetPalette(clut);
+            var histogram = new Dictionary<ushort, int>();
+            for (int page = 0; page < pages.Count; page++)
+            {
+                if (pages[page].Clut != clut) continue;
+                for (int y = 0; y < tim.Height; y++)
+                    for (int x = 0; x < 128 && pages[page].X + x < tim.Width; x++)
+                    {
+                        ushort color = TimFile.Convert32to16(unchecked((uint)bitmap.GetPixel(page * 128 + x, y).ToArgb()));
+                        histogram.TryGetValue(color, out int n);
+                        histogram[color] = n + 1;
+                    }
+            }
+
+            int free = reserved.Count(r => !r);
+            var boxes = new List<List<KeyValuePair<ushort, int>>> { histogram.ToList() };
+            while (boxes.Count < free)
+            {
+                int bestBox = -1, bestChannel = -1;
+                long bestScore = 0;
+                for (int b = 0; b < boxes.Count; b++)
+                {
+                    if (boxes[b].Count < 2) continue;
+                    long population = boxes[b].Sum(e => (long)e.Value);
+                    for (int ch = 0; ch < 4; ch++)
+                    {
+                        int channel = ch;
+                        int range = boxes[b].Max(e => TimChannel(e.Key, channel)) - boxes[b].Min(e => TimChannel(e.Key, channel));
+                        long score = (long)range * population;
+                        if (score > bestScore) { bestBox = b; bestChannel = ch; bestScore = score; }
+                    }
+                }
+                if (bestBox < 0) break;
+                int selectedChannel = bestChannel;
+                var sorted = boxes[bestBox].OrderBy(e => TimChannel(e.Key, selectedChannel)).ToList();
+                long half = sorted.Sum(e => (long)e.Value) / 2, sum = 0;
+                int split = 0;
+                while (split < sorted.Count - 1 && sum < half) sum += sorted[split++].Value;
+                split = Math.Clamp(split, 1, sorted.Count - 1);
+                boxes[bestBox] = sorted.GetRange(0, split);
+                boxes.Add(sorted.GetRange(split, sorted.Count - split));
+            }
+
+            var indices = Enumerable.Range(0, reserved.Length).Where(i => reserved[i]).ToList();
+            int slot = 0;
+            foreach (var box in boxes.Take(free))
+            {
+                while (reserved[slot]) slot++;
+                long total = box.Sum(e => (long)e.Value);
+                int[] avg = new int[4];
+                for (int ch = 0; ch < 4; ch++)
+                {
+                    int channel = ch;
+                    avg[ch] = (int)((box.Sum(e => (long)TimChannel(e.Key, channel) * e.Value) + total / 2) / total);
+                }
+                palette[slot] = (ushort)((avg[0] >= 16 ? 0x8000 : 0) | (avg[1] << 10) | (avg[2] << 5) | avg[3]);
+                indices.Add(slot++);
+            }
+            var nearest = new Dictionary<ushort, byte>();
+            foreach (ushort color in histogram.Keys)
+            {
+                int best = int.MaxValue, index = 0;
+                foreach (int candidate in indices)
+                {
+                    int distance = 0;
+                    for (int ch = 0; ch < 4; ch++)
+                    {
+                        int delta = TimChannel(color, ch) - TimChannel(palette[candidate], ch);
+                        distance += delta * delta * (ch == 0 ? 4 : 1);
+                    }
+                    if (distance < best) { best = distance; index = candidate; }
+                }
+                nearest[color] = (byte)index;
+            }
+            for (int page = 0; page < pages.Count; page++)
+            {
+                if (pages[page].Clut != clut) continue;
+                for (int y = 0; y < tim.Height; y++)
+                    for (int x = 0; x < 128 && pages[page].X + x < tim.Width; x++)
+                    {
+                        ushort color = TimFile.Convert32to16(unchecked((uint)bitmap.GetPixel(page * 128 + x, y).ToArgb()));
+                        assignments[y * tim.Width + pages[page].X + x] = nearest[color];
+                    }
+            }
+            newPalettes.Add(clut, palette);
+        }
+        foreach (var entry in newPalettes) tim.SetPalette(entry.Key, entry.Value);
+        foreach (var entry in assignments) tim.SetRawPixel(entry.Key % tim.Width, entry.Key / tim.Width, entry.Value);
+    }
+
+    private static int TimChannel(int color, int channel) => channel switch
+    {
+        0 => (color & 0x8000) != 0 ? 31 : 0,
+        1 => (color >> 10) & 31,
+        2 => (color >> 5) & 31,
+        _ => color & 31
+    };
 
     private static void ImportTimAtlas(TimFile tim, Bitmap bitmap)
     {
