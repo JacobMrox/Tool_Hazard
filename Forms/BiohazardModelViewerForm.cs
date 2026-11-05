@@ -1528,6 +1528,9 @@ public sealed class BiohazardModelViewerForm : Form
             return 0xFF000000u | (uint)(r << 16) | (uint)(g << 8) | (uint)b;
         }
 
+        public SurvivorTexture Rebase(byte[] data, int delta) => new SurvivorTexture(data,
+            _surfaces.Select(s => (checked(s.Offset + delta), s.Width, s.Height)).ToArray());
+
         public void Replace(Bitmap bitmap, byte[] data)
         {
             if (bitmap.Width != Width || bitmap.Height != Height)
@@ -1565,9 +1568,12 @@ public sealed class BiohazardModelViewerForm : Form
         private Vector3[] _normals;
         private Vector2[] _uv;
         private SurvivorGroup[] _groups;
-        private readonly int _originalVertexEnd;
+        private int _originalVertexEnd;
         private int _originalGroupCountOffset;
         private byte[] _suffix;
+        private int _metadataVertexCount;
+        private int _metadataTriangleCount;
+        private SurvivorGroup[] _metadataGroups;
         private readonly int[] _parentIndices;
         private readonly Matrix4x4[] _bindLocalTransforms;
         private SurvivorAnimationBank? _animationBank;
@@ -1598,6 +1604,9 @@ public sealed class BiohazardModelViewerForm : Form
             _originalVertexEnd = originalVertexEnd;
             _originalGroupCountOffset = originalGroupCountOffset;
             _suffix = data.AsSpan(originalVertexEnd).ToArray();
+            _metadataVertexCount = vertices.Length;
+            _metadataTriangleCount = triangleCount;
+            _metadataGroups = (SurvivorGroup[])groups.Clone();
         }
 
         public static SurvivorNab FromFile(string path)
@@ -2352,8 +2361,58 @@ public sealed class BiohazardModelViewerForm : Form
 
         private byte[] SerializeMesh()
         {
-            int vertexEnd = 8 + _vertices.Length * VertexStride;
-            byte[] result = new byte[vertexEnd + _suffix.Length];
+            int groupOffset = checked(_originalGroupCountOffset - _originalVertexEnd + 4);
+            int cursor = groupOffset;
+            var groupOffsets = new int[_groups.Length];
+            for (int i = 0; i < _groups.Length; i++)
+            {
+                if (cursor < 0 || cursor + 28 > _suffix.Length) throw new InvalidDataException("NAB mesh group data is truncated.");
+                groupOffsets[i] = cursor;
+                bool textured = BitConverter.ToUInt32(_suffix, cursor) != 0;
+                cursor = checked(cursor + (textured ? 32 : 28));
+            }
+            int oldVertexAux = cursor;
+            int oldTriangleAux = checked(oldVertexAux + _metadataVertexCount * 60);
+            int oldTail = checked(oldTriangleAux + _metadataTriangleCount * 20);
+            if (oldTail > _suffix.Length) throw new InvalidDataException("NAB auxiliary mesh records are truncated.");
+            int newTriangleAux = checked(oldVertexAux + _vertices.Length * 60);
+            int newTail = checked(newTriangleAux + TriangleCount * 20);
+            byte[] suffix = new byte[checked(newTail + _suffix.Length - oldTail)];
+            Buffer.BlockCopy(_suffix, 0, suffix, 0, oldVertexAux);
+            Buffer.BlockCopy(_suffix, oldTail, suffix, newTail, _suffix.Length - oldTail);
+            bool countsChanged = _metadataVertexCount != _vertices.Length || _metadataGroups.Where((g, i) =>
+                g.TriangleStart != _groups[i].TriangleStart || g.TriangleCount != _groups[i].TriangleCount).Any();
+            for (int group = 0; group < _groups.Length; group++)
+            {
+                SurvivorGroup previous = _metadataGroups[group], current = _groups[group];
+                bool reindex = countsChanged && HasVisibleTrianglesInGroup(group);
+                BitConverter.GetBytes(current.TriangleStart).CopyTo(suffix, groupOffsets[group] + 8);
+                BitConverter.GetBytes(current.TriangleCount).CopyTo(suffix, groupOffsets[group] + 12);
+                for (int triangle = 0; triangle < current.TriangleCount; triangle++)
+                {
+                    int sourceTriangle = previous.TriangleStart + Math.Min(triangle, previous.TriangleCount - 1);
+                    int destinationTriangle = current.TriangleStart + triangle;
+                    Buffer.BlockCopy(_suffix, oldTriangleAux + sourceTriangle * 20, suffix, newTriangleAux + destinationTriangle * 20, 20);
+                    for (int corner = 0; corner < 3; corner++)
+                    {
+                        int source = sourceTriangle * 3 + corner, destination = destinationTriangle * 3 + corner;
+                        int aux = oldVertexAux + destination * 60;
+                        Buffer.BlockCopy(_suffix, oldVertexAux + source * 60, suffix, aux, 60);
+                        Vector3 p = _vertices[destination], n = _normals[destination];
+                        WriteFloat(suffix, aux + 4, p.X); WriteFloat(suffix, aux + 8, p.Y); WriteFloat(suffix, aux + 12, p.Z);
+                        WriteFloat(suffix, aux + 16, p.X); WriteFloat(suffix, aux + 20, p.Y); WriteFloat(suffix, aux + 24, p.Z);
+                        WriteFloat(suffix, aux + 28, n.X); WriteFloat(suffix, aux + 32, n.Y); WriteFloat(suffix, aux + 36, n.Z);
+                        WriteFloat(suffix, aux + 40, n.X); WriteFloat(suffix, aux + 44, n.Y); WriteFloat(suffix, aux + 48, n.Z);
+                        if (reindex)
+                        {
+                            BitConverter.GetBytes(destination).CopyTo(suffix, aux + 52);
+                            BitConverter.GetBytes(destination).CopyTo(suffix, aux + 56);
+                        }
+                    }
+                }
+            }
+            int vertexEnd = checked(8 + _vertices.Length * VertexStride);
+            byte[] result = new byte[checked(vertexEnd + suffix.Length)];
             BitConverter.GetBytes(_vertices.Length).CopyTo(result, 0);
             BitConverter.GetBytes(TriangleCount).CopyTo(result, 4);
             for (int i = 0; i < _vertices.Length; i++)
@@ -2366,14 +2425,27 @@ public sealed class BiohazardModelViewerForm : Form
                 BitConverter.GetBytes(0xFFFFFFFFu).CopyTo(result, o + 24);
                 WriteFloat(result, o + 28, t.X / Math.Max(1, Texture.Width - 1)); WriteFloat(result, o + 32, t.Y / Math.Max(1, Texture.Height - 1));
             }
-            _suffix.CopyTo(result, vertexEnd);
-            int groupTable = vertexEnd + (_originalGroupCountOffset - _originalVertexEnd) + 4;
-            for (int i = 0; i < _groups.Length; i++)
-            {
-                BitConverter.GetBytes(_groups[i].TriangleStart).CopyTo(result, groupTable + i * 32 + 8);
-                BitConverter.GetBytes(_groups[i].TriangleCount).CopyTo(result, groupTable + i * 32 + 12);
-            }
+            suffix.CopyTo(result, vertexEnd);
+            Texture = Texture.Rebase(result, vertexEnd - _originalVertexEnd);
+            _originalGroupCountOffset = vertexEnd + groupOffset - 4;
+            _originalVertexEnd = vertexEnd;
+            _suffix = suffix;
+            _metadataVertexCount = _vertices.Length;
+            _metadataTriangleCount = TriangleCount;
+            _metadataGroups = (SurvivorGroup[])_groups.Clone();
             return result;
+        }
+
+        private bool HasVisibleTrianglesInGroup(int group)
+        {
+            SurvivorGroup g = _groups[group];
+            for (int triangle = 0; triangle < g.TriangleCount; triangle++)
+            {
+                int i = (g.TriangleStart + triangle) * 3;
+                if (Vector3.Cross(_vertices[i + 1] - _vertices[i], _vertices[i + 2] - _vertices[i]).LengthSquared() > 0.000001f)
+                    return true;
+            }
+            return false;
         }
 
         private static void WriteFloat(byte[] data, int offset, float value) => BitConverter.GetBytes(value).CopyTo(data, offset);
