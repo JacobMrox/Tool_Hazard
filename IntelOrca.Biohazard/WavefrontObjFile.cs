@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Globalization;
 
 namespace Tool_Hazard.IntelOrca.Biohazard
 {
@@ -39,13 +40,13 @@ namespace Tool_Hazard.IntelOrca.Biohazard
                         currentObject.Name = parts[1];
                         break;
                     case "v":
-                        Vertices.Add(new Vertex(double.Parse(parts[1]), double.Parse(parts[2]), double.Parse(parts[3])));
+                        Vertices.Add(new Vertex(double.Parse(parts[1], CultureInfo.InvariantCulture), double.Parse(parts[2], CultureInfo.InvariantCulture), double.Parse(parts[3], CultureInfo.InvariantCulture)));
                         break;
                     case "vn":
-                        Normals.Add(new Vertex(double.Parse(parts[1]), double.Parse(parts[2]), double.Parse(parts[3])));
+                        Normals.Add(new Vertex(double.Parse(parts[1], CultureInfo.InvariantCulture), double.Parse(parts[2], CultureInfo.InvariantCulture), double.Parse(parts[3], CultureInfo.InvariantCulture)));
                         break;
                     case "vt":
-                        TextureCoordinates.Add(new TextureCoordinate(double.Parse(parts[1]), double.Parse(parts[2])));
+                        TextureCoordinates.Add(new TextureCoordinate(double.Parse(parts[1], CultureInfo.InvariantCulture), double.Parse(parts[2], CultureInfo.InvariantCulture)));
                         break;
                     case "f":
                         if (parts.Length == 4)

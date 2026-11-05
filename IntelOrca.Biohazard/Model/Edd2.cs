@@ -22,7 +22,9 @@ namespace IntelOrca.Biohazard.Model
             get
             {
                 var firstOffset = GetSpan<ushort>(2, 1)[0];
-                var count = firstOffset / 4;
+                // RE3 animation headers are eight bytes, unlike the four-byte
+                // headers used by RE1/RE2.
+                var count = firstOffset / 8;
                 return GetSpan<Animation>(0, count);
             }
         }
@@ -62,6 +64,7 @@ namespace IntelOrca.Biohazard.Model
             {
                 builder.Animations.Add(new Builder.Animation()
                 {
+                    StartFrame = (uint)(Animations[i].StartFrame | ((uint)Animations[i].Unknown << 16)),
                     Frames = GetFrames(i).ToArray()
                 });
             }

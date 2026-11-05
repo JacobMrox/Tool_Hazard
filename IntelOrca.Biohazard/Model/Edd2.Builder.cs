@@ -15,7 +15,7 @@ namespace IntelOrca.Biohazard.Model
                 var ms = new MemoryStream();
                 var bw = new BinaryWriter(ms);
 
-                var offset = Animations.Count * 4;
+                var offset = Animations.Count * 8;
                 for (var i = 0; i < Animations.Count; i++)
                 {
                     var animation = Animations[i];
