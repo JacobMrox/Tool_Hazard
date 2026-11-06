@@ -24,6 +24,7 @@ public sealed class BiohazardModelViewerForm : Form
     private readonly System.Windows.Forms.Timer _animationTimer = new() { Interval = 33 };
     private ModelFile? _model;
     private SurvivorNab? _survivor;
+    private SurvivorHmd? _survivorHmd;
     private TimFile? _texture;
     private string? _texturePath;
     private string? _path;
@@ -137,7 +138,7 @@ public sealed class BiohazardModelViewerForm : Form
         using var dialog = new OpenFileDialog
         {
             Title = "Open classic Biohazard model",
-            Filter = "Biohazard models (*.emd;*.pld;*.nab)|*.emd;*.pld;*.nab|Survivor PC model (*.nab)|*.nab|Enemy model (*.emd)|*.emd|Player model (*.pld)|*.pld|All files (*.*)|*.*"
+            Filter = "Biohazard models (*.emd;*.pld;*.nab;*.hmd)|*.emd;*.pld;*.nab;*.hmd|Survivor PC models (*.nab;*.hmd)|*.nab;*.hmd|Survivor scene / NPC model (*.hmd)|*.hmd|Enemy model (*.emd)|*.emd|Player model (*.pld)|*.pld|All files (*.*)|*.*"
         };
         if (dialog.ShowDialog(this) == DialogResult.OK) Open(dialog.FileName);
     }
@@ -151,9 +152,15 @@ public sealed class BiohazardModelViewerForm : Form
                 OpenSurvivor(path);
                 return;
             }
+            if (Path.GetExtension(path).Equals(".hmd", StringComparison.OrdinalIgnoreCase))
+            {
+                OpenSurvivorHmd(path);
+                return;
+            }
             ModelFile model = ModelFile.FromFile(path);
             _model = model;
             _survivor = null;
+            _survivorHmd = null;
             _path = path;
             SetPlaying(false);
             LoadAnimations(model);
@@ -181,6 +188,7 @@ public sealed class BiohazardModelViewerForm : Form
     {
         SurvivorNab survivor = SurvivorNab.FromFile(path);
         _survivor = survivor;
+        _survivorHmd = null;
         _model = null;
         _path = path;
         _texture = null;
@@ -202,6 +210,39 @@ public sealed class BiohazardModelViewerForm : Form
         LoadSurvivorMesh();
         if (survivor.HasAnimations) ApplyCurrentPose();
         Text = $"Biohazard Model Viewer - {Path.GetFileName(path)}";
+    }
+
+    private void OpenSurvivorHmd(string path)
+    {
+        SurvivorHmd hmd = SurvivorHmd.FromFile(path);
+        _survivorHmd = hmd;
+        _survivor = null;
+        _model = null;
+        _path = path;
+        _texture = null;
+        _texturePath = null;
+        SetPlaying(false);
+        _animations.Clear();
+        _animation.Items.Clear();
+        _animation.Enabled = _playPause.Enabled = _timeline.Enabled = false;
+        UpdateTimeline(0, 0);
+        _mesh.Items.Clear();
+        _mesh.Items.Add("HMD scene / actor data");
+        _mesh.SelectedIndex = 0;
+        LoadSurvivorHmd();
+        Text = $"Biohazard Model Viewer - {Path.GetFileName(path)}";
+    }
+
+    private void LoadSurvivorHmd()
+    {
+        if (_survivorHmd == null) return;
+        _renderParts = _survivorHmd.CreateRenderParts();
+        _parts.Items.Clear();
+        for (int i = 0; i < _renderParts.Count; i++) _parts.Items.Add($"Block {i:D2}", true);
+        _viewport.SetModel(_renderParts, null);
+        string pointers = string.Join(", ", _survivorHmd.BlockPointers.Select((p, i) => $"{i}:{p:X8}"));
+        int triangles = _renderParts.Sum(p => p.Faces.Count);
+        _details.Text = $"Game: Resident Evil Survivor PC\r\nType: HMD scene / NPC model\r\nBlocks: {_survivorHmd.BlockCount:N0}  Render parts: {_renderParts.Count:N0}  Triangles: {triangles:N0}\r\nPrimitive header: 0x{_survivorHmd.PrimitiveHeaderOffset:X}\r\nBlock pointers (word offsets): {pointers}";
     }
 
     private void LoadSurvivorMesh()
@@ -1351,6 +1392,7 @@ public sealed class BiohazardModelViewerForm : Form
 
     private void LoadSelectedMesh()
     {
+        if (_survivorHmd != null) { LoadSurvivorHmd(); return; }
         if (_survivor != null) { LoadSurvivorMesh(); return; }
         if (_model == null || _mesh.SelectedIndex < 0) return;
         try
@@ -2655,6 +2697,145 @@ public sealed class BiohazardModelViewerForm : Form
     }
 
     private sealed record RenderFace(int[] Indices, Vector2[] UV, byte Page, int Clut);
+
+    private sealed class SurvivorHmd
+    {
+        private readonly byte[] _data;
+        public int PrimitiveHeaderOffset { get; }
+        public int BlockCount => BlockPointers.Length;
+        public uint[] BlockPointers { get; }
+
+        private SurvivorHmd(byte[] data, int primitiveHeaderOffset, uint[] blockPointers)
+        {
+            _data = data;
+            PrimitiveHeaderOffset = primitiveHeaderOffset;
+            BlockPointers = blockPointers;
+        }
+
+        public static SurvivorHmd FromFile(string path)
+        {
+            byte[] data = File.ReadAllBytes(path);
+            if (data.Length < 16 || BitConverter.ToUInt32(data, 0) != 0x50)
+                throw new InvalidDataException("This is not a PlayStation HMD file (version ID 0x50). ");
+            uint mapFlag = BitConverter.ToUInt32(data, 4);
+            if (mapFlag > 1) throw new InvalidDataException("The HMD map flag is invalid.");
+            uint primitiveHeaderWords = BitConverter.ToUInt32(data, 8);
+            uint blockCount = BitConverter.ToUInt32(data, 12);
+            if (blockCount == 0 || blockCount > 4096 || 16L + blockCount * 4L > data.Length)
+                throw new InvalidDataException("The HMD block table is invalid or truncated.");
+            long primitiveHeaderOffset = primitiveHeaderWords * 4L;
+            if (primitiveHeaderOffset < 0 || primitiveHeaderOffset >= data.Length)
+                throw new InvalidDataException("The HMD primitive-header pointer is outside the file.");
+            var pointers = new uint[blockCount];
+            for (int i = 0; i < pointers.Length; i++) pointers[i] = BitConverter.ToUInt32(data, 16 + i * 4);
+            return new SurvivorHmd(data, (int)primitiveHeaderOffset, pointers);
+        }
+
+        private int WordPointer(uint value)
+        {
+            long offset = (value & 0x7FFFFFFFu) * 4L;
+            if (offset < 0 || offset >= _data.Length) throw new InvalidDataException($"HMD pointer 0x{value:X8} is outside the file.");
+            return (int)offset;
+        }
+
+        private ushort U16(int offset)
+        {
+            if ((uint)(offset + 2) > (uint)_data.Length) throw new InvalidDataException("The HMD polygon data is truncated.");
+            return BitConverter.ToUInt16(_data, offset);
+        }
+
+        private uint U32(int offset)
+        {
+            if ((uint)(offset + 4) > (uint)_data.Length) throw new InvalidDataException("The HMD data is truncated.");
+            return BitConverter.ToUInt32(_data, offset);
+        }
+
+        private static (int Size, int[] VertexOffsets)? PacketLayout(byte type)
+        {
+            // Standard SCE HMD category-0 polygon packets. Driver flags occupy
+            // the upper bits; the low byte describes the GPU packet layout.
+            return type switch
+            {
+                0x08 => (12, new[] { 6, 8, 10 }),
+                0x09 => (20, new[] { 14, 16, 18 }),
+                0x0A => (20, new[] { 14, 16, 18 }),
+                0x0C => (16, new[] { 6, 10, 14 }),
+                0x0D => (24, new[] { 14, 18, 22 }),
+                0x0E => (24, new[] { 14, 18, 22 }),
+                0x10 => (16, new[] { 6, 8, 10, 12 }),
+                0x11 => (24, new[] { 16, 18, 20, 22 }),
+                0x12 => (32, new[] { 18, 22, 26, 30 }),
+                0x14 => (20, new[] { 6, 10, 14, 18 }),
+                0x15 => (32, new[] { 18, 22, 26, 30 }),
+                0x16 => (32, new[] { 18, 22, 26, 30 }),
+                _ => null
+            };
+        }
+
+        public List<RenderPart> CreateRenderParts()
+        {
+            var result = new List<RenderPart>();
+            foreach (uint rawBlock in BlockPointers)
+            {
+                if (rawBlock == 0 || rawBlock == 0xFFFFFFFF) continue;
+                int primitive = WordPointer(rawBlock);
+                int guard = 0;
+                while (primitive >= 0 && guard++ < 256)
+                {
+                    uint next = U32(primitive);
+                    int header = WordPointer(U32(primitive + 4));
+                    int typeCount = (int)(U32(primitive + 8) & 0x7FFFFFFF);
+                    if (typeCount < 0 || typeCount > 256) throw new InvalidDataException("The HMD primitive type count is invalid.");
+                    int headerSize = (int)U32(header);
+                    if (headerSize < 2) throw new InvalidDataException("The HMD model primitive has no polygon/vertex header.");
+                    int polygonTop = WordPointer(U32(header + 4));
+                    int vertexTop = WordPointer(U32(header + 8));
+                    var faces = new List<int[]>();
+                    int maximumVertex = -1;
+                    for (int t = 0; t < typeCount; t++)
+                    {
+                        int descriptor = primitive + 12 + t * 12;
+                        uint typeWord = U32(descriptor);
+                        uint countSize = U32(descriptor + 4);
+                        int polygonCount = (int)((countSize >> 16) & 0x7FFF);
+                        uint polygonIndex = U32(descriptor + 8) & 0x00FFFFFF;
+                        var layout = PacketLayout((byte)typeWord);
+                        if (layout == null || polygonCount == 0) continue;
+                        int packet = checked(polygonTop + (int)polygonIndex * 4);
+                        for (int p = 0; p < polygonCount; p++, packet += layout.Value.Size)
+                        {
+                            int[] indices = layout.Value.VertexOffsets.Select(o => (int)U16(packet + o)).ToArray();
+                            maximumVertex = Math.Max(maximumVertex, indices.Max());
+                            if (indices.Length == 3) faces.Add(indices);
+                            else
+                            {
+                                faces.Add(new[] { indices[0], indices[1], indices[2] });
+                                faces.Add(new[] { indices[3], indices[2], indices[1] });
+                            }
+                        }
+                    }
+                    if (maximumVertex >= 0 && maximumVertex < 65536)
+                    {
+                        var vertices = new Vector3[maximumVertex + 1];
+                        for (int i = 0; i < vertices.Length; i++)
+                        {
+                            int v = vertexTop + i * 8;
+                            if (v + 8 > _data.Length) throw new InvalidDataException("The HMD vertex section is truncated.");
+                            vertices[i] = new Vector3(BitConverter.ToInt16(_data, v), BitConverter.ToInt16(_data, v + 2), BitConverter.ToInt16(_data, v + 4));
+                        }
+                        var renderFaces = faces.Select(f => new RenderFace(f, Enumerable.Repeat(Vector2.Zero, 3).ToArray(), 0, 0)).ToList();
+                        var part = new RenderPart(vertices, renderFaces);
+                        part.ApplyTransform(Matrix4x4.Identity);
+                        result.Add(part);
+                    }
+                    if (next == 0xFFFFFFFF || next == 0) break;
+                    primitive = WordPointer(next);
+                }
+            }
+            if (result.Count == 0) throw new InvalidDataException("No supported standard polygon primitives were found in this HMD.");
+            return result;
+        }
+    }
     private sealed record AnimationChoice(IEdd Edd, Emr Skeleton, int Bank, int AnimationIndex);
 
     private sealed class RenderPart
