@@ -89,7 +89,7 @@ namespace Tool_Hazard
                 MessageBox.Show(this, $"Exported to:\n{folder}\n\nRun Apply-GameBoost.ps1 (user) and Apply-GameBoost-Elevated.ps1 (admin) for HAGS + Ultimate Performance.", "Game Boost", MessageBoxButtons.OK, MessageBoxIcon.Information);
             };
             gameBoostMenuItem.DropDownItems.AddRange(new ToolStripItem[] { gameBoostOpen, gameBoostClean, gameBoostScripts });
-            menuStrip1.Items.Add(gameBoostMenuItem);
+            toolStripMenuItem2.DropDownItems.Add(gameBoostMenuItem);
 
             // Sync menu check state from saved setting
             playStartupSoundToolStripMenuItem.Checked = Properties.Settings.Default.PlayStartupSound;
