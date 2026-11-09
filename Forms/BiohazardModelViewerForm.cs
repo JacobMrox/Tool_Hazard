@@ -233,16 +233,134 @@ public sealed class BiohazardModelViewerForm : Form
         Text = $"Biohazard Model Viewer - {Path.GetFileName(path)}";
     }
 
+    private static int ReadTimOrgX(string path)
+    {
+        try
+        {
+            using var fs = File.OpenRead(path);
+            var buf = new byte[14];
+            if (fs.Read(buf, 0, buf.Length) < buf.Length) return -1;
+            return BitConverter.ToUInt16(buf, 12);
+        }
+        catch { return -1; }
+    }
+
+    private static Dictionary<string, string> ParseRsd(string path)
+    {
+        var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (string raw in File.ReadAllLines(path))
+        {
+            string line = raw.Trim();
+            if (line.Length == 0 || line.StartsWith('#') || line.StartsWith('@')) continue;
+            int eq = line.IndexOf('=');
+            if (eq <= 0) continue;
+            map[line[..eq].Trim()] = line[(eq + 1)..].Trim();
+        }
+        return map;
+    }
+
+    private static string? FindSibling(string dir, string baseName, string extension)
+    {
+        string direct = Path.Combine(dir, baseName + extension);
+        if (File.Exists(direct)) return direct;
+        foreach (string f in Directory.Exists(dir) ? Directory.GetFiles(dir, "*" + extension) : Array.Empty<string>())
+            if (string.Equals(Path.GetFileNameWithoutExtension(f), baseName, StringComparison.OrdinalIgnoreCase))
+                return f;
+        return null;
+    }
+
+    // Builds textured render parts for an HMD. When the folder still contains
+    // the Meditor sources (.PLY/.MAT + .RSD/.TIM) the model is rebuilt from
+    // those (authoritative UVs/vertex colours); otherwise GPU packets are
+    // decoded directly and bound to the .TIM files in the folder.
+    private static (List<RenderPart> Parts, IViewerTexture? Texture, string TextureDescription) LoadHmdTexturedParts(SurvivorHmd hmd, string hmdPath)
+    {
+        string dir = Path.GetDirectoryName(hmdPath) ?? ".";
+        string baseName = Path.GetFileNameWithoutExtension(hmdPath);
+        string? rsdPath = FindSibling(dir, baseName, ".RSD")
+            ?? Directory.GetFiles(dir, "*.RSD").FirstOrDefault(f => true);
+        Dictionary<string, string>? rsd = null;
+        try { if (rsdPath != null) rsd = ParseRsd(rsdPath); } catch { rsd = null; }
+
+        // Collect texture slots: RSD TEX[0..] order, else *.TIM in the folder.
+        var texNames = new List<string>();
+        if (rsd != null)
+        {
+            for (int i = 0; ; i++)
+            {
+                if (!rsd.TryGetValue($"TEX[{i}]", out string? name)) break;
+                texNames.Add(name);
+            }
+        }
+        if (texNames.Count == 0)
+            texNames = Directory.GetFiles(dir, "*.TIM").Select(Path.GetFileName).Where(n => n != null).Cast<string>().ToList();
+        else
+        {
+            // A combined 128-wide TIM (e.g. IO301_0.TIM) next to the halves is
+            // redundant; prefer the manifest list when present.
+        }
+        var slots = new List<(string Name, TimFile Tim, int OrgX)>();
+        foreach (string name in texNames)
+        {
+            string full = Path.IsPathRooted(name) ? name : Path.Combine(dir, name);
+            if (!File.Exists(full))
+            {
+                // Case-insensitive fallback for dumps checked out on any casing.
+                string? found = Directory.GetFiles(dir, "*", SearchOption.TopDirectoryOnly)
+                    .FirstOrDefault(f => string.Equals(Path.GetFileName(f), name, StringComparison.OrdinalIgnoreCase));
+                if (found == null) continue;
+                full = found;
+            }
+            try
+            {
+                slots.Add((Path.GetFileName(full), new TimFile(full), ReadTimOrgX(full)));
+            }
+            catch { /* skip unreadable TIM */ }
+        }
+
+        HmdTimAtlas? atlas = slots.Count > 0 ? new HmdTimAtlas(slots) : null;
+
+        // Preferred path: rebuild from PLY/MAT sources.
+        string? plyPath = null, matPath = null;
+        if (rsd != null)
+        {
+            if (rsd.TryGetValue("PLY", out string? plyName))
+                plyPath = Path.Combine(dir, plyName);
+            if (rsd.TryGetValue("MAT", out string? matName))
+                matPath = Path.Combine(dir, matName);
+        }
+        plyPath ??= FindSibling(dir, baseName, ".PLY");
+        matPath ??= FindSibling(dir, baseName, ".MAT");
+        if (plyPath != null && matPath != null && File.Exists(plyPath) && File.Exists(matPath) && atlas != null)
+        {
+            try
+            {
+                var parts = PlyMatParts.Load(plyPath, matPath, atlas);
+                string desc = $"PLY/MAT + {atlas.SlotCount} TIM(s) ({string.Join(", ", atlas.Names)})";
+                return (parts, atlas, desc);
+            }
+            catch { /* fall back to packet decoding */ }
+        }
+
+        // Packet path: decode geometry + UV/TPAGE/vertex colours from the HMD.
+        var packetParts = hmd.CreateRenderParts(tpageX => atlas?.PageForTpageX(tpageX) ?? tpageX);
+        string packetDesc = atlas != null
+            ? $"Packet UV + {atlas.SlotCount} TIM(s) ({string.Join(", ", atlas.Names)})"
+            : "Packet geometry (no TIM found)";
+        return (packetParts, atlas, packetDesc);
+    }
+
     private void LoadSurvivorHmd()
     {
         if (_survivorHmd == null) return;
-        _renderParts = _survivorHmd.CreateRenderParts();
+        var (parts, texture, textureDesc) = LoadHmdTexturedParts(_survivorHmd, _path!);
+        _renderParts = parts;
         _parts.Items.Clear();
         for (int i = 0; i < _renderParts.Count; i++) _parts.Items.Add($"Block {i:D2}", true);
-        _viewport.SetModel(_renderParts, null);
+        _viewport.SetModel(_renderParts, texture);
         string pointers = string.Join(", ", _survivorHmd.BlockPointers.Select((p, i) => $"{i}:{p:X8}"));
         int triangles = _renderParts.Sum(p => p.Faces.Count);
-        _details.Text = $"Game: Resident Evil Survivor PC\r\nType: HMD scene / NPC model\r\nBlocks: {_survivorHmd.BlockCount:N0}  Render parts: {_renderParts.Count:N0}  Triangles: {triangles:N0}\r\nPrimitive header: 0x{_survivorHmd.PrimitiveHeaderOffset:X}\r\nBlock pointers (word offsets): {pointers}";
+        _details.Text = $"Game: Resident Evil Survivor PC\r\nType: HMD scene / NPC model\r\nBlocks: {_survivorHmd.BlockCount:N0}  Render parts: {_renderParts.Count:N0}  Triangles: {triangles:N0}\r\nTexture: {textureDesc}\r\nPrimitive header: 0x{_survivorHmd.PrimitiveHeaderOffset:X}\r\nBlock pointers (word offsets): {pointers}";
     }
 
     private void LoadSurvivorMesh()
@@ -265,20 +383,20 @@ public sealed class BiohazardModelViewerForm : Form
         _animation.Items.Clear();
         if (_skeleton != null)
         {
-            for (int bank = 0; ; bank++)
+            // Probe by chunk count instead of throwing past the last bank.
+            int banks = Math.Min(
+                CountChunksOfKind(model, ModelFile.ChunkKind.Animation),
+                CountChunksOfKind(model, ModelFile.ChunkKind.Armature));
+            for (int bank = 0; bank < banks; bank++)
             {
-                try
+                IEdd edd = model.GetEdd(bank);
+                Emr keyframes = model.GetEmr(bank);
+                Emr rig = _skeleton.WithKeyframes(keyframes);
+                for (int i = 0; i < edd.AnimationCount; i++)
                 {
-                    IEdd edd = model.GetEdd(bank);
-                    Emr keyframes = model.GetEmr(bank);
-                    Emr rig = _skeleton.WithKeyframes(keyframes);
-                    for (int i = 0; i < edd.AnimationCount; i++)
-                    {
-                        _animations.Add(new AnimationChoice(edd, rig, bank, i));
-                        _animation.Items.Add($"Bank {bank} / Animation {i:D2} ({edd.GetAnimationDuration(i)} frames)");
-                    }
+                    _animations.Add(new AnimationChoice(edd, rig, bank, i));
+                    _animation.Items.Add($"Bank {bank} / Animation {i:D2} ({edd.GetAnimationDuration(i)} frames)");
                 }
-                catch { break; }
             }
         }
         _animation.EndUpdate();
@@ -1369,25 +1487,21 @@ public sealed class BiohazardModelViewerForm : Form
     {
         _texture = null;
         _texturePath = null;
-        try
+        if (CountChunksOfKind(model, ModelFile.ChunkKind.Texture) > 0)
         {
-            try
+            _texture = model.GetTim(0);
+            _texturePath = "Embedded TIM";
+        }
+        else
+        {
+            string path = Path.ChangeExtension(modelPath, ".tim");
+            if (!File.Exists(path)) path = Path.ChangeExtension(modelPath, ".TIM");
+            if (File.Exists(path))
             {
-                _texture = model.GetTim(0);
-                _texturePath = "Embedded TIM";
-            }
-            catch
-            {
-                string path = Path.ChangeExtension(modelPath, ".tim");
-                if (!File.Exists(path)) path = Path.ChangeExtension(modelPath, ".TIM");
-                if (File.Exists(path))
-                {
-                    _texture = new TimFile(path);
-                    _texturePath = path;
-                }
+                _texture = new TimFile(path);
+                _texturePath = path;
             }
         }
-        catch { _texture = null; _texturePath = null; }
     }
 
     private void LoadSelectedMesh()
@@ -1466,10 +1580,20 @@ public sealed class BiohazardModelViewerForm : Form
         return index >= 0 && index < 256 ? index : page & 0x0F;
     }
 
+    private static int CountChunksOfKind(ModelFile model, ModelFile.ChunkKind kind)
+    {
+        int count = 0;
+        for (int i = 0; i < model.NumChunks; i++)
+            if (model.GetChunkKind(i) == kind) count++;
+        return count;
+    }
+
     private static Emr? TryGetSkeleton(ModelFile model)
     {
-        try { return model.GetEmr(0); }
-        catch { return null; }
+        // Avoid exception-driven control flow: under the VS debugger each
+        // first-chance throw halts execution and looks like a hang.
+        if (CountChunksOfKind(model, ModelFile.ChunkKind.Armature) == 0) return null;
+        return model.GetEmr(0);
     }
 
     private static Matrix4x4[] BuildPartTransforms(Emr? skeleton, int partCount, int keyFrameIndex)
@@ -1532,6 +1656,44 @@ public sealed class BiohazardModelViewerForm : Form
         public int Height => tim.Height;
         public int PaletteCount => tim.ClutCount;
         public uint GetPixel(int x, int y, int palette) => tim.GetPixel(x, y, palette);
+    }
+
+    // Side-by-side atlas of the .TIM files referenced by an HMD's .RSD
+    // manifest. Each TIM occupies a 128-pixel-wide slot so the viewport's
+    // Page*128 addressing works unchanged. Slot order follows manifest
+    // (TEX) order; PageForOrgX maps a PSX texture page (VRAM X / 64) to the
+    // slot whose TIM was uploaded at that VRAM position.
+    private sealed class HmdTimAtlas : IViewerTexture
+    {
+        private readonly TimFile[] _tims;
+        private readonly Dictionary<int, int> _orgXToPage = new();
+        public int Width => checked(Math.Max(128, 128 * _tims.Length));
+        public int Height => _tims.Length == 0 ? 1 : _tims.Max(t => t.Height);
+        public int PaletteCount => _tims.Length == 0 ? 1 : _tims.Max(t => Math.Max(1, t.ClutCount));
+        public int SlotCount => _tims.Length;
+        public string[] Names { get; }
+
+        public HmdTimAtlas(List<(string Name, TimFile Tim, int OrgX)> slots)
+        {
+            _tims = slots.Select(s => s.Tim).ToArray();
+            Names = slots.Select(s => s.Name).ToArray();
+            for (int i = 0; i < slots.Count; i++)
+                if (slots[i].OrgX >= 0 && !_orgXToPage.ContainsKey(slots[i].OrgX))
+                    _orgXToPage[slots[i].OrgX] = i;
+        }
+
+        public int PageForOrgX(int orgX) => _orgXToPage.TryGetValue(orgX, out int page) ? page : 0;
+        public int PageForTpageX(int tpageX) => PageForOrgX(tpageX * 64);
+        public int PageForTexIndex(int texIndex) => (uint)texIndex < (uint)_tims.Length ? texIndex : 0;
+
+        public uint GetPixel(int x, int y, int palette)
+        {
+            int slot = x / 128, localX = x % 128;
+            if ((uint)slot >= (uint)_tims.Length) return 0;
+            var tim = _tims[slot];
+            if (localX >= tim.Width || y >= tim.Height) return 0;
+            return tim.GetPixel(localX, y, palette);
+        }
     }
 
     private sealed class SurvivorTexture : IViewerTexture
@@ -1851,16 +2013,18 @@ public sealed class BiohazardModelViewerForm : Form
 
         private static uint FindRootNodePointer(byte[] data, int searchStart, uint lowestReferencedPointer)
         {
+            // Build the pointer set once instead of rescanning the whole tail
+            // for every candidate. The naive rescan is O(candidates * fileSize),
+            // which is fine in Release but looks like a hang under the VS
+            // debugger (unoptimized BitConverter calls + debugger overhead).
+            var present = new HashSet<uint>();
+            for (int o = searchStart; o <= data.Length - 4; o += 4)
+                present.Add(BitConverter.ToUInt32(data, o));
             uint pointer = lowestReferencedPointer;
             while (pointer >= 0x104)
             {
                 uint candidate = pointer - 0x104;
-                bool found = false;
-                for (int o = searchStart; o <= data.Length - 4; o += 4)
-                {
-                    if (BitConverter.ToUInt32(data, o) == candidate) { found = true; break; }
-                }
-                if (!found) break;
+                if (!present.Contains(candidate)) break;
                 pointer = candidate;
             }
             return pointer;
@@ -2745,7 +2909,140 @@ public sealed class BiohazardModelViewerForm : Form
         private sealed record SurvivorPart(Vector3[] Vertices, Vector3[] Normals, Vector2[] UV, byte TexturePage, int NodeIndex);
     }
 
-    private sealed record RenderFace(int[] Indices, Vector2[] UV, byte Page, int Clut);
+    // Clut < 0 marks an untextured (flat/vertex-coloured) face. VtColors holds
+    // one PSX vertex colour per corner (RGB 0-255), interpolated across the
+    // triangle and multiplied with the texture (or used directly when flat).
+    private sealed record RenderFace(int[] Indices, Vector2[] UV, byte Page, int Clut, Color[]? VtColors = null);
+
+    // Meditor text sources that accompany many PSX_DATA HMDs:
+    // .PLY = "tex v0 v1 v2 v3 n0 n1 n2 n3" quads + vertex/normal tables,
+    // .MAT = one line per polygon: idx ? F H/D ? 4x(u,v) uv pairs, then
+    // 4 RGB triples (H) or one RGB (D). A zero 4th UV marks a triangle.
+    private static class PlyMatParts
+    {
+        private static string[] Section(string[] lines, string marker, int count)
+        {
+            int start = Array.FindIndex(lines, l => l.TrimStart().StartsWith('#') &&
+                l.TrimStart().StartsWith(marker, StringComparison.OrdinalIgnoreCase));
+            if (start < 0) throw new InvalidDataException($"PLY/MAT section '{marker}' not found.");
+            return lines.Skip(start + 1).Take(count).ToArray();
+        }
+
+        private static int[] SectionCounts(string[] lines)
+        {
+            // "@XXX..." then "# Number of Items" then counts: PLY carries
+            // "v n p" on one line, MAT carries a single count line.
+            var found = new List<int>();
+            for (int i = 0; i < Math.Min(6, lines.Length); i++)
+            {
+                int[] nums = lines[i].Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(s => int.TryParse(s, out int n) ? n : -1).ToArray();
+                if (nums.Length >= 3 && nums.All(n => n > 0)) return nums;
+                if (nums.Length == 1 && nums[0] > 0) found.Add(nums[0]);
+            }
+            if (found.Count > 0) return found.ToArray();
+            throw new InvalidDataException("PLY/MAT item counts not found.");
+        }
+
+        private static int[] Ints(string line) =>
+            line.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToArray();
+
+        private static float[] Floats(string line) =>
+            line.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => float.Parse(s, CultureInfo.InvariantCulture)).ToArray();
+
+        public static List<RenderPart> Load(string plyPath, string matPath, HmdTimAtlas atlas)
+        {
+            string[] plyLines = File.ReadAllLines(plyPath);
+            string[] matLines = File.ReadAllLines(matPath);
+            int[] counts = SectionCounts(plyLines);
+            int vCount = counts[0], nCount = counts[1], pCount = counts[2];
+            Vector3[] verts = Section(plyLines, "# Vertex", vCount).Select(l =>
+            {
+                float[] f = Floats(l);
+                return new Vector3(f[0], f[1], f[2]);
+            }).ToArray();
+            Vector3[] normals = Section(plyLines, "# Normal", nCount).Select(l =>
+            {
+                float[] f = Floats(l);
+                var v = new Vector3(f[0], f[1], f[2]);
+                return v.LengthSquared() == 0 ? Vector3.UnitY : Vector3.Normalize(v);
+            }).ToArray();
+            int[] matCounts = SectionCounts(matLines);
+            string[] matRows = Section(matLines, "# Material", matCounts[0]);
+            if (matRows.Length < pCount) throw new InvalidDataException("MAT has fewer rows than PLY polygons.");
+            string[] polyRows = Section(plyLines, "# Polygon", pCount);
+
+            var result = new List<RenderPart>(pCount);
+            for (int i = 0; i < pCount; i++)
+            {
+                int[] poly = Ints(polyRows[i]);
+                if (poly.Length != 9) throw new InvalidDataException($"PLY polygon {i} must have 9 fields.");
+                // PLY field 0 is the triangle(0)/quad(1) flag; the texture slot
+                // is MAT token 4 (index into the RSD TEX list). Verified 1:1
+                // against packet TPAGE: token 1 <-> tpageX 14, token 0 <-> 15.
+                int[] vi = poly.Skip(1).Take(4).ToArray();
+                int[] ni = poly.Skip(5).Take(4).ToArray();
+                foreach (int v in vi)
+                    if ((uint)v >= (uint)verts.Length) throw new InvalidDataException($"PLY polygon {i} has vertex {v} out of range.");
+                foreach (int n in ni)
+                    if ((uint)n >= (uint)normals.Length) throw new InvalidDataException($"PLY polygon {i} has normal {n} out of range.");
+                // MAT rows mix numbers with flag letters ("0 1 F H 1 ...").
+                string[] toks = matRows[i].Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+                var mat = new int[toks.Length];
+                for (int t = 0; t < toks.Length; t++) mat[t] = int.TryParse(toks[t], out int n) ? n : toks[t][0];
+                if (mat.Length < 16 || toks[2] != "F") throw new InvalidDataException($"MAT row {i} is not a polygon material.");
+                bool textured = toks[3] == "H";
+                int texIndex = mat[4];
+                // 4 UV pairs at tokens 5..12; a zero 4th pair marks a triangle.
+                Vector2[] uvs = Enumerable.Range(0, 4).Select(k =>
+                    new Vector2(mat[5 + k * 2], mat[6 + k * 2])).ToArray();
+                bool triangle = uvs[3] == Vector2.Zero;
+                int useVerts = triangle ? 3 : 4;
+                Vector3[] localVerts = vi.Take(useVerts).Select(v => verts[v]).ToArray();
+                Vector3[] localNormals = ni.Take(useVerts).Select(n => normals[n]).ToArray();
+                byte page = (byte)atlas.PageForTexIndex(texIndex);
+                Color[] colors;
+                if (mat.Length >= 25)
+                    colors = Enumerable.Range(0, 4).Select(k => Color.FromArgb(255,
+                        Math.Clamp(mat[13 + k * 3], 0, 255),
+                        Math.Clamp(mat[14 + k * 3], 0, 255),
+                        Math.Clamp(mat[15 + k * 3], 0, 255))).ToArray();
+                else
+                    colors = Enumerable.Repeat(Color.FromArgb(255,
+                        Math.Clamp(mat[13], 0, 255), Math.Clamp(mat[14], 0, 255), Math.Clamp(mat[15], 0, 255)), 4).ToArray();
+
+                var faces = new List<RenderFace>();
+                if (!textured)
+                {
+                    if (triangle)
+                        faces.Add(new RenderFace(new[] { 0, 1, 2 }, Enumerable.Repeat(Vector2.Zero, 3).ToArray(),
+                            page, -1, new[] { colors[0], colors[1], colors[2] }));
+                    else
+                    {
+                        faces.Add(new RenderFace(new[] { 0, 1, 2 }, Enumerable.Repeat(Vector2.Zero, 3).ToArray(),
+                            page, -1, new[] { colors[0], colors[1], colors[2] }));
+                        faces.Add(new RenderFace(new[] { 3, 2, 1 }, Enumerable.Repeat(Vector2.Zero, 3).ToArray(),
+                            page, -1, new[] { colors[3], colors[2], colors[1] }));
+                    }
+                }
+                else if (triangle)
+                    faces.Add(new RenderFace(new[] { 0, 1, 2 }, uvs.Take(3).ToArray(),
+                        page, 0, colors.Take(3).ToArray()));
+                else
+                {
+                    faces.Add(new RenderFace(new[] { 0, 1, 2 }, uvs.Take(3).ToArray(),
+                        page, 0, colors.Take(3).ToArray()));
+                    faces.Add(new RenderFace(new[] { 3, 2, 1 }, new[] { uvs[3], uvs[2], uvs[1] },
+                        page, 0, new[] { colors[3], colors[2], colors[1] }));
+                }
+                var part = new RenderPart(localVerts, faces, localNormals);
+                part.ApplyTransform(Matrix4x4.Identity);
+                result.Add(part);
+            }
+            return result;
+        }
+    }
 
     private sealed class SurvivorHmd
     {
@@ -2799,35 +3096,43 @@ public sealed class BiohazardModelViewerForm : Form
             return BitConverter.ToUInt32(_data, offset);
         }
 
-        private static (int Size, int[] VertexOffsets)? PacketLayout(byte type)
+        // Packet layout: Size, vertex-index offsets, packed-UV offsets
+        // (uint16: low byte U, high byte V; null = flat untextured packet),
+        // SingleColor (true: one RGB at bytes 0-2; false: one RGB word per
+        // vertex at bytes 0,4,8,..) and the TPAGE word offset (-1 if none).
+        // UV/TPAGE offsets for 0x49/0x51/0x4D/0x55 were verified against the
+        // PLY/MAT sources of PSX_DATA/item/IO301_0/A.HMD (packet verts, UVs
+        // and vertex colours all match). Other textured types keep null UVs
+        // and render with vertex colours only rather than risk garbage UVs.
+        private static (int Size, int[] VertexOffsets, int[]? UvOffsets, bool SingleColor, int TpageOffset)? PacketLayout(byte type)
         {
             // Standard SCE HMD category-0 polygon packets. Driver flags occupy
             // the upper bits; the low byte describes the GPU packet layout.
             return type switch
             {
-                0x08 => (12, new[] { 6, 8, 10 }),
-                0x09 => (20, new[] { 14, 16, 18 }),
-                0x0A => (20, new[] { 14, 16, 18 }),
-                0x0C => (16, new[] { 6, 10, 14 }),
-                0x0D => (24, new[] { 14, 18, 22 }),
-                0x0E => (24, new[] { 14, 18, 22 }),
-                0x10 => (16, new[] { 6, 8, 10, 12 }),
-                0x11 => (24, new[] { 16, 18, 20, 22 }),
-                0x12 => (28, new[] { 18, 20, 22, 24 }),
-                0x14 => (20, new[] { 6, 10, 14, 18 }),
-                0x15 => (28, new[] { 14, 18, 22, 26 }),
-                0x16 => (32, new[] { 18, 22, 26, 30 }),
-                0x49 => (20, new[] { 14, 16, 18 }),
-                0x4D => (28, new[] { 22, 24, 26 }),
-                0x50 => (12, new[] { 4, 6, 8, 10 }),
-                0x51 => (24, new[] { 14, 18, 20, 22 }),
-                0x54 => (24, new[] { 16, 18, 20, 22 }),
-                0x55 => (36, new[] { 26, 30, 32, 34 }),
+                0x08 => (12, new[] { 6, 8, 10 }, null, true, -1),
+                0x09 => (20, new[] { 14, 16, 18 }, null, true, -1),
+                0x0A => (20, new[] { 14, 16, 18 }, null, true, -1),
+                0x0C => (16, new[] { 6, 10, 14 }, null, true, -1),
+                0x0D => (24, new[] { 14, 18, 22 }, null, true, -1),
+                0x0E => (24, new[] { 14, 18, 22 }, null, true, -1),
+                0x10 => (16, new[] { 6, 8, 10, 12 }, null, true, -1),
+                0x11 => (24, new[] { 16, 18, 20, 22 }, null, true, -1),
+                0x12 => (28, new[] { 18, 20, 22, 24 }, null, true, -1),
+                0x14 => (20, new[] { 6, 10, 14, 18 }, null, true, -1),
+                0x15 => (28, new[] { 14, 18, 22, 26 }, null, true, -1),
+                0x16 => (32, new[] { 18, 22, 26, 30 }, null, true, -1),
+                0x49 => (20, new[] { 14, 16, 18 }, new[] { 4, 8, 12 }, true, 10),
+                0x4D => (28, new[] { 22, 24, 26 }, new[] { 12, 16, 20 }, false, 18),
+                0x50 => (12, new[] { 4, 6, 8, 10 }, null, true, -1),
+                0x51 => (24, new[] { 14, 18, 20, 22 }, new[] { 4, 8, 12, 16 }, true, 10),
+                0x54 => (24, new[] { 16, 18, 20, 22 }, null, true, -1),
+                0x55 => (36, new[] { 26, 30, 32, 34 }, new[] { 16, 20, 24, 28 }, false, 22),
                 _ => null
             };
         }
 
-        public List<RenderPart> CreateRenderParts()
+        public List<RenderPart> CreateRenderParts(Func<int, int>? pageMapper = null)
         {
             var result = new List<RenderPart>();
             foreach (uint rawBlock in BlockPointers)
@@ -2845,7 +3150,7 @@ public sealed class BiohazardModelViewerForm : Form
                     if (headerSize < 2) throw new InvalidDataException("The HMD model primitive has no polygon/vertex header.");
                     int polygonTop = WordPointer(U32(header + 4));
                     int vertexTop = WordPointer(U32(header + 8));
-                    var faces = new List<int[]>();
+                    var faces = new List<RenderFace>();
                     int maximumVertex = -1;
                     for (int t = 0; t < typeCount; t++)
                     {
@@ -2854,26 +3159,60 @@ public sealed class BiohazardModelViewerForm : Form
                         uint countSize = U32(descriptor + 4);
                         int polygonCount = (int)((countSize >> 16) & 0x7FFF);
                         uint polygonIndex = U32(descriptor + 8) & 0x00FFFFFF;
-                        var layout = PacketLayout((byte)typeWord);
-                        if (layout == null || polygonCount == 0) continue;
+                        var layoutNullable = PacketLayout((byte)typeWord);
+                        if (layoutNullable == null || polygonCount == 0) continue;
+                        var layout = layoutNullable.Value;
                         int packet = checked(polygonTop + (int)polygonIndex * 4);
                         // Non-polygon primitives (lights, items, skeletons) reuse the same
                         // descriptor shape; a packet range that runs past the file means this
                         // descriptor is not a polygon stream, so skip it instead of failing.
-                        if (packet < 0 || (long)packet + (long)polygonCount * layout.Value.Size > _data.Length) continue;
-                        for (int p = 0; p < polygonCount; p++, packet += layout.Value.Size)
+                        if (packet < 0 || (long)packet + (long)polygonCount * layout.Size > _data.Length) continue;
+                        int numVerts = layout.VertexOffsets.Length;
+                        Color PacketColor(int pkt, int vertexIndex)
                         {
-                            int[] indices = layout.Value.VertexOffsets.Select(o => (int)U16(packet + o)).ToArray();
+                            int o = layout.SingleColor ? pkt : pkt + vertexIndex * 4;
+                            return Color.FromArgb(255, _data[o], _data[o + 1], _data[o + 2]);
+                        }
+                        for (int p = 0; p < polygonCount; p++, packet += layout.Size)
+                        {
+                            int[] indices = layout.VertexOffsets.Select(o => (int)U16(packet + o)).ToArray();
                             maximumVertex = Math.Max(maximumVertex, indices.Max());
-                            if (indices.Length == 3) faces.Add(indices);
+                            Color[] colors = Enumerable.Range(0, numVerts).Select(i => PacketColor(packet, i)).ToArray();
+                            if (layout.UvOffsets == null)
+                            {
+                                var flat = colors.Take(3).ToArray();
+                                if (indices.Length == 3)
+                                    faces.Add(new RenderFace(indices, Enumerable.Repeat(Vector2.Zero, 3).ToArray(), 0, -1, flat));
+                                else
+                                {
+                                    faces.Add(new RenderFace(new[] { indices[0], indices[1], indices[2] },
+                                        Enumerable.Repeat(Vector2.Zero, 3).ToArray(), 0, -1, new[] { colors[0], colors[1], colors[2] }));
+                                    faces.Add(new RenderFace(new[] { indices[3], indices[2], indices[1] },
+                                        Enumerable.Repeat(Vector2.Zero, 3).ToArray(), 0, -1, new[] { colors[3], colors[2], colors[1] }));
+                                }
+                                continue;
+                            }
+                            // Packed UV: low byte U, high byte V.
+                            Vector2[] uvs = layout.UvOffsets.Select(o =>
+                            {
+                                ushort w = U16(packet + o);
+                                return new Vector2((byte)(w & 0xFF), (byte)(w >> 8));
+                            }).ToArray();
+                            int tpageX = layout.TpageOffset >= 0 ? U16(packet + layout.TpageOffset) & 0xF : 0;
+                            byte page = (byte)(pageMapper != null ? pageMapper(tpageX) : tpageX);
+                            // Clut is unused by 16bpp TIMs; pass 0 (atlas slot selects the TIM).
+                            if (indices.Length == 3)
+                                faces.Add(new RenderFace(indices, uvs, page, 0, colors));
                             else
                             {
-                                faces.Add(new[] { indices[0], indices[1], indices[2] });
-                                faces.Add(new[] { indices[3], indices[2], indices[1] });
+                                faces.Add(new RenderFace(new[] { indices[0], indices[1], indices[2] },
+                                    new[] { uvs[0], uvs[1], uvs[2] }, page, 0, new[] { colors[0], colors[1], colors[2] }));
+                                faces.Add(new RenderFace(new[] { indices[3], indices[2], indices[1] },
+                                    new[] { uvs[3], uvs[2], uvs[1] }, page, 0, new[] { colors[3], colors[2], colors[1] }));
                             }
                         }
                     }
-                    if (maximumVertex >= 0 && maximumVertex < 65536)
+                    if (maximumVertex >= 0 && maximumVertex < 65536 && faces.Count > 0)
                     {
                         var vertices = new Vector3[maximumVertex + 1];
                         for (int i = 0; i < vertices.Length; i++)
@@ -2882,7 +3221,7 @@ public sealed class BiohazardModelViewerForm : Form
                             if (v + 8 > _data.Length) throw new InvalidDataException("The HMD vertex section is truncated.");
                             vertices[i] = new Vector3(BitConverter.ToInt16(_data, v), BitConverter.ToInt16(_data, v + 2), BitConverter.ToInt16(_data, v + 4));
                         }
-                        var renderFaces = faces.Select(f => new RenderFace(f, Enumerable.Repeat(Vector2.Zero, 3).ToArray(), 0, 0)).ToList();
+                        var renderFaces = faces;
                         var part = new RenderPart(vertices, renderFaces);
                         part.ApplyTransform(Matrix4x4.Identity);
                         result.Add(part);
@@ -3087,9 +3426,20 @@ public sealed class BiohazardModelViewerForm : Form
                 int index = y * Width + x;
                 if (z >= depth[index]) continue;
                 float light = w0 * lights[0] + w1 * lights[1] + w2 * lights[2];
-                Color flat = Color.FromArgb(255, (int)(fallback.R * light), (int)(fallback.G * light), (int)(fallback.B * light));
+                // Vertex colours (PSX RGB) modulate the texture or colour flat faces.
+                float vr = 1f, vg = 1f, vb = 1f;
+                bool hasVertexColor = face.VtColors is { Length: 3 };
+                if (hasVertexColor)
+                {
+                    vr = (w0 * face.VtColors![0].R + w1 * face.VtColors[1].R + w2 * face.VtColors[2].R) / 255f;
+                    vg = (w0 * face.VtColors[0].G + w1 * face.VtColors[1].G + w2 * face.VtColors[2].G) / 255f;
+                    vb = (w0 * face.VtColors[0].B + w1 * face.VtColors[1].B + w2 * face.VtColors[2].B) / 255f;
+                }
+                Color flat = Color.FromArgb(255,
+                    (int)(fallback.R * light * vr), (int)(fallback.G * light * vg), (int)(fallback.B * light * vb));
 
                 Color color = flat;
+                if (face.Clut < 0) { depth[index] = z; pixels[index] = flat.ToArgb(); continue; }
                 if (_texture != null && TexturesVisible)
                 {
                     int u = (int)MathF.Round(w0 * face.UV[0].X + w1 * face.UV[1].X + w2 * face.UV[2].X) + face.Page * 128;
@@ -3101,7 +3451,8 @@ public sealed class BiohazardModelViewerForm : Form
                         uint argb = _texture.GetPixel(u, v, face.Clut);
                         color = Color.FromArgb(unchecked((int)argb));
                         if (color.A == 0) continue;
-                        color = Color.FromArgb(color.A, (int)(color.R * light), (int)(color.G * light), (int)(color.B * light));
+                        color = Color.FromArgb(color.A,
+                            (int)(color.R * light * vr), (int)(color.G * light * vg), (int)(color.B * light * vb));
                     }
                     catch
                     {
