@@ -68,6 +68,29 @@ namespace Tool_Hazard
             bINPC2014ToolStripMenuItem.Text = "BIN / TPL / PACK Model Viewer";
             bINPC2014ToolStripMenuItem.Click += (_, _) => new BiohazardModelViewerForm().Show(this);
 
+            // Game Boost — PC performance & gaming optimizer (user + elevated PowerShell scripts).
+            var gameBoostMenuItem = new ToolStripMenuItem("Game Boost");
+            var gameBoostOpen = new ToolStripMenuItem("Open Game Boost Panel...");
+            gameBoostOpen.Click += (_, _) => new GameBoostForm().Show(this);
+            var gameBoostClean = new ToolStripMenuItem("Clean Temp Files");
+            gameBoostClean.Click += async (_, _) =>
+            {
+                var (freed, _) = await Task.Run(Tool_Hazard.GameBoost.GameBoostService.CleanTemp);
+                UpdateStatus($"Game Boost: cleaned {(freed / 1024 / 1024):N0} MB of temp files");
+            };
+            var gameBoostScripts = new ToolStripMenuItem("Export PowerShell Scripts to Desktop");
+            gameBoostScripts.Click += (_, _) =>
+            {
+                string folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "ToolHazard-GameBoost");
+                Directory.CreateDirectory(folder);
+                File.WriteAllText(Path.Combine(folder, "Apply-GameBoost.ps1"), Tool_Hazard.GameBoost.GameBoostService.ExportUserScript());
+                File.WriteAllText(Path.Combine(folder, "Apply-GameBoost-Elevated.ps1"), Tool_Hazard.GameBoost.GameBoostService.ExportElevatedScript());
+                File.WriteAllText(Path.Combine(folder, "Revert-GameBoost-Elevated.ps1"), Tool_Hazard.GameBoost.GameBoostService.ExportRevertElevatedScript());
+                MessageBox.Show(this, $"Exported to:\n{folder}\n\nRun Apply-GameBoost.ps1 (user) and Apply-GameBoost-Elevated.ps1 (admin) for HAGS + Ultimate Performance.", "Game Boost", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            };
+            gameBoostMenuItem.DropDownItems.AddRange(new ToolStripItem[] { gameBoostOpen, gameBoostClean, gameBoostScripts });
+            menuStrip1.Items.Add(gameBoostMenuItem);
+
             // Sync menu check state from saved setting
             playStartupSoundToolStripMenuItem.Checked = Properties.Settings.Default.PlayStartupSound;
 

@@ -85,6 +85,12 @@ Inizialmente nato come White Day Mod Tool, si è evoluto in un toolkit completo 
   * 2007 `.PMD` meshes and binary scenario `.SMD` containers (embedded BIN/TPL extraction + placed OBJ export), text `.SMD`, generic `.OBJ`, and `.SMX` metadata inspection.
   * Mesh export to OBJ (+MTL)/SMD; OBJ/SMD import patches UHD BINs in place when vertex/triangle counts match, otherwise opens as a generic view.
   * Texture export to PNG/BMP and PNG/BMP replacement re-encoded to DDS (A8R8G8B8) or TGA in place; BIN/TPL saved as patched clones (all untouched sections byte-preserved), PACKs rebuilt with fresh offsets.
+* PC Game Boost (Windows 11 speed + gaming optimizer)
+  * `Game Boost` menu > Open Game Boost Panel: live checklist (Power plan, Game Mode, HAGS, Game DVR capture, Visual FX, transparency, mouse accel, background apps, throttling, temp, startup) with one-click Apply/Revert.
+  * User-level (no admin): Game Mode ON + Game DVR background capture OFF, Visual Effects -> Best performance, transparency/animations OFF, mouse raw input (1:1), Taskbar bloat OFF, background apps OFF, power throttling OFF, `%TEMP%` cleanup.
+  * Elevated (admin, via PowerShell scripts in `pc-hardening/`): Hardware GPU Scheduling (HAGS) ON, Ultimate Performance power plan + PCIe ASPM OFF, CPU foreground scheduler boost (`Win32PrioritySeparation=38`), SysMain/WSearch/DiagTrack -> Manual, telemetry + Delivery Optimization policies.
+  * Launch games with Boost: pick any `.exe`, sets High-performance GPU preference, lowers Edge/Discord-class background apps to BelowNormal and launches the game at High priority; Restore Priorities button undoes it.
+  * Exportable PowerShell equivalents (`pc-hardening/Apply-GameBoost.ps1`, `Apply-GameBoost-Elevated.ps1`, `Revert-GameBoost-Elevated.ps1`) so tweaks can be applied without the app.
 
 # Planned features
 * ~~Add Multi-Clut TIM support to the Tim/Pix Viewer.~~
