@@ -1665,15 +1665,29 @@ public sealed class BiohazardModelViewerForm : Form
             int groupCountOffset;
             while (true)
             {
-                int continuationAdjustment = surfaces.Count == 0 ? 0 : -4;
-                if (surfaceOffset + SurfaceDataOffset + continuationAdjustment > data.Length)
-                    throw new InvalidDataException("NAB surface header is truncated.");
-                int format = BitConverter.ToInt32(data, surfaceOffset + SurfaceFormatOffset + continuationAdjustment);
-                int surfaceWidth = BitConverter.ToInt32(data, surfaceOffset + SurfaceWidthOffset + continuationAdjustment);
-                int surfaceHeight = BitConverter.ToInt32(data, surfaceOffset + SurfaceHeightOffset + continuationAdjustment);
-                int surfaceData = checked(surfaceOffset + SurfaceDataOffset + continuationAdjustment);
-                if (format != 25 || surfaceWidth <= 0 || surfaceWidth > 2048 || surfaceHeight <= 0 || surfaceHeight > 2048 ||
-                    surfaceData + surfaceWidth * surfaceHeight * 2 > data.Length)
+                int surfaceWidth, surfaceHeight, surfaceData;
+                if (surfaces.Count == 0)
+                {
+                    if (surfaceOffset + SurfaceDataOffset > data.Length)
+                        throw new InvalidDataException("NAB surface header is truncated.");
+                    if (BitConverter.ToInt32(data, surfaceOffset + SurfaceFormatOffset) != 25)
+                        throw new InvalidDataException("NAB vertex or embedded texture data is truncated.");
+                    surfaceWidth = BitConverter.ToInt32(data, surfaceOffset + SurfaceWidthOffset);
+                    surfaceHeight = BitConverter.ToInt32(data, surfaceOffset + SurfaceHeightOffset);
+                    surfaceData = surfaceOffset + SurfaceDataOffset;
+                }
+                else if (TryReadContinuationSurface(data, surfaceOffset, out surfaceWidth, out surfaceHeight, out surfaceData))
+                {
+                    // Another embedded surface follows the previous pixel block.
+                }
+                else
+                {
+                    // No further surface: the mesh group table must begin here.
+                    groupCountOffset = surfaceOffset;
+                    break;
+                }
+                if (surfaceWidth <= 0 || surfaceWidth > 2048 || surfaceHeight <= 0 || surfaceHeight > 2048 ||
+                    (long)surfaceData + surfaceWidth * surfaceHeight * 2 > data.Length)
                     throw new InvalidDataException("NAB vertex or embedded texture data is truncated.");
                 surfaces.Add((surfaceData, surfaceWidth, surfaceHeight));
                 groupCountOffset = checked(surfaceData + surfaceWidth * surfaceHeight * 2);
@@ -1712,13 +1726,13 @@ public sealed class BiohazardModelViewerForm : Form
             var rawGroups = new (int Start, int Count, uint NodePointer, byte TexturePage)[groupCount];
             var surfacePages = new Dictionary<uint, byte>();
             int expectedTriangle = 0;
+            int groupRecord = groupTable;
             for (int i = 0; i < groupCount; i++)
             {
-                int o = groupTable + i * 32;
-                uint surfacePointer = BitConverter.ToUInt32(data, o);
-                int start = BitConverter.ToInt32(data, o + 8);
-                int count = BitConverter.ToInt32(data, o + 12);
-                uint nodePointer = BitConverter.ToUInt32(data, o + 16);
+                uint surfacePointer = BitConverter.ToUInt32(data, groupRecord);
+                int start = BitConverter.ToInt32(data, groupRecord + 8);
+                int count = BitConverter.ToInt32(data, groupRecord + 12);
+                uint nodePointer = BitConverter.ToUInt32(data, groupRecord + 16);
                 byte texturePage = 0;
                 if (surfacePointer != 0)
                 {
@@ -1735,14 +1749,17 @@ public sealed class BiohazardModelViewerForm : Form
                 expectedTriangle += count;
                 minimumNodePointer = Math.Min(minimumNodePointer, nodePointer);
                 rawGroups[i] = (start, count, nodePointer, texturePage);
+                // Textured group records are 32 bytes; untextured ones omit the four texture words.
+                groupRecord += surfacePointer != 0 ? 32 : 28;
             }
             if (expectedTriangle != triangleCount)
                 throw new InvalidDataException("NAB mesh groups do not cover every triangle.");
 
-            uint rootNodePointer = FindRootNodePointer(data, groupTable + groupCount * 32, minimumNodePointer);
+            int groupTableEnd = groupRecord;
+            uint rootNodePointer = FindRootNodePointer(data, groupTableEnd, minimumNodePointer);
             uint maximumNodePointer = rawGroups.Max(x => x.NodePointer);
             int minimumNodeCount = checked((int)((maximumNodePointer - rootNodePointer) / 0x104) + 1);
-            int nodeCount = FindNodeCount(data, rootNodePointer, minimumNodeCount, groupTable + groupCount * 32);
+            int nodeCount = FindNodeCount(data, rootNodePointer, minimumNodeCount, groupTableEnd);
             rootNodePointer = checked(rootNodePointer - (uint)((nodeCount - minimumNodeCount) * 0x104));
             int rootNodeOffset = checked(data.Length - nodeCount * 0x108);
             if (rootNodeOffset < 0) throw new InvalidDataException("NAB node table is truncated.");
@@ -1783,19 +1800,51 @@ public sealed class BiohazardModelViewerForm : Form
                 new SurvivorTexture(data, surfaces), animationPath, animationBank, vertexEnd, groupCountOffset);
         }
 
+        // Reads the header of an embedded surface that follows the previous pixel block. Most dumps
+        // place [size][format][width][height] straight after the pixels, but some reserve a gap in
+        // which the format word sits at +356 (the historical continuation layout).
+        private static bool TryReadContinuationSurface(byte[] data, int offset, out int width, out int height, out int dataOffset)
+        {
+            width = height = dataOffset = 0;
+            if (offset <= data.Length - 16 && BitConverter.ToInt32(data, offset + 4) == 25)
+            {
+                int size = BitConverter.ToInt32(data, offset);
+                int immediateWidth = BitConverter.ToInt32(data, offset + 8);
+                int immediateHeight = BitConverter.ToInt32(data, offset + 12);
+                if (immediateWidth > 0 && immediateWidth <= 2048 && immediateHeight > 0 && immediateHeight <= 2048 &&
+                    size == immediateWidth * immediateHeight * 2 && (long)offset + 16 + size <= data.Length)
+                {
+                    width = immediateWidth;
+                    height = immediateHeight;
+                    dataOffset = offset + 16;
+                    return true;
+                }
+            }
+            const int continuationAdjustment = -4;
+            if (offset > data.Length - (SurfaceDataOffset + continuationAdjustment)) return false;
+            if (BitConverter.ToInt32(data, offset + SurfaceFormatOffset + continuationAdjustment) != 25) return false;
+            width = BitConverter.ToInt32(data, offset + SurfaceWidthOffset + continuationAdjustment);
+            height = BitConverter.ToInt32(data, offset + SurfaceHeightOffset + continuationAdjustment);
+            dataOffset = offset + SurfaceDataOffset + continuationAdjustment;
+            return true;
+        }
+
         private static bool IsGroupTable(byte[] data, int offset, int triangleCount)
         {
             if (offset < 0 || offset + 4 > data.Length) return false;
             int count = BitConverter.ToInt32(data, offset);
             if (count <= 0 || count > 256 || offset + 4 + count * 32 > data.Length) return false;
             int expected = 0;
+            int record = offset + 4;
             for (int i = 0; i < count; i++)
             {
-                int record = offset + 4 + i * 32;
+                // Textured group records are 32 bytes; untextured ones omit the four texture words.
+                uint surface = BitConverter.ToUInt32(data, record);
                 int start = BitConverter.ToInt32(data, record + 8);
                 int length = BitConverter.ToInt32(data, record + 12);
                 if (start != expected || length <= 0 || start + length > triangleCount) return false;
                 expected += length;
+                record += surface != 0 ? 32 : 28;
             }
             return expected == triangleCount;
         }
@@ -2764,10 +2813,16 @@ public sealed class BiohazardModelViewerForm : Form
                 0x0E => (24, new[] { 14, 18, 22 }),
                 0x10 => (16, new[] { 6, 8, 10, 12 }),
                 0x11 => (24, new[] { 16, 18, 20, 22 }),
-                0x12 => (32, new[] { 18, 22, 26, 30 }),
+                0x12 => (28, new[] { 18, 20, 22, 24 }),
                 0x14 => (20, new[] { 6, 10, 14, 18 }),
-                0x15 => (32, new[] { 18, 22, 26, 30 }),
+                0x15 => (28, new[] { 14, 18, 22, 26 }),
                 0x16 => (32, new[] { 18, 22, 26, 30 }),
+                0x49 => (20, new[] { 14, 16, 18 }),
+                0x4D => (28, new[] { 22, 24, 26 }),
+                0x50 => (12, new[] { 4, 6, 8, 10 }),
+                0x51 => (24, new[] { 14, 18, 20, 22 }),
+                0x54 => (24, new[] { 16, 18, 20, 22 }),
+                0x55 => (36, new[] { 26, 30, 32, 34 }),
                 _ => null
             };
         }
@@ -2802,6 +2857,10 @@ public sealed class BiohazardModelViewerForm : Form
                         var layout = PacketLayout((byte)typeWord);
                         if (layout == null || polygonCount == 0) continue;
                         int packet = checked(polygonTop + (int)polygonIndex * 4);
+                        // Non-polygon primitives (lights, items, skeletons) reuse the same
+                        // descriptor shape; a packet range that runs past the file means this
+                        // descriptor is not a polygon stream, so skip it instead of failing.
+                        if (packet < 0 || (long)packet + (long)polygonCount * layout.Value.Size > _data.Length) continue;
                         for (int p = 0; p < polygonCount; p++, packet += layout.Value.Size)
                         {
                             int[] indices = layout.Value.VertexOffsets.Select(o => (int)U16(packet + o)).ToArray();
