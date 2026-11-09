@@ -61,6 +61,13 @@ namespace Tool_Hazard
             tplExplorerMenuItem.Click += (_, _) => new TplExplorerForm().Show(this);
             rE42005ToolStripMenuItem.DropDownItems.Add(tplExplorerMenuItem);
 
+            // RE4 BIN/TPL/PACK viewer (JADERLINK_MODEL_VIEWER port, MIT).
+            // The BIN menu item was previously disabled; enable it and route it
+            // to the unified Model Viewer, which now dispatches RE4 formats.
+            bINPC2014ToolStripMenuItem.Enabled = true;
+            bINPC2014ToolStripMenuItem.Text = "BIN / TPL / PACK Model Viewer";
+            bINPC2014ToolStripMenuItem.Click += (_, _) => new BiohazardModelViewerForm().Show(this);
+
             // Sync menu check state from saved setting
             playStartupSoundToolStripMenuItem.Checked = Properties.Settings.Default.PlayStartupSound;
 

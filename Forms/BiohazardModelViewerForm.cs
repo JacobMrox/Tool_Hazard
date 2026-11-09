@@ -7,6 +7,7 @@ using System.Text.Json;
 using IntelOrca.Biohazard.Model;
 using Tool_Hazard.IntelOrca.Biohazard;
 using Tool_Hazard.IntelOrca.Biohazard.Model;
+using Tool_Hazard.Biohazard.RE4;
 
 namespace Tool_Hazard.Forms;
 
@@ -25,6 +26,14 @@ public sealed class BiohazardModelViewerForm : Form
     private ModelFile? _model;
     private SurvivorNab? _survivor;
     private SurvivorHmd? _survivorHmd;
+    private Re4BinModel? _re4Bin;
+    private Re4PmdModel? _re4Pmd;
+    private Re4ScenarioSmd? _re4Scenario;
+    private Re4TplDocument? _re4Tpl;
+    private Re4PackDocument? _re4Pack;
+    private readonly Dictionary<string, Bitmap> _re4PackTextures = new(StringComparer.OrdinalIgnoreCase);
+    private List<Re4MeshPart>? _re4GenericParts;
+    private string? _re4KindLabel;
     private TimFile? _texture;
     private string? _texturePath;
     private string? _path;
@@ -37,7 +46,7 @@ public sealed class BiohazardModelViewerForm : Form
 
     public BiohazardModelViewerForm(string? initialPath = null)
     {
-        Text = "Biohazard Model Viewer - RE1 / RE2 / RE3 / Survivor PC";
+        Text = "Biohazard Model Viewer - RE1 / RE2 / RE3 / Survivor PC / RE4";
         StartPosition = FormStartPosition.CenterScreen;
         MinimumSize = new Size(760, 500);
         Size = new Size(1050, 720);
@@ -50,6 +59,24 @@ public sealed class BiohazardModelViewerForm : Form
         var clearTexture = new ToolStripMenuItem("Clear texture", null, (_, _) => { _texture = null; _texturePath = null; LoadSelectedMesh(); });
         var exit = new ToolStripMenuItem("Exit", null, (_, _) => Close());
         file.DropDownItems.AddRange(new ToolStripItem[] { open, saveAs, new ToolStripSeparator(), openTexture, clearTexture, new ToolStripSeparator(), exit });
+        var re4Menu = new ToolStripMenuItem("RE4 (JADERLINK)");
+        var re4OpenBin = new ToolStripMenuItem("Open RE4 BIN (UHD/GC-Wii/PS4/PS2)...", null, (_, _) => PromptRe4Open("bin"));
+        var re4OpenPmd = new ToolStripMenuItem("Open RE4 2007 PMD...", null, (_, _) => PromptRe4Open("pmd"));
+        var re4OpenSmd = new ToolStripMenuItem("Open scenario SMD (binary) / text SMD...", null, (_, _) => PromptRe4Open("smd"));
+        var re4OpenTpl = new ToolStripMenuItem("Load RE4 TPL...", null, (_, _) => PromptRe4Open("tpl"));
+        var re4OpenPack = new ToolStripMenuItem("Load RE4 PACK textures (multi)...", null, (_, _) => PromptRe4Pack());
+        var re4OpenSmx = new ToolStripMenuItem("Inspect RE4 SMX...", null, (_, _) => PromptRe4Smx());
+        re4Menu.DropDownItems.AddRange(new ToolStripItem[]
+        {
+            re4OpenBin, re4OpenPmd, re4OpenSmd, new ToolStripSeparator(),
+            re4OpenTpl, re4OpenPack, re4OpenSmx, new ToolStripSeparator(),
+            new ToolStripMenuItem("Export RE4 mesh (OBJ)...", null, (_, _) => ExportRe4Mesh("obj")),
+            new ToolStripMenuItem("Export RE4 mesh (SMD)...", null, (_, _) => ExportRe4Mesh("smd")),
+            new ToolStripMenuItem("Import mesh (OBJ creates view, native BIN patches in place)...", null, (_, _) => ImportRe4Mesh()),
+            new ToolStripMenuItem("Export RE4 texture (PNG)...", null, (_, _) => ExportRe4Texture()),
+            new ToolStripMenuItem("Replace RE4 PACK texture (PNG/BMP -> DDS/TGA)...", null, (_, _) => ReplaceRe4PackTexture()),
+            new ToolStripMenuItem("Save RE4 BIN / TPL / PACK as...", null, (_, _) => SaveRe4As())
+        });
         var view = new ToolStripMenuItem("View");
         var smooth = new ToolStripMenuItem("Smooth shading") { CheckOnClick = true, Checked = true };
         smooth.CheckedChanged += (_, _) => _viewport.SmoothShading = smooth.Checked;
@@ -87,7 +114,7 @@ public sealed class BiohazardModelViewerForm : Form
             new ToolStripMenuItem("Replace classic native animation bank...", null, (_, _) => ReplaceClassicAnimationBank()),
             new ToolStripMenuItem("Replace compatible Survivor NAC bank...", null, (_, _) => ReplaceSurvivorAnimationBank())
         });
-        menu.Items.AddRange(new ToolStripItem[] { file, view, meshMenu, textureMenu, animationMenu });
+        menu.Items.AddRange(new ToolStripItem[] { file, view, meshMenu, textureMenu, animationMenu, re4Menu });
         MainMenuStrip = menu;
 
         var sidebar = new Panel { Dock = DockStyle.Right, Width = 230, Padding = new Padding(8) };
@@ -137,8 +164,8 @@ public sealed class BiohazardModelViewerForm : Form
     {
         using var dialog = new OpenFileDialog
         {
-            Title = "Open classic Biohazard model",
-            Filter = "Biohazard models (*.emd;*.pld;*.nab;*.hmd)|*.emd;*.pld;*.nab;*.hmd|Survivor PC models (*.nab;*.hmd)|*.nab;*.hmd|Survivor scene / NPC model (*.hmd)|*.hmd|Enemy model (*.emd)|*.emd|Player model (*.pld)|*.pld|All files (*.*)|*.*"
+            Title = "Open Biohazard model (classic or RE4)",
+            Filter = "Biohazard models (*.emd;*.pld;*.nab;*.hmd)|*.emd;*.pld;*.nab;*.hmd|RE4 models (*.bin;*.pmd;*.smx)|*.bin;*.pmd;*.smx|Scenario / generic (*.smd;*.obj)|*.smd;*.obj|All files (*.*)|*.*"
         };
         if (dialog.ShowDialog(this) == DialogResult.OK) Open(dialog.FileName);
     }
@@ -147,6 +174,17 @@ public sealed class BiohazardModelViewerForm : Form
     {
         try
         {
+            string ext = Path.GetExtension(path).ToLowerInvariant();
+            if (ext == ".bin" || ext == ".pmd" || ext == ".smx" || ext == ".obj" || (ext == ".smd" && Re4Detect.IsTextSmd(path)))
+            {
+                OpenRe4(path);
+                return;
+            }
+            if (ext == ".smd" && Re4ScenarioSmd.IsScenarioSmd(File.ReadAllBytes(path)))
+            {
+                OpenRe4(path);
+                return;
+            }
             if (Path.GetExtension(path).Equals(".nab", StringComparison.OrdinalIgnoreCase))
             {
                 OpenSurvivor(path);
@@ -157,6 +195,7 @@ public sealed class BiohazardModelViewerForm : Form
                 OpenSurvivorHmd(path);
                 return;
             }
+            ClearRe4State();
             ModelFile model = ModelFile.FromFile(path);
             _model = model;
             _survivor = null;
@@ -231,6 +270,625 @@ public sealed class BiohazardModelViewerForm : Form
         _mesh.SelectedIndex = 0;
         LoadSurvivorHmd();
         Text = $"Biohazard Model Viewer - {Path.GetFileName(path)}";
+    }
+
+    // ---- RE4 (JADERLINK) integration ----
+    // Decoders live in Biohazard/RE4/*.cs (MIT). The viewer renders via the
+    // existing software ModelViewport by mapping RE4 parts onto RenderPart and
+    // RE4 PACK textures onto a single BitmapTexture atlas (UVs pre-scaled).
+
+    private void ClearRe4State()
+    {
+        _re4Bin = null; _re4Pmd = null; _re4Scenario = null; _re4GenericParts = null;
+        _re4KindLabel = null;
+    }
+
+    private static class Re4Detect
+    {
+        public static bool IsTextSmd(string path)
+        {
+            try
+            {
+                using var r = File.OpenText(path);
+                for (int i = 0; i < 8; i++)
+                {
+                    string? line = r.ReadLine();
+                    if (line == null) return false;
+                    string t = line.Trim();
+                    if (t.Length == 0 || t.StartsWith("//")) continue;
+                    return t.ToLowerInvariant().StartsWith("version");
+                }
+            }
+            catch { }
+            return false;
+        }
+    }
+
+    private void OpenRe4(string path)
+    {
+        ClearRe4State();
+        _model = null; _survivor = null; _survivorHmd = null;
+        _texture = null; _texturePath = null;
+        _path = path;
+        SetPlaying(false);
+        _animations.Clear(); _animation.Items.Clear();
+        _animation.Enabled = _playPause.Enabled = _timeline.Enabled = false;
+        UpdateTimeline(0, 0);
+        string ext = Path.GetExtension(path).ToLowerInvariant();
+        if (ext == ".bin")
+        {
+            _re4Bin = Re4BinModel.Load(path);
+            _re4KindLabel = _re4Bin.Description;
+            _re4Tpl = TryAutoLoadTpl(path);
+        }
+        else if (ext == ".pmd")
+        {
+            _re4Pmd = Re4PmdModel.Load(path);
+            _re4KindLabel = $"RE4 2007 PMD - {Path.GetFileName(path)}";
+            TryAutoLoadPackTexturesForPmd(path);
+        }
+        else if (ext == ".smx")
+        {
+            var entries = Re4SmxModel.Load(path);
+            _re4GenericParts = new List<Re4MeshPart>();
+            _re4KindLabel = $"RE4 SMX - {Path.GetFileName(path)} ({entries.Count} entries)";
+            ShowRe4Info($"SMX opened: {entries.Count} entries.\r\nMode values: {string.Join(", ", entries.Select(e => e.Mode))}\r\nThis is a metadata-only preview; load a BIN/PMD for geometry.");
+            _mesh.Items.Clear();
+            _mesh.Items.Add("SMX metadata (no geometry)");
+            _mesh.SelectedIndex = 0;
+            _details.Text = $"Game: Resident Evil 4\r\nType: SMX metadata\r\nEntries: {entries.Count:N0}\r\nFirst entry: Model={entries.FirstOrDefault()?.UseSmxId} Mode={entries.FirstOrDefault()?.Mode}";
+            _renderParts = new List<RenderPart>();
+            _viewport.SetModel(new List<RenderPart>(), null);
+            Text = $"Biohazard Model Viewer - {Path.GetFileName(path)}";
+            return;
+        }
+        else if (ext == ".obj")
+        {
+            _re4GenericParts = Re4MeshIo.ImportObj(path);
+            _re4KindLabel = $"OBJ - {Path.GetFileName(path)}";
+        }
+        else if (ext == ".smd")
+        {
+            if (Re4Detect.IsTextSmd(path))
+            {
+                _re4GenericParts = Re4MeshIo.ImportSmd(path);
+                _re4KindLabel = $"Text SMD - {Path.GetFileName(path)}";
+            }
+            else
+            {
+                _re4Scenario = Re4ScenarioSmd.Load(path);
+                _re4KindLabel = $"Scenario SMD - {Path.GetFileName(path)} ({_re4Scenario.Lines.Count} lines, BINs: {string.Join(",", _re4Scenario.Bins.Keys)})";
+                // Show first embedded BIN if present.
+                if (_re4Scenario.Bins.Count > 0) _re4Bin = _re4Scenario.Bins.OrderBy(k => k.Key).First().Value;
+                else throw new InvalidDataException("Scenario SMD contains no embedded BINs.");
+            }
+        }
+        else
+        {
+            throw new InvalidDataException($"Unsupported RE4 file: {ext}");
+        }
+        _mesh.BeginUpdate();
+        _mesh.Items.Clear();
+        var parts = CurrentRe4Parts();
+        for (int i = 0; i < parts.Count; i++) _mesh.Items.Add(parts[i].Name);
+        if (parts.Count == 0) _mesh.Items.Add("(no parts)");
+        _mesh.EndUpdate();
+        if (parts.Count > 0) _mesh.SelectedIndex = 0;
+        else LoadRe4SelectedMesh();
+        Text = $"Biohazard Model Viewer - {Path.GetFileName(path)}";
+    }
+
+    private List<Re4MeshPart> CurrentRe4Parts()
+    {
+        if (_re4Bin != null) return _re4Bin.Parts;
+        if (_re4Pmd != null) return _re4Pmd.Parts;
+        if (_re4GenericParts != null) return _re4GenericParts;
+        return new List<Re4MeshPart>();
+    }
+
+    private Re4TplDocument? TryAutoLoadTpl(string binPath)
+    {
+        string dir = Path.GetDirectoryName(binPath) ?? ".";
+        string baseName = Path.GetFileNameWithoutExtension(binPath);
+        foreach (string cand in new[] { Path.Combine(dir, baseName + ".TPL"), Path.Combine(dir, baseName + ".tpl") })
+        {
+            if (File.Exists(cand))
+            {
+                try { return Re4TplModel.Load(cand); } catch { }
+            }
+        }
+        // Any .tpl in the folder as fallback.
+        try
+        {
+            string? any = Directory.GetFiles(dir, "*.tpl").FirstOrDefault();
+            if (any != null) return Re4TplModel.Load(any);
+        }
+        catch { }
+        return null;
+    }
+
+    private void TryAutoLoadPackTexturesForPmd(string pmdPath)
+    {
+        string dir = Path.GetDirectoryName(pmdPath) ?? ".";
+        if (_re4Pmd == null) return;
+        foreach (string name in _re4Pmd.Materials.Select(m => m.TextureName).Where(s => !string.IsNullOrWhiteSpace(s)))
+        {
+            string full = Path.IsPathRooted(name) ? name : Path.Combine(dir, name);
+            if (!File.Exists(full)) continue;
+            try
+            {
+                byte[] bytes = File.ReadAllBytes(full);
+                var bmp = Re4TextureCodec.DecodeToBitmap(bytes, out _);
+                if (bmp != null) _re4PackTextures[Path.GetFileName(name).ToLowerInvariant()] = bmp;
+            }
+            catch { }
+        }
+    }
+
+    private void PromptRe4Open(string kind)
+    {
+        using var dialog = new OpenFileDialog
+        {
+            Title = kind switch { "bin" => "Open RE4 BIN", "pmd" => "Open RE4 2007 PMD", "smd" => "Open scenario SMD / text SMD", "tpl" => "Load RE4 TPL", _ => "Open RE4 file" },
+            Filter = kind switch
+            {
+                "bin" => "RE4 BIN (*.bin)|*.bin|All files (*.*)|*.*",
+                "pmd" => "RE4 PMD (*.pmd)|*.pmd|All files (*.*)|*.*",
+                "smd" => "Scenario SMD (*.smd)|*.smd|Text SMD / OBJ (*.smd;*.obj)|*.smd;*.obj|All files (*.*)|*.*",
+                "tpl" => "RE4 TPL (*.tpl)|*.tpl|All files (*.*)|*.*",
+                _ => "All files (*.*)|*.*"
+            },
+            Multiselect = false
+        };
+        if (dialog.ShowDialog(this) != DialogResult.OK) return;
+        try
+        {
+            if (kind == "tpl")
+            {
+                _re4Tpl = Re4TplModel.Load(dialog.FileName);
+                _details.Text = $"Game: Resident Evil 4\r\nType: TPL\r\n{_re4Tpl.Description}\r\nEntries: {_re4Tpl.Entries.Count:N0}";
+                MessageBox.Show(this, $"Loaded TPL: {_re4Tpl.Entries.Count} entries.\r\nOpen the matching BIN to view textured mesh.", "RE4 TPL", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            OpenRe4(dialog.FileName);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, $"RE4 open failed:\n{ex.Message}", "Biohazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private void PromptRe4Pack()
+    {
+        using var dialog = new OpenFileDialog { Title = "Load RE4 PACK textures", Filter = "RE4 PACK (*.pack)|*.pack|All files (*.*)|*.*", Multiselect = true };
+        if (dialog.ShowDialog(this) != DialogResult.OK) return;
+        try
+        {
+            foreach (string f in dialog.FileNames)
+            {
+                var pack = Re4PackDocument.Load(f);
+                _re4Pack = pack;
+                foreach (var ent in pack.Entries)
+                {
+                    var bmp = Re4TextureCodec.DecodeToBitmap(ent.ImageBytes, out _);
+                    if (bmp != null) _re4PackTextures[ent.TextureKey] = bmp;
+                }
+            }
+            MessageBox.Show(this, $"Loaded {_re4PackTextures.Count} PACK textures from {_re4Pack?.Description}.", "RE4 PACK", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            if (_re4Bin != null || _re4Pmd != null || _re4GenericParts != null) LoadRe4SelectedMesh();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, $"PACK load failed:\n{ex.Message}", "Biohazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private void PromptRe4Smx()
+    {
+        using var dialog = new OpenFileDialog { Title = "Inspect RE4 SMX", Filter = "SMX (*.smx)|*.smx" };
+        if (dialog.ShowDialog(this) != DialogResult.OK) return;
+        try
+        {
+            var entries = Re4SmxModel.Load(dialog.FileName);
+            MessageBox.Show(this, $"SMX entries: {entries.Count}\nFirst: Model={entries[0].UseSmxId} Mode={entries[0].Mode}", "RE4 SMX", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, $"SMX failed:\n{ex.Message}", "Biohazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private void ShowRe4Info(string text) => MessageBox.Show(this, text, "RE4", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+    private void LoadRe4SelectedMesh()
+    {
+        if (_mesh.SelectedIndex < 0) return;
+        try
+        {
+            var parts = CurrentRe4Parts();
+            if (parts.Count == 0) return;
+            int sel = Math.Clamp(_mesh.SelectedIndex, 0, parts.Count - 1);
+            // Show all parts, highlight selection in details (viewport shows full mesh).
+            var (renderParts, texture) = BuildRe4RenderParts(parts);
+            _renderParts = renderParts;
+            _parts.Items.Clear();
+            for (int i = 0; i < renderParts.Count; i++) _parts.Items.Add($"Part {i:D2} {(i == sel ? "(selected)" : "")}", true);
+            _viewport.SetModel(renderParts, texture);
+            string matInfo = "";
+            if (_re4Bin != null)
+            {
+                matInfo = $"\r\nMaterials: {_re4Bin.Materials.Count}  TexCount: {_re4Bin.TexCount}  Flags: 0x{_re4Bin.BinFlags:X8}";
+                if (_re4Bin.Materials.Count > sel)
+                {
+                    var mat = _re4Bin.Materials[sel];
+                    matInfo += $"\r\nSelected material: diffuse_map={mat.DiffuseMap} alpha={mat.AlphaTextured}";
+                }
+            }
+            int tris = parts.Sum(p => p.TriangleCount);
+            string texInfo = ResolveRe4TextureDescription(parts);
+            _details.Text = $"Game: Resident Evil 4\r\nType: {_re4KindLabel}\r\nParts: {parts.Count:N0}  Triangles: {tris:N0}  Bones: {(_re4Bin?.Bones.Count ?? 0):N0}{matInfo}\r\nTexture: {texInfo}";
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, $"RE4 mesh load failed:\n{ex.Message}", "Biohazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private string ResolveRe4TextureDescription(List<Re4MeshPart> parts)
+    {
+        if (_re4PackTextures.Count == 0) return "None (load PACK textures)";
+        if (_re4Pmd != null)
+        {
+            var names = _re4Pmd.Materials.Select(m => m.TextureName).Distinct().ToList();
+            return $"PMD TGA ({string.Join(", ", names)})";
+        }
+        if (_re4Bin != null)
+        {
+            var keys = parts.Select(p =>
+            {
+                int tplIndex = p.MaterialIndex;
+                if (_re4Tpl != null && tplIndex < _re4Tpl.Entries.Count) return _re4Tpl.Entries[tplIndex].TextureKey;
+                return $"material {p.MaterialIndex}";
+            }).Distinct().ToList();
+            return $"PACK atlas ({string.Join(", ", keys)})";
+        }
+        return $"PACK ({_re4PackTextures.Count} in memory)";
+    }
+
+    private (List<RenderPart> Parts, IViewerTexture? Texture) BuildRe4RenderParts(List<Re4MeshPart> parts)
+    {
+        // Build a side-by-side atlas: each material's texture at its own X offset.
+        var materialBitmaps = BuildMaterialBitmaps(parts);
+        int totalW = materialBitmaps.Sum(b => b.Width);
+        int maxH = materialBitmaps.Count == 0 ? 1 : materialBitmaps.Max(b => b.Height);
+        if (materialBitmaps.Count == 0 || totalW == 0)
+        {
+            return (BuildFlatRe4Parts(parts), null);
+        }
+        var atlas = new Bitmap(Math.Max(1, totalW), Math.Max(1, maxH), System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+        var offsets = new int[materialBitmaps.Count];
+        int cursorX = 0;
+        for (int i = 0; i < materialBitmaps.Count; i++)
+        {
+            offsets[i] = cursorX;
+            using var g = System.Drawing.Graphics.FromImage(atlas);
+            g.DrawImage(materialBitmaps[i], cursorX, 0);
+            cursorX += materialBitmaps[i].Width;
+        }
+        var tex = new Re4BitmapTexture(atlas, offsets, materialBitmaps.Select(b => b.Width).ToArray(), materialBitmaps.Select(b => b.Height).ToArray());
+        var renderParts = new List<RenderPart>();
+        for (int pi = 0; pi < parts.Count; pi++)
+        {
+            var part = parts[pi];
+            int mat = Math.Clamp(part.MaterialIndex, 0, materialBitmaps.Count - 1);
+            var localVerts = new System.Numerics.Vector3[part.VertexCount];
+            for (int i = 0; i < part.VertexCount; i++)
+                localVerts[i] = new System.Numerics.Vector3(part.Vertices[i * 3], part.Vertices[i * 3 + 1], part.Vertices[i * 3 + 2]);
+            var normals = new System.Numerics.Vector3[part.VertexCount];
+            for (int i = 0; i < part.VertexCount; i++)
+                normals[i] = new System.Numerics.Vector3(part.UniqueNormals[i * 3], part.UniqueNormals[i * 3 + 1], part.UniqueNormals[i * 3 + 2]);
+            var faces = new List<RenderFace>();
+            for (int t = 0; t < part.Indices.Length; t += 3)
+            {
+                int a = (int)part.Indices[t], b = (int)part.Indices[t + 1], c = (int)part.Indices[t + 2];
+                if ((uint)a >= (uint)part.VertexCount || (uint)b >= (uint)part.VertexCount || (uint)c >= (uint)part.VertexCount) continue;
+                faces.Add(new RenderFace(new[] { a, b, c }, new[]
+                {
+                    new Vector2(offsets[mat] + part.UniqueUvs[a * 2] * materialBitmaps[mat].Width, part.UniqueUvs[a * 2 + 1] * maxH),
+                    new Vector2(offsets[mat] + part.UniqueUvs[b * 2] * materialBitmaps[mat].Width, part.UniqueUvs[b * 2 + 1] * maxH),
+                    new Vector2(offsets[mat] + part.UniqueUvs[c * 2] * materialBitmaps[mat].Width, part.UniqueUvs[c * 2 + 1] * maxH),
+                }, 0, 0));
+            }
+            var rp = new RenderPart(localVerts, faces, normals);
+            if (part.UniqueColors.Length >= 4 && part.UniqueColors.Any(v => v != 1f))
+            {
+                // Bake vertex colors into faces via VtColors; rasterizer already modulates.
+                var colored = new List<RenderFace>();
+                for (int t = 0; t < part.Indices.Length; t += 3)
+                {
+                    int a = (int)part.Indices[t], b = (int)part.Indices[t + 1], c = (int)part.Indices[t + 2];
+                    if ((uint)a >= (uint)part.VertexCount || (uint)b >= (uint)part.VertexCount || (uint)c >= (uint)part.VertexCount) continue;
+                    Color ca = Re4Color(part, a), cb = Re4Color(part, b), cc = Re4Color(part, c);
+                    colored.Add(new RenderFace(new[] { a, b, c }, new[]
+                    {
+                        new Vector2(offsets[mat] + part.UniqueUvs[a * 2] * materialBitmaps[mat].Width, part.UniqueUvs[a * 2 + 1] * maxH),
+                        new Vector2(offsets[mat] + part.UniqueUvs[b * 2] * materialBitmaps[mat].Width, part.UniqueUvs[b * 2 + 1] * maxH),
+                        new Vector2(offsets[mat] + part.UniqueUvs[c * 2] * materialBitmaps[mat].Width, part.UniqueUvs[c * 2 + 1] * maxH),
+                    }, 0, 0, new[] { ca, cb, cc }));
+                }
+                rp = new RenderPart(localVerts, colored, normals);
+            }
+            rp.ApplyTransform(System.Numerics.Matrix4x4.Identity);
+            renderParts.Add(rp);
+        }
+        return (renderParts, tex);
+    }
+
+    private static Color Re4Color(Re4MeshPart part, int vi)
+    {
+        if (vi * 4 + 3 >= part.UniqueColors.Length) return Color.White;
+        return Color.FromArgb(255,
+            (int)Math.Clamp(part.UniqueColors[vi * 4] * 255, 0, 255),
+            (int)Math.Clamp(part.UniqueColors[vi * 4 + 1] * 255, 0, 255),
+            (int)Math.Clamp(part.UniqueColors[vi * 4 + 2] * 255, 0, 255));
+    }
+
+    private List<RenderPart> BuildFlatRe4Parts(List<Re4MeshPart> parts)
+    {
+        var renderParts = new List<RenderPart>();
+        foreach (var part in parts)
+        {
+            var localVerts = new System.Numerics.Vector3[part.VertexCount];
+            for (int i = 0; i < part.VertexCount; i++)
+                localVerts[i] = new System.Numerics.Vector3(part.Vertices[i * 3], part.Vertices[i * 3 + 1], part.Vertices[i * 3 + 2]);
+            var normals = new System.Numerics.Vector3[part.VertexCount];
+            for (int i = 0; i < part.VertexCount; i++)
+                normals[i] = new System.Numerics.Vector3(part.UniqueNormals[i * 3], part.UniqueNormals[i * 3 + 1], part.UniqueNormals[i * 3 + 2]);
+            var faces = new List<RenderFace>();
+            for (int t = 0; t < part.Indices.Length; t += 3)
+            {
+                int a = (int)part.Indices[t], b = (int)part.Indices[t + 1], c = (int)part.Indices[t + 2];
+                if ((uint)a >= (uint)part.VertexCount || (uint)b >= (uint)part.VertexCount || (uint)c >= (uint)part.VertexCount) continue;
+                faces.Add(new RenderFace(new[] { a, b, c }, new[] { Vector2.Zero, Vector2.Zero, Vector2.Zero }, 0, -1));
+            }
+            var rp = new RenderPart(localVerts, faces, normals);
+            rp.ApplyTransform(System.Numerics.Matrix4x4.Identity);
+            renderParts.Add(rp);
+        }
+        return renderParts;
+    }
+
+    private List<Bitmap> BuildMaterialBitmaps(List<Re4MeshPart> parts)
+    {
+        var list = new List<Bitmap>();
+        if (_re4Pmd != null)
+        {
+            foreach (var part in parts)
+            {
+                int idx = part.MaterialIndex;
+                string? name = idx >= 0 && idx < _re4Pmd.Materials.Count ? Path.GetFileName(_re4Pmd.Materials[idx].TextureName).ToLowerInvariant() : null;
+                if (name != null && _re4PackTextures.TryGetValue(name, out var bmp)) list.Add(new Bitmap(bmp));
+                else list.Add(new Bitmap(1, 1));
+            }
+            return list;
+        }
+        foreach (var part in parts)
+        {
+            string? key = null;
+            if (_re4Tpl != null && part.MaterialIndex < _re4Tpl.Entries.Count) key = _re4Tpl.Entries[part.MaterialIndex].TextureKey;
+            if (key != null && _re4PackTextures.TryGetValue(key, out var bmp)) list.Add(new Bitmap(bmp));
+            else if (_re4PackTextures.Count > 0 && key == null) list.Add(new Bitmap(_re4PackTextures.Values.First()));
+            else list.Add(new Bitmap(1, 1));
+        }
+        return list;
+    }
+
+    private void ExportRe4Mesh(string format)
+    {
+        try
+        {
+            if (_re4Scenario != null && _re4Scenario.Bins.Count > 0)
+            {
+                using var dlg = new SaveFileDialog { Title = "Export scenario as placed OBJ", Filter = "Wavefront OBJ (*.obj)|*.obj", FileName = Path.GetFileNameWithoutExtension(_path ?? "scenario") + "_placed.obj" };
+                if (dlg.ShowDialog(this) != DialogResult.OK) return;
+                _re4Scenario.ExportPlacedObj(dlg.FileName);
+                return;
+            }
+            if (_re4Bin != null)
+            {
+                using var dlg = new SaveFileDialog { Title = $"Export RE4 mesh ({format.ToUpperInvariant()})", Filter = format == "obj" ? "Wavefront OBJ (*.obj)|*.obj" : "StudioMDL Data (*.smd)|*.smd", FileName = Path.GetFileNameWithoutExtension(_path ?? "re4") + "." + format };
+                if (dlg.ShowDialog(this) != DialogResult.OK) return;
+                if (format == "obj") { Re4MeshIo.ExportObj(_re4Bin, dlg.FileName); Re4MeshIo.ExportMtl(_re4Bin, dlg.FileName); }
+                else Re4MeshIo.ExportSmd(_re4Bin, dlg.FileName);
+                return;
+            }
+            if (_re4Pmd != null)
+            {
+                using var dlg = new SaveFileDialog { Title = "Export PMD mesh (OBJ)", Filter = "Wavefront OBJ (*.obj)|*.obj", FileName = Path.GetFileNameWithoutExtension(_path ?? "pmd") + ".obj" };
+                if (dlg.ShowDialog(this) != DialogResult.OK) return;
+                _re4Pmd.ExportObj(dlg.FileName);
+                return;
+            }
+            MessageBox.Show(this, "Open an RE4 BIN, 2007 PMD, or scenario SMD first.", "RE4", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, $"RE4 mesh export failed:\n{ex.Message}", "Biohazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private void ImportRe4Mesh()
+    {
+        using var dialog = new OpenFileDialog { Title = "Import OBJ / SMD mesh", Filter = "Wavefront OBJ (*.obj)|*.obj|StudioMDL Data (*.smd)|*.smd|All files (*.*)|*.*" };
+        if (dialog.ShowDialog(this) != DialogResult.OK) return;
+        try
+        {
+            string ext = Path.GetExtension(dialog.FileName).ToLowerInvariant();
+            var imported = ext == ".smd" ? Re4MeshIo.ImportSmd(dialog.FileName) : Re4MeshIo.ImportObj(dialog.FileName);
+            if (_re4Bin != null && _re4Bin.CanSaveNative)
+            {
+                // Native in-place patch (same counts only). This is the "textures only
+                // native" path: geometry round-trips losslessly; new geometry with
+                // different counts becomes a generic view instead.
+                try
+                {
+                    _re4Bin.ReplaceGeometry(imported.ToArray());
+                    _re4KindLabel = _re4Bin.Description + " (patched from OBJ/SMD)";
+                    LoadRe4SelectedMesh();
+                    MessageBox.Show(this, "Native BIN geometry patched in place. Use File > Save model as... to write the BIN.", "RE4 import", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+                catch (InvalidDataException ex)
+                {
+                    MessageBox.Show(this, $"{ex.Message}\n\nShowing as a generic mesh view instead (native BIN left unchanged).\n\nTip: export the current BIN to OBJ, edit in Blender, and re-import without changing vertex/triangle counts for a native patch.", "RE4 import", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            }
+            if (_re4Bin != null && !_re4Bin.CanSaveNative)
+                MessageBox.Show(this, "PS2 VIF BIN is read-only; showing imported mesh as a generic view.", "RE4 import", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            _re4Bin = null; _re4Pmd = null;
+            _re4GenericParts = imported;
+            _re4KindLabel = $"Imported {Path.GetFileName(dialog.FileName)}";
+            _mesh.BeginUpdate(); _mesh.Items.Clear();
+            foreach (var p in imported) _mesh.Items.Add(p.Name);
+            _mesh.EndUpdate();
+            if (imported.Count > 0) _mesh.SelectedIndex = 0;
+            else LoadRe4SelectedMesh();
+            Text = $"Biohazard Model Viewer - {Path.GetFileName(dialog.FileName)}";
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, $"RE4 mesh import failed:\n{ex.Message}", "Biohazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private void ExportRe4Texture()
+    {
+        try
+        {
+            if (_re4PackTextures.Count == 0)
+            {
+                MessageBox.Show(this, "No PACK textures loaded. Use RE4 (JADERLINK) > Load RE4 PACK textures first.", "RE4", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            int sel = Math.Clamp(_mesh.SelectedIndex, 0, Math.Max(0, CurrentRe4Parts().Count - 1));
+            var parts = CurrentRe4Parts();
+            var bitmaps = BuildMaterialBitmaps(parts);
+            Bitmap? bmp = sel < bitmaps.Count ? bitmaps[sel] : _re4PackTextures.Values.First();
+            using var dlg = new SaveFileDialog { Title = "Export RE4 texture", Filter = "PNG image (*.png)|*.png|Bitmap image (*.bmp)|*.bmp", FileName = $"re4_material_{sel}.png" };
+            if (dlg.ShowDialog(this) != DialogResult.OK) return;
+            bmp.Save(dlg.FileName, Path.GetExtension(dlg.FileName).Equals(".bmp", StringComparison.OrdinalIgnoreCase) ? System.Drawing.Imaging.ImageFormat.Bmp : System.Drawing.Imaging.ImageFormat.Png);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, $"RE4 texture export failed:\n{ex.Message}", "Biohazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private void ReplaceRe4PackTexture()
+    {
+        using var dialog = new OpenFileDialog { Title = "Replace PACK texture from PNG/BMP", Filter = "Images (*.png;*.bmp)|*.png;*.bmp|All files (*.*)|*.*" };
+        if (dialog.ShowDialog(this) != DialogResult.OK) return;
+        try
+        {
+            if (_re4Pack == null)
+            {
+                MessageBox.Show(this, "No PACK loaded. Load a PACK first; standalone PNG textures cannot be played back as native PACK entries.", "RE4", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            using var bmp = new Bitmap(dialog.FileName);
+            int sel = Math.Clamp(_mesh.SelectedIndex, 0, Math.Max(0, CurrentRe4Parts().Count - 1));
+            var parts = CurrentRe4Parts();
+            Re4PackEntry? target = null;
+            if (_re4Bin != null && _re4Tpl != null && sel < parts.Count)
+            {
+                int tplIndex = parts[sel].MaterialIndex;
+                if (tplIndex < _re4Tpl.Entries.Count)
+                {
+                    string key = _re4Tpl.Entries[tplIndex].TextureKey;
+                    target = _re4Pack.Entries.FirstOrDefault(e => e.TextureKey.Equals(key, StringComparison.OrdinalIgnoreCase));
+                }
+            }
+            target ??= _re4Pack.Entries.FirstOrDefault();
+            if (target == null) throw new InvalidOperationException("PACK contains no entries.");
+            byte[] encoded = target.Format == "TGA" ? Re4TextureCodec.EncodeTgaUncompressed(bmp) : Re4TextureCodec.EncodeDdsUncompressed(bmp);
+            if (target.Format == "GNF")
+                throw new NotSupportedException("GNF textures are raw passthrough (Scarlet decode not vendored). Replace the GNF bytes in a hex editor or use the upstream RE4_PS4NS viewer.");
+            target.ImageBytes = encoded;
+            target.Format = Re4PackDocument.DetectFormat(encoded);
+            _re4PackTextures[target.TextureKey] = new Bitmap(bmp);
+            if (_re4Bin != null || _re4Pmd != null || _re4GenericParts != null) LoadRe4SelectedMesh();
+            MessageBox.Show(this, $"Replaced {target.TextureKey} (now {encoded.Length} bytes, {target.Format}). Use Save RE4 as... to write the PACK.", "RE4 texture", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, $"RE4 texture replacement failed:\n{ex.Message}", "Biohazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private void SaveRe4As()
+    {
+        try
+        {
+            if (_re4Bin != null)
+            {
+                using var dlg = new SaveFileDialog { FileName = Path.GetFileName(_path ?? "model.bin"), Filter = "RE4 BIN (*.bin)|*.bin|All files (*.*)|*.*" };
+                if (dlg.ShowDialog(this) != DialogResult.OK) return;
+                _re4Bin.Save(dlg.FileName);
+                if (_re4Tpl != null) Re4TplModel.Save(_re4Tpl, Path.ChangeExtension(dlg.FileName, ".tpl"));
+                return;
+            }
+            if (_re4Pmd != null)
+            {
+                using var dlg = new SaveFileDialog { FileName = Path.GetFileName(_path ?? "model.pmd"), Filter = "RE4 PMD (*.pmd)|*.pmd" };
+                if (dlg.ShowDialog(this) != DialogResult.OK) return;
+                _re4Pmd.Save(dlg.FileName);
+                return;
+            }
+            if (_re4Pack != null)
+            {
+                using var dlg = new SaveFileDialog { FileName = Path.GetFileName(_re4Pack.SourcePath), Filter = "RE4 PACK (*.pack)|*.pack" };
+                if (dlg.ShowDialog(this) != DialogResult.OK) return;
+                _re4Pack.Save(dlg.FileName);
+                return;
+            }
+            if (_re4Scenario != null)
+            {
+                using var dlg = new SaveFileDialog { FileName = Path.GetFileName(_path ?? "scenario.smd"), Filter = "Scenario SMD (*.smd)|*.smd" };
+                if (dlg.ShowDialog(this) != DialogResult.OK) return;
+                _re4Scenario.Save(dlg.FileName);
+                return;
+            }
+            MessageBox.Show(this, "No RE4 asset open.", "RE4", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, $"RE4 save failed:\n{ex.Message}", "Biohazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private sealed class Re4BitmapTexture : IViewerTexture
+    {
+        private readonly Bitmap _atlas;
+        private readonly int[] _offsets;
+        private readonly int[] _widths;
+        public string? Description;
+        public int Width => _atlas.Width;
+        public int Height => _atlas.Height;
+        public int PaletteCount => 1;
+        public Re4BitmapTexture(Bitmap atlas, int[] offsets, int[] widths, int[] heights)
+        {
+            _atlas = atlas; _offsets = offsets;
+            _widths = widths;
+            _ = heights;
+        }
+        public uint GetPixel(int x, int y, int palette)
+        {
+            x = Math.Clamp(x, 0, _atlas.Width - 1);
+            y = Math.Clamp(y, 0, _atlas.Height - 1);
+            return unchecked((uint)_atlas.GetPixel(x, y).ToArgb());
+        }
+        public int[] Offsets => _offsets;
+        public int[] Widths => _widths;
     }
 
     private static int ReadTimOrgX(string path)
@@ -555,6 +1213,37 @@ public sealed class BiohazardModelViewerForm : Form
 
     private void ViewTexture()
     {
+        if (_re4Bin != null || _re4Pmd != null || _re4GenericParts != null || _re4Scenario != null)
+        {
+            try
+            {
+                var parts = CurrentRe4Parts();
+                var bitmaps = BuildMaterialBitmaps(parts);
+                if (bitmaps.Count == 0 || bitmaps.All(b => b.Width == 1 && b.Height == 1))
+                {
+                    MessageBox.Show(this, "No PACK textures are bound to this mesh. Load matching PACK textures first.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+                int totalW = bitmaps.Sum(b => b.Width), maxH = bitmaps.Max(b => b.Height);
+                using var atlas = new Bitmap(Math.Max(1, totalW), Math.Max(1, maxH));
+                using (var g = System.Drawing.Graphics.FromImage(atlas))
+                {
+                    int x = 0;
+                    foreach (var b in bitmaps) { g.DrawImage(b, x, 0); x += b.Width; }
+                }
+                var re4preview = new Form { Text = $"RE4 texture atlas - {atlas.Width}x{atlas.Height}", StartPosition = FormStartPosition.CenterParent, ClientSize = new Size(Math.Clamp(atlas.Width * 2, 480, 1100), Math.Clamp(atlas.Height * 2, 360, 800)) };
+                var re4picture = new PictureBox { Dock = DockStyle.Fill, BackColor = Color.FromArgb(32, 32, 32), SizeMode = PictureBoxSizeMode.Zoom, Image = new Bitmap(atlas) };
+                re4preview.FormClosed += (_, _) => re4picture.Image?.Dispose();
+                re4preview.Controls.Add(re4picture);
+                re4preview.Show(this);
+                return;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, $"Texture view failed:\n{ex.Message}", Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+        }
         using Bitmap? bitmap = CreateTextureBitmap();
         if (bitmap == null)
         {
@@ -572,6 +1261,11 @@ public sealed class BiohazardModelViewerForm : Form
 
     private void ExportTexture()
     {
+        if (_re4Bin != null || _re4Pmd != null || _re4GenericParts != null || _re4Scenario != null)
+        {
+            ExportRe4Texture();
+            return;
+        }
         using Bitmap? bitmap = CreateTextureBitmap();
         if (bitmap == null)
         {
@@ -1305,6 +1999,11 @@ public sealed class BiohazardModelViewerForm : Form
 
     private void SaveModelAs()
     {
+        if (_re4Bin != null || _re4Pmd != null || _re4Pack != null || _re4Scenario != null)
+        {
+            SaveRe4As();
+            return;
+        }
         if (_survivor != null && _path != null)
         {
             using var survivorDialog = new SaveFileDialog { FileName = Path.GetFileName(_path), Filter = "Survivor model (*.nab)|*.nab" };
@@ -1342,6 +2041,21 @@ public sealed class BiohazardModelViewerForm : Form
 
     private void ExportMesh(bool selectedPart, bool native)
     {
+        if (_re4Bin != null || _re4Pmd != null || _re4GenericParts != null || _re4Scenario != null)
+        {
+            if (native)
+            {
+                if (_re4Bin != null && !_re4Bin.CanSaveNative)
+                {
+                    MessageBox.Show(this, "PS2 VIF BIN has no native mesh writer; export to OBJ instead.", "Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+                SaveRe4As();
+                return;
+            }
+            ExportRe4Mesh("obj");
+            return;
+        }
         if (_survivor != null)
         {
             int selected = selectedPart ? SelectedPartIndex() : -1;
@@ -1383,6 +2097,11 @@ public sealed class BiohazardModelViewerForm : Form
 
     private void ReplaceMesh(bool selectedPart, bool native)
     {
+        if (_re4Bin != null || _re4Pmd != null || _re4GenericParts != null || _re4Scenario != null)
+        {
+            ImportRe4Mesh();
+            return;
+        }
         if (_survivor != null)
         {
             ReplaceSurvivorMesh(selectedPart, native);
@@ -1508,6 +2227,7 @@ public sealed class BiohazardModelViewerForm : Form
     {
         if (_survivorHmd != null) { LoadSurvivorHmd(); return; }
         if (_survivor != null) { LoadSurvivorMesh(); return; }
+        if (_re4Bin != null || _re4Pmd != null || _re4GenericParts != null || _re4Scenario != null) { LoadRe4SelectedMesh(); return; }
         if (_model == null || _mesh.SelectedIndex < 0) return;
         try
         {

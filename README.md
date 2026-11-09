@@ -78,6 +78,13 @@ Inizialmente nato come White Day Mod Tool, si è evoluto in un toolkit completo 
 * Sony PS1
   * TIM Viewer complete with multipack and multiclut support.
   * TIM to PNG/BMP/PIX (BIO) and vice versa.
+* Resident Evil 4 (RE4 / BIO4) — Model Viewer (JADERLINK_MODEL_VIEWER port)
+  * Unified Model Viewer now opens RE4 `.BIN` meshes: UHD (PC), X360/PS3 (BE), PS4/Switch (wide), GC/Wii, and PS2 VIF (read-only).
+  * BIO4 `.TPL` reference tables link BIN materials to `.PACK` textures (PackID/TextureID) across all four families; GC/Wii embedded TPL headers are parsed as well.
+  * `.PACK` textures decoded natively (DDS uncompressed + DXT1/3/5 subset, TGA uncompressed/RLE truecolor/colormapped); GNF entries pass through raw (Scarlet decode not vendored).
+  * 2007 `.PMD` meshes and binary scenario `.SMD` containers (embedded BIN/TPL extraction + placed OBJ export), text `.SMD`, generic `.OBJ`, and `.SMX` metadata inspection.
+  * Mesh export to OBJ (+MTL)/SMD; OBJ/SMD import patches UHD BINs in place when vertex/triangle counts match, otherwise opens as a generic view.
+  * Texture export to PNG/BMP and PNG/BMP replacement re-encoded to DDS (A8R8G8B8) or TGA in place; BIN/TPL saved as patched clones (all untouched sections byte-preserved), PACKs rebuilt with fresh offsets.
 
 # Planned features
 * ~~Add Multi-Clut TIM support to the Tim/Pix Viewer.~~
@@ -101,4 +108,5 @@ This is to be compiled in Visual Studio 2026. For compiled ready-to-use release,
 * Leo2236 for providing lots of tools for the Resident Evil/Biohazard community including source codes, some of which were used in this project.
 * [Gemini-Loboto3](https://github.com/Gemini-Loboto3): for his immense work and contribution to the RE Community, some of my work which is based or inspired by his work, including the File Editor.
 * Jader-Link for his [RE4 GCA DAT Tool](https://github.com/JADERLINK/RE4-2007-GCA-TOOL).
+* [JADERLINK_MODEL_VIEWER](https://github.com/JADERLINK/JADERLINK_MODEL_VIEWER) by [JADERLINK](https://github.com/JADERLINK) (MIT) — RE4 UHD / PS4-NS / GC-Wii / PS2 / X360-PS3 / 2007 BIN+TPL/PACK viewer. Format research and decoder structure (UHD BE/LE + PS4/NS wide BIN, GC/Wii shorts, PS2 VIF, TPL wide, PACK entry layout, scenario SMD + SMX, PMD 2007, StudioMdlData SMD) ported to `Biohazard/RE4/` without the OpenTK renderer; Tool Hazard renders via its own software `ModelViewport`. Original credits preserved: OpenTK 3.3.3 (MIT), CjClutter ObjLoader (MIT, reference only — Tool Hazard uses its existing `WavefrontObjFile`), SMD_READER_LIB/JADERLINK (MIT), TGASharpLib/Alex Green (MIT, subset reimplemented with attribution), DDSReaderSharp/Alex Green + Kenji Sasaki (MIT, subset reimplemented with attribution), Scarlet/xdanieldzd (MIT, GNF passthrough only).
 * [Trigger17](https://github.com/Trigger117): Survivor NAB/NAC format research.
