@@ -50,10 +50,63 @@ namespace Tool_Hazard.White_Day
         // Diagnostic: numVertices of first mesh (if any)
         public int FirstMeshNumVertices;
 
+        // PET vertex positions are stored in each influencing bone's local frame,
+        // and the BONE block stores parent-relative transforms (3ds-max Biped
+        // hierarchy). The on-disk 4x3 matrix is Max/Direct3D row-vector style
+        // (rows X,Y,Z, translation in the last row) stored column-major; Load()
+        // turns it into its transpose, so Transpose() here restores the disk
+        // layout. System.Numerics is row-vector, so the world pose for a bone is
+        // local * parent chained up through the parents (parent 255 = root).
+        public List<Matrix4x4> ComputeWorldBoneMatrices()
+        {
+            var world = new Matrix4x4[Bones.Count];
+            for (int i = 0; i < Bones.Count; i++)
+            {
+                Matrix4x4 local = Matrix4x4.Transpose(Bones[i].Matrix);
+                int parent = Bones[i].Parent;
+                world[i] = parent < i ? Matrix4x4.Multiply(local, world[parent]) : local;
+            }
+            return world.ToList();
+        }
+
+        // Skin a local-space vertex by ALL of its bone weights (weights sum to 0xFF).
+        public Vector3 SkinVertex(Vector3 local, List<(byte Weight, byte BoneId)> boneWeights, List<Matrix4x4> worldBones)
+        {
+            float total = 0f;
+            Vector3 acc = Vector3.Zero;
+            foreach (var (weight, boneId) in boneWeights)
+            {
+                if (weight == 0 || boneId >= worldBones.Count) continue;
+                acc += Vector3.Transform(local, worldBones[boneId]) * (weight / 255f);
+                total += weight / 255f;
+            }
+            return total > 0f ? acc / total : local;
+        }
+
+        // Skin a direction (e.g. a vertex normal) the same way, without translation
+        // (W=0 drops the translation row from the transform).
+        public Vector3 SkinDirection(Vector3 local, List<(byte Weight, byte BoneId)> boneWeights, List<Matrix4x4> worldBones)
+        {
+            float total = 0f;
+            Vector3 acc = Vector3.Zero;
+            foreach (var (weight, boneId) in boneWeights)
+            {
+                if (weight == 0 || boneId >= worldBones.Count) continue;
+                Vector4 dir = new(local, 0f);
+                Vector4 t = Vector4.Transform(dir, worldBones[boneId]);
+                acc += new Vector3(t.X, t.Y, t.Z) * (weight / 255f);
+                total += weight / 255f;
+            }
+            return total > 0f ? acc / total : local;
+        }
+
         public static WhiteDayPetModel Load(string path)
         {
             var model = new WhiteDayPetModel { Description = Path.GetFileName(path) };
             byte[] data = File.ReadAllBytes(path);
+            // ".mpet" files (Pangya "version 1" per the petImp reference plugin) carry a
+            // 21-byte MESH header and a 4-byte extra field per vertex; ".pet" files do not.
+            bool mpetV1 = Path.GetExtension(path).Equals(".mpet", StringComparison.OrdinalIgnoreCase);
             using var ms = new MemoryStream(data);
             using var reader = new BinaryReader(ms);
 
@@ -120,11 +173,27 @@ namespace Tool_Hazard.White_Day
 
                     case "MESH":
                     {
-                        // White Day PET MESH block has NO count byte and NO meshid header.
-                        // It starts directly with numVertices (int32), then vertex data.
-                        // Vertex layout: x,y,z as 3 floats (12 bytes) + weight:byte +
-                        // boneId:byte + 2 pad bytes = 16 bytes per vertex.
-                        // Weight 0xFF means wsum reaches 0xFF immediately (one weight pair).
+                        // MESH layout (cross-checked against the petImp 3ds-max plugin and
+                        // all 1005 White Day game files; every file uses exactly one MESH
+                        // block ordered TEXT>BONE>ANIM>MESH>FANM>FRAM>MOTI>COLL):
+                        //   [.mpet "version 1" files only: 21-byte header, skipped]
+                        //   int32 numVertices
+                        //   per vertex: float x,y,z (12 bytes), then
+                        //     [.mpet files only: 4 extra bytes, skipped]
+                        //     byte weight, byte boneId
+                        //       - weight == 0xFF: single weight; exactly 2 trailing bytes
+                        //         (an empty second slot) always follow
+                        //       - weight < 0xFF: further (weight, boneId) pairs follow with
+                        //         NO padding until the weights sum to 0xFF
+                        //   int32 numPolygons
+                        //   per polygon: 3 corners x { u16 vertexIndex, u16 pad,
+                        //     float nx,ny,nz, float u,v } = 72 bytes
+                        //   per polygon: 1 texture-map byte (index into TEXT)
+                        if (mpetV1)
+                        {
+                            if (blockMs.Position + 21 > blockMs.Length) break;
+                            br.ReadBytes(21);
+                        }
                         if (blockMs.Position + 4 > blockMs.Length) break;
                         int numVertices = br.ReadInt32();
                         model.FirstMeshNumVertices = numVertices;
@@ -134,23 +203,31 @@ namespace Tool_Hazard.White_Day
 
                         for (int v = 0; v < numVertices; v++)
                         {
-                            if (blockMs.Position + 16 > blockMs.Length) break;
+                            int minBytes = mpetV1 ? 18 : 14; // 12 pos + (v1: 4 extra) + 2 weight bytes
+                            if (blockMs.Position + minBytes > blockMs.Length) break;
                             var vertex = new WhiteDayPetVertex();
                             vertex.Position = new Vector4(br.ReadSingle(), br.ReadSingle(), br.ReadSingle(), 1f);
-                            // Weight byte + boneId byte + 2 padding bytes.
+                            if (mpetV1) br.ReadBytes(4); // version-1 extra field after the position
                             byte weight = br.ReadByte();
                             byte boneId = br.ReadByte();
-                            br.ReadByte(); br.ReadByte(); // padding
                             vertex.BoneWeights.Add((weight, boneId));
-                            // If weight < 0xFF, read additional weight pairs until wsum reaches 0xFF.
-                            int wsum = weight;
-                            while (wsum < 0xFF && blockMs.Position + 2 <= blockMs.Length)
+                            if (weight == 0xFF)
                             {
-                                byte w2 = br.ReadByte();
-                                byte b2 = br.ReadByte();
-                                wsum += w2;
-                                vertex.BoneWeights.Add((w2, b2));
-                                if (wsum >= 0xFF) break;
+                                // Single weight: two trailing bytes always follow.
+                                if (blockMs.Position + 2 > blockMs.Length) break;
+                                br.ReadBytes(2);
+                            }
+                            else
+                            {
+                                // Multi-weight: pairs until the weights sum to 0xFF, no padding.
+                                int wsum = weight;
+                                while (wsum < 0xFF && blockMs.Position + 2 <= blockMs.Length)
+                                {
+                                    byte w2 = br.ReadByte();
+                                    byte b2 = br.ReadByte();
+                                    wsum += w2;
+                                    vertex.BoneWeights.Add((w2, b2));
+                                }
                             }
                             mesh.Vertices.Add(vertex);
                         }

@@ -71,6 +71,10 @@ public sealed class BiohazardModelViewerForm : Form
         view.DropDownItems.AddRange(new ToolStripItem[] { smooth, textures, new ToolStripSeparator() });
         view.DropDownItems.Add(new ToolStripMenuItem("Reset camera", null, (_, _) => _viewport.ResetCamera()) { ShortcutKeys = Keys.Control | Keys.R });
         view.DropDownItems.Add(new ToolStripMenuItem("Toggle wireframe", null, (_, _) => _viewport.Wireframe = !_viewport.Wireframe) { ShortcutKeys = Keys.Control | Keys.W });
+        var bones = new ToolStripMenuItem("Show bones") { CheckOnClick = true, Checked = false };
+        bones.CheckedChanged += (_, _) => _viewport.ShowBones = bones.Checked;
+        bones.ShortcutKeys = Keys.Control | Keys.B;
+        view.DropDownItems.Add(bones);
         var meshMenu = new ToolStripMenuItem("Mesh");
         meshMenu.DropDownItems.AddRange(new ToolStripItem[] {
             new ToolStripMenuItem("Export whole mesh (OBJ)...", null, (_, _) => ExportMesh(false, false)),
@@ -160,6 +164,10 @@ public sealed class BiohazardModelViewerForm : Form
     {
         try
         {
+            // Clear any PET state so the mesh-dropdown dispatch below can't
+            // accidentally rebuild a stale PET mesh (SelectedIndexChanged fires
+            // LoadSelectedMesh() synchronously).
+            ClearPetState();
             string ext = Path.GetExtension(path).ToLowerInvariant();
             if (ext == ".bin" || ext == ".pmd" || ext == ".smx" || ext == ".obj" || (ext == ".smd" && Re4Detect.IsTextSmd(path)))
             {
@@ -910,10 +918,44 @@ public sealed class BiohazardModelViewerForm : Form
         _petTextures.Clear();
     }
 
+    // White Day's engine resolves texture names globally across the data
+    // tree (a PET references bare filenames only). Building a name->path
+    // index of the data folder once per install is cheap and gets every
+    // texture the model asks for, wherever it was shipped.
+    private static Dictionary<string, string>? _petDataTextureIndex;
+    private static string? _petDataTextureIndexRoot;
+
+    private static Dictionary<string, string>? GetPetDataTextureIndex(string petPath)
+    {
+        try
+        {
+            DirectoryInfo? root = null;
+            for (var dir = new DirectoryInfo(Path.GetDirectoryName(petPath) ?? "."); dir != null; dir = dir.Parent)
+                if (string.Equals(dir.Name, "data", StringComparison.OrdinalIgnoreCase)) { root = dir; break; }
+            if (root == null) return null;
+            if (_petDataTextureIndex != null && string.Equals(_petDataTextureIndexRoot, root.FullName, StringComparison.OrdinalIgnoreCase))
+                return _petDataTextureIndex;
+            var index = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var exts = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".jpg", ".jpeg", ".bmp", ".png", ".tga" };
+            foreach (string file in Directory.EnumerateFiles(root.FullName, "*.*", SearchOption.AllDirectories))
+            {
+                if (!exts.Contains(Path.GetExtension(file))) continue;
+                string key = Path.GetFileNameWithoutExtension(file).ToLowerInvariant();
+                if (!index.ContainsKey(key)) index[key] = file;
+                if (index.Count > 100_000) break;
+            }
+            _petDataTextureIndex = index;
+            _petDataTextureIndexRoot = root.FullName;
+            return index;
+        }
+        catch { return null; }
+    }
+
     private void LoadPetTextures(string petPath)
     {
         if (_petModel == null) return;
         string dir = Path.GetDirectoryName(petPath) ?? ".";
+        var index = GetPetDataTextureIndex(petPath);
         foreach (string name in _petModel.Textures)
         {
             if (string.IsNullOrWhiteSpace(name)) continue;
@@ -922,6 +964,9 @@ public sealed class BiohazardModelViewerForm : Form
             {
                 string? found = Directory.GetFiles(dir, "*", SearchOption.TopDirectoryOnly)
                     .FirstOrDefault(f => string.Equals(Path.GetFileName(f), name, StringComparison.OrdinalIgnoreCase));
+                if (found == null && index != null &&
+                    index.TryGetValue(Path.GetFileNameWithoutExtension(name).ToLowerInvariant(), out string? indexed))
+                    found = indexed;
                 if (found == null) continue;
                 full = found;
             }
@@ -941,19 +986,54 @@ public sealed class BiohazardModelViewerForm : Form
         {
             if (mesh.Vertices.Count == 0 || mesh.Polygons.Count == 0) continue;
 
-            // Use raw bind-pose vertex positions for viewing.
+            // PET vertices are stored in each bone's LOCAL frame. Skin them into
+            // the world bind pose by parent-chained bone matrices (all weights),
+            // then negate Y because this viewport maps model +Y to screen +Y
+            // (the figure would otherwise render upside-down).
+            var worldBones = _petModel!.ComputeWorldBoneMatrices();
             var localVerts = new Vector3[mesh.Vertices.Count];
             for (int i = 0; i < mesh.Vertices.Count; i++)
             {
                 var v = mesh.Vertices[i];
-                localVerts[i] = new Vector3(v.Position.X, v.Position.Y, v.Position.Z);
+                var skinned = _petModel.SkinVertex(new Vector3(v.Position.X, v.Position.Y, v.Position.Z), v.BoneWeights, worldBones);
+                localVerts[i] = new Vector3(skinned.X, -skinned.Y, skinned.Z);
             }
 
+            // Skin the polygon corner normals the same way and accumulate per-vertex
+            // (proper smooth vertex normals instead of a placeholder).
+            var normalAccum = new Vector3[mesh.Vertices.Count];
+            foreach (var poly in mesh.Polygons)
+            {
+                if (poly.Indices.Length != 3) continue;
+                for (int c = 0; c < 3; c++)
+                {
+                    uint vi = poly.Indices[c].Index;
+                    if (vi >= (uint)mesh.Vertices.Count) continue;
+                    var v = mesh.Vertices[(int)vi];
+                    normalAccum[vi] += _petModel.SkinDirection(Vector3.Normalize(poly.Indices[c].Normal), v.BoneWeights, worldBones);
+                }
+            }
             var localNormals = new Vector3[mesh.Vertices.Count];
             for (int i = 0; i < mesh.Vertices.Count; i++)
-                localNormals[i] = Vector3.UnitY;
+            {
+                Vector3 n = normalAccum[i];
+                if (n.LengthSquared() < 1e-8f) n = Vector3.UnitY; else n = Vector3.Normalize(n);
+                localNormals[i] = new Vector3(n.X, -n.Y, n.Z);
+            }
 
             var faces = new List<RenderFace>();
+            var faceTexCache = new Dictionary<int, IViewerTexture?>();
+            IViewerTexture? TexForPoly(int polyIndex)
+            {
+                byte texIndex = polyIndex < mesh.TexMap.Length ? mesh.TexMap[polyIndex] : (byte)0;
+                if (!faceTexCache.TryGetValue(texIndex, out var t))
+                {
+                    t = ResolvePetTextureIndex(texIndex);
+                    faceTexCache[texIndex] = t;
+                }
+                return t;
+            }
+            int polyIdx = 0;
             foreach (var poly in mesh.Polygons)
             {
                 if (poly.Indices.Length < 3) continue;
@@ -962,15 +1042,27 @@ public sealed class BiohazardModelViewerForm : Form
                 for (int c = 0; c < 3; c++)
                 {
                     faceIndices[c] = (int)poly.Indices[c].Index;
-                    faceUvs[c] = new Vector2(poly.Indices[c].Uv.X, 1f - poly.Indices[c].Uv.Y);
+                    // PET UVs are top-left origin (D3D convention) — no flip.
+                    faceUvs[c] = new Vector2(poly.Indices[c].Uv.X, poly.Indices[c].Uv.Y);
                 }
-                faces.Add(new RenderFace(faceIndices, faceUvs, 0, 0));
+                var faceTex = TexForPoly(polyIdx);
+                if (faceTex != null)
+                {
+                    // PET UVs are normalized 0..1, but the rasterizer works in
+                    // texel pixels (the RE4/PSX atlas convention), so scale to
+                    // this texture's dimensions.
+                    for (int c = 0; c < 3; c++)
+                        faceUvs[c] = new Vector2(faceUvs[c].X * faceTex.Width, faceUvs[c].Y * faceTex.Height);
+                }
+                faces.Add(new RenderFace(faceIndices, faceUvs, 0, 0) { Texture = faceTex });
+                polyIdx++;
                 // If quad, add second triangle.
                 if (poly.Indices.Length == 4)
                 {
+                    var quadUvs = new[] { faceUvs[2], faceUvs[1], faceUvs[3] };
                     faces.Add(new RenderFace(
                         new[] { (int)poly.Indices[2].Index, (int)poly.Indices[1].Index, (int)poly.Indices[3].Index },
-                        new[] { faceUvs[2], faceUvs[1], faceUvs[3] }, 0, 0));
+                        quadUvs, 0, 0) { Texture = faceTex });
                 }
             }
 
@@ -996,16 +1088,28 @@ public sealed class BiohazardModelViewerForm : Form
         int tris = parts.Sum(p => p.Faces.Count);
         int verts = parts.Sum(p => p.LocalVertices.Length);
         string texDesc = tex is PetBitmapTexture pbtDesc ? pbtDesc.Description ?? "None" : "None";
+        if (_petModel != null)
+        {
+            // Skeleton overlay: bind-pose joints (PET parts are Y-negated).
+            var worldBones = _petModel.ComputeWorldBoneMatrices();
+            var joints = worldBones.Select(t => new Vector3(t.M41, -t.M42, t.M43)).ToList();
+            var parents = _petModel.Bones.Select(b => b.Parent == 255 ? -1 : (int)b.Parent).ToList();
+            _viewport.SetSkeleton(joints, parents);
+        }
         _details.Text = $"Game: White Day (2001)\r\nType: PET model\r\n{_petKindLabel}\r\nMeshes: {meshes.Count:N0}  Vertices: {verts:N0}  Triangles: {tris:N0}  Bones: {_petModel.Bones.Count:N0}\r\nTexture: {texDesc}";
     }
 
     private IViewerTexture? ResolvePetTexture(WhiteDayPetMesh mesh)
     {
-        if (_petTextures.Count == 0) return null;
         byte texIndex = mesh.TexMap.Length > 0 ? mesh.TexMap[0] : (byte)0;
-        string? key = null;
-        if (_petModel != null && texIndex < _petModel.Textures.Count)
-            key = _petModel.Textures[texIndex];
+        return ResolvePetTextureIndex(texIndex);
+    }
+
+    private IViewerTexture? ResolvePetTextureIndex(int texIndex)
+    {
+        if (_petModel == null || _petTextures.Count == 0) return null;
+        if (texIndex < 0 || texIndex >= _petModel.Textures.Count) return null;
+        string? key = _petModel.Textures[texIndex];
         if (key != null && _petTextures.TryGetValue(key.ToLowerInvariant(), out var bmp))
             return new PetBitmapTexture(bmp) { Description = key };
         return null;
@@ -1201,6 +1305,10 @@ public sealed class BiohazardModelViewerForm : Form
         _parts.Items.Clear();
         for (int i = 0; i < _renderParts.Count; i++) _parts.Items.Add($"Part {i:D2}", true);
         _viewport.SetModel(_renderParts, _survivor.Texture);
+        var bindPose = _survivor.GetBindGlobalPose();
+        _viewport.SetSkeleton(
+            bindPose.Select(t => new Vector3(t.M41, t.M42, t.M43)).ToList(),
+            Enumerable.Range(0, bindPose.Length).Select(_survivor.GetParentIndex).ToList());
         _details.Text = $"Game: Resident Evil Survivor PC\r\nType: NAB + NAC\r\nParts: {_renderParts.Count:N0}  Triangles: {_survivor.TriangleCount:N0}\r\nTexture: Embedded {_survivor.Texture.Width}x{_survivor.Texture.Height} A1R5G5B5\r\nAnimation bank: {(_survivor.HasAnimationBank ? Path.GetFileName(_survivor.AnimationPath) : "Not found")}  Selectors: {_survivor.SelectorCount}";
     }
 
@@ -1292,7 +1400,15 @@ public sealed class BiohazardModelViewerForm : Form
         if (_survivor != null)
         {
             if (duration != 0)
-                _survivor.ApplyPose(_renderParts, _animation.SelectedIndex, Math.Clamp(_animationTime, 0, duration - 1));
+            {
+                int sel = _animation.SelectedIndex;
+                int frame = Math.Clamp(_animationTime, 0, duration - 1);
+                _survivor.ApplyPose(_renderParts, sel, frame);
+                var pose = _survivor.GetGlobalPose(sel, frame);
+                _viewport.SetSkeleton(
+                    pose.Select(t => new Vector3(t.M41, t.M42, t.M43)).ToList(),
+                    Enumerable.Range(0, pose.Length).Select(_survivor.GetParentIndex).ToList());
+            }
             _viewport.RefitModel();
             UpdateTimeline(_animationTime, duration);
             _viewport.Invalidate();
@@ -1306,6 +1422,7 @@ public sealed class BiohazardModelViewerForm : Form
         Matrix4x4[] transforms = BuildPartTransforms(_skeleton, _renderParts.Count, keyFrame);
         for (int i = 0; i < _renderParts.Count; i++)
             _renderParts[i].ApplyTransform(transforms[i]);
+        SetSkeletonFromWorld(_viewport, _skeleton, BuildPartTransforms(_skeleton, _skeleton.NumParts, keyFrame));
         UpdateTimeline(_animationTime, duration);
         _viewport.Invalidate();
         _animationTimer.Interval = Math.Max(8, (int)Math.Round(33.333 * 100.0 / (double)_speed.Value));
@@ -2486,17 +2603,13 @@ public sealed class BiohazardModelViewerForm : Form
             foreach (var mesh in meshes)
             {
                 writer.WriteLine($"o {mesh.Name}");
-                // Vertices (skinned to first bone)
+                // Vertices (skinned to the parent-chained world bind pose, all weights)
+                var worldBones = _petModel.ComputeWorldBoneMatrices();
                 for (int i = 0; i < mesh.Vertices.Count; i++)
                 {
                     var v = mesh.Vertices[i];
                     Vector3 pos = new(v.Position.X, v.Position.Y, v.Position.Z);
-                    if (v.BoneWeights.Count > 0)
-                    {
-                        var first = v.BoneWeights[0];
-                        if (first.Weight > 0 && first.BoneId < _petModel.Bones.Count)
-                            pos = Vector3.Transform(pos, _petModel.Bones[first.BoneId].Matrix);
-                    }
+                    pos = _petModel.SkinVertex(pos, v.BoneWeights, worldBones);
                     writer.WriteLine(FormattableString.Invariant($"v {pos.X:R} {pos.Y:R} {pos.Z:R}"));
                 }
                 // UVs
@@ -2505,11 +2618,20 @@ public sealed class BiohazardModelViewerForm : Form
                     foreach (var idx in poly.Indices)
                         writer.WriteLine(FormattableString.Invariant($"vt {idx.Uv.X:R} {1f - idx.Uv.Y:R}"));
                 }
-                // Normals
-                foreach (var poly in mesh.Polygons)
+                // Normals (skinned like the vertices)
+                for (int pi = 0; pi < mesh.Polygons.Count; pi++)
                 {
-                    foreach (var idx in poly.Indices)
-                        writer.WriteLine(FormattableString.Invariant($"vn {idx.Normal.X:R} {idx.Normal.Y:R} {idx.Normal.Z:R}"));
+                    foreach (var idx in mesh.Polygons[pi].Indices)
+                    {
+                        Vector3 n = Vector3.Normalize(idx.Normal);
+                        if (idx.Index < (uint)mesh.Vertices.Count)
+                        {
+                            var v = mesh.Vertices[(int)idx.Index];
+                            n = _petModel.SkinDirection(n, v.BoneWeights, worldBones);
+                            if (n.LengthSquared() < 1e-8f) n = Vector3.UnitY; else n = Vector3.Normalize(n);
+                        }
+                        writer.WriteLine(FormattableString.Invariant($"vn {n.X:R} {n.Y:R} {n.Z:R}"));
+                    }
                 }
                 // Faces
                 int uvOffset = 0;
@@ -2656,32 +2778,35 @@ public sealed class BiohazardModelViewerForm : Form
             }
             WriteBlock(bw, "BONE", boneMs.ToArray());
 
-            // MESH block
-            var meshMs = new MemoryStream();
-            using var meshWriter = new BinaryWriter(meshMs);
-            meshWriter.Write((byte)_petModel.Meshes.Count);
-            meshWriter.Write(0u); // meshid
-            meshWriter.Write(0u); meshWriter.Write(0u); meshWriter.Write(0u); meshWriter.Write(0u); // unknown
+            // MESH blocks — one block per mesh, matching real game files
+            // (layout documented in WhiteDayPetModel.Load).
             foreach (var mesh in _petModel.Meshes)
             {
+                var meshMs = new MemoryStream();
+                using var meshWriter = new BinaryWriter(meshMs);
                 meshWriter.Write(mesh.Vertices.Count);
                 foreach (var v in mesh.Vertices)
                 {
-                    meshWriter.Write(v.Position.X); meshWriter.Write(v.Position.Y); meshWriter.Write(v.Position.Z); meshWriter.Write(v.Position.W);
-                    // Write bone weights: at least 2 pairs, sum = 0xFF
-                    if (v.BoneWeights.Count > 0)
+                    meshWriter.Write(v.Position.X); meshWriter.Write(v.Position.Y); meshWriter.Write(v.Position.Z);
+                    // Single-weight vertices are written as 0xFF + boneId + 2 trailing bytes;
+                    // multi-weight vertices as (weight, boneId) pairs whose sum is 0xFF.
+                    if (v.BoneWeights.Count <= 1)
                     {
-                        var first = v.BoneWeights[0];
-                        meshWriter.Write(first.Weight); meshWriter.Write(first.BoneId);
+                        byte boneId = v.BoneWeights.Count > 0 ? v.BoneWeights[0].BoneId : (byte)0;
+                        meshWriter.Write((byte)0xFF); meshWriter.Write(boneId);
+                        meshWriter.Write((byte)0); meshWriter.Write((byte)0);
                     }
                     else
                     {
-                        meshWriter.Write((byte)255); meshWriter.Write((byte)0);
-                    }
-                    // Pad to at least 2 weights
-                    while (v.BoneWeights.Count < 2)
-                    {
-                        meshWriter.Write((byte)0); meshWriter.Write((byte)0);
+                        int sum = v.BoneWeights.Sum(w => w.Weight);
+                        for (int wi = 0; wi < v.BoneWeights.Count; wi++)
+                        {
+                            byte weight = v.BoneWeights[wi].Weight;
+                            byte boneId = v.BoneWeights[wi].BoneId;
+                            if (wi == v.BoneWeights.Count - 1)
+                                weight = (byte)Math.Clamp(0xFF - sum + weight, 0, 255);
+                            meshWriter.Write(weight); meshWriter.Write(boneId);
+                        }
                     }
                 }
                 meshWriter.Write(mesh.Polygons.Count);
@@ -2695,8 +2820,8 @@ public sealed class BiohazardModelViewerForm : Form
                     }
                 }
                 foreach (var t in mesh.TexMap) meshWriter.Write(t);
+                WriteBlock(bw, "MESH", meshMs.ToArray());
             }
-            WriteBlock(bw, "MESH", meshMs.ToArray());
 
             MessageBox.Show(this, $"PET saved to {path}.", "PET Save", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
@@ -2810,6 +2935,10 @@ public sealed class BiohazardModelViewerForm : Form
             }
             _viewport.SetModel(parts, _texture == null ? null : new TimTexture(_texture));
             _renderParts = parts;
+            if (skeleton != null)
+                SetSkeletonFromWorld(_viewport, skeleton, BuildPartTransforms(skeleton, skeleton.NumParts, keyFrame));
+            else
+                _viewport.SetSkeleton(null, null);
             string texture = _texture == null ? "None" : $"{(_texturePath == "Embedded TIM" ? _texturePath : Path.GetFileName(_texturePath))} ({_texture.Width}x{_texture.Height})";
             _details.Text = $"Game: {VersionName(_model.Version)}\r\nType: {Path.GetExtension(_path!).TrimStart('.').ToUpperInvariant()}\r\nParts: {parts.Count:N0}  Bones: {boneCount:N0}  Triangles: {triangles:N0}\r\nTexture: {texture}\r\nCLUT: per polygon";
         }
@@ -2840,6 +2969,24 @@ public sealed class BiohazardModelViewerForm : Form
         // first-chance throw halts execution and looks like a hang.
         if (CountChunksOfKind(model, ModelFile.ChunkKind.Armature) == 0) return null;
         return model.GetEmr(0);
+    }
+
+    private static void SetSkeletonFromWorld(ModelViewport viewport, Emr? skeleton, Matrix4x4[] world)
+    {
+        if (skeleton == null || world.Length == 0)
+        {
+            viewport.SetSkeleton(null, null);
+            return;
+        }
+        var joints = new List<Vector3>(world.Length);
+        foreach (var t in world)
+            joints.Add(new Vector3(t.M41, t.M42, t.M43));
+        var parents = new int[world.Length];
+        for (int i = 0; i < world.Length; i++) parents[i] = -1;
+        for (int i = 0; i < world.Length; i++)
+            foreach (byte child in skeleton.GetArmatureParts(i))
+                if (child < parents.Length) parents[child] = i;
+        viewport.SetSkeleton(joints, new List<int>(parents));
     }
 
     private static Matrix4x4[] BuildPartTransforms(Emr? skeleton, int partCount, int keyFrameIndex)
@@ -4003,6 +4150,19 @@ public sealed class BiohazardModelViewerForm : Form
             return global;
         }
 
+        // Bind pose: the same parent-chain with no animation applied.
+        public Matrix4x4[] GetBindGlobalPose()
+        {
+            var local = (Matrix4x4[])_bindLocalTransforms.Clone();
+            var global = new Matrix4x4[local.Length];
+            for (int i = 0; i < local.Length; i++)
+            {
+                int parent = _parentIndices[i];
+                global[i] = parent >= 0 && parent < i ? local[i] * global[parent] : local[i];
+            }
+            return global;
+        }
+
         public void ApplyPose(List<RenderPart> parts, int selector, int frame)
         {
             if (_animationBank == null) return;
@@ -4157,7 +4317,9 @@ public sealed class BiohazardModelViewerForm : Form
     // Clut < 0 marks an untextured (flat/vertex-coloured) face. VtColors holds
     // one PSX vertex colour per corner (RGB 0-255), interpolated across the
     // triangle and multiplied with the texture (or used directly when flat).
-    private sealed record RenderFace(int[] Indices, Vector2[] UV, byte Page, int Clut, Color[]? VtColors = null);
+    // Texture, when set, overrides the viewport texture for this face (White Day
+    // PET polygons pick one texture per polygon via their texture-map byte).
+    private sealed record RenderFace(int[] Indices, Vector2[] UV, byte Page, int Clut, Color[]? VtColors = null, IViewerTexture? Texture = null);
 
     // Meditor text sources that accompany many PSX_DATA HMDs:
     // .PLY = "tex v0 v1 v2 v3 n0 n1 n2 n3" quads + vertex/normal tables,
@@ -4630,6 +4792,21 @@ public sealed class BiohazardModelViewerForm : Form
         public bool SmoothShading { get => _smoothShading; set { _smoothShading = value; Invalidate(); } }
         public bool TexturesVisible { get => _texturesVisible; set { _texturesVisible = value; Invalidate(); } }
 
+        private bool _showBones;
+        private List<Vector3> _joints = new();
+        private List<int> _jointParents = new(); // -1 = root
+
+        public bool ShowBones { get => _showBones; set { _showBones = value; Invalidate(); } }
+
+        // Joint list in the same space as the rendered parts (PET joints are
+        // Y-negated there). Pass null joints to hide the overlay.
+        public void SetSkeleton(List<Vector3>? joints, List<int>? parents)
+        {
+            _joints = joints ?? new List<Vector3>();
+            _jointParents = parents ?? new List<int>();
+            Invalidate();
+        }
+
         public ModelViewport()
         {
             DoubleBuffered = true;
@@ -4641,6 +4818,8 @@ public sealed class BiohazardModelViewerForm : Form
         {
             _parts = parts;
             _texture = texture;
+            _joints.Clear();
+            _jointParents.Clear();
             Vector3[] all = parts.SelectMany(x => x.Vertices).ToArray();
             if (all.Length > 0)
             {
@@ -4726,8 +4905,33 @@ public sealed class BiohazardModelViewerForm : Form
                 bitmap.UnlockBits(bits);
                 e.Graphics.DrawImageUnscaled(bitmap, 0, 0);
             }
-            TextRenderer.DrawText(e.Graphics, "Drag: orbit   Wheel: zoom   Ctrl+R: reset   Ctrl+W: wireframe", Font,
+            if (_showBones && _joints.Count > 0)
+                DrawSkeleton(e.Graphics, rotation, scale);
+            TextRenderer.DrawText(e.Graphics, "Drag: orbit   Wheel: zoom   Ctrl+R: reset   Ctrl+W: wireframe   Ctrl+B: bones", Font,
                 new Point(10, Height - 26), Color.Silver);
+        }
+
+        private void DrawSkeleton(Graphics g, Matrix4x4 rotation, float scale)
+        {
+            var transformed = _joints.Select(v => Vector3.Transform(v - _center, rotation)).ToArray();
+            var pts = new PointF[transformed.Length];
+            for (int i = 0; i < transformed.Length; i++)
+                pts[i] = new PointF(Width / 2f + transformed[i].X * scale, Height / 2f + transformed[i].Y * scale);
+            using var bonePen = new Pen(Color.FromArgb(230, 90, 230, 130), 2f);
+            using var jointFill = new SolidBrush(Color.FromArgb(230, 90, 230, 130));
+            using var rootFill = new SolidBrush(Color.FromArgb(230, 255, 190, 80));
+            for (int i = 0; i < pts.Length; i++)
+            {
+                int parent = i < _jointParents.Count ? _jointParents[i] : -1;
+                if (parent >= 0 && parent < pts.Length)
+                    g.DrawLine(bonePen, pts[parent], pts[i]);
+            }
+            for (int i = 0; i < pts.Length; i++)
+            {
+                bool isRoot = (i < _jointParents.Count ? _jointParents[i] : -1) < 0;
+                int r = isRoot ? 5 : 3;
+                g.FillEllipse(isRoot ? rootFill : jointFill, pts[i].X - r, pts[i].Y - r, r * 2, r * 2);
+            }
         }
 
         private void RasterTriangle(int[] pixels, float[] depth, Vector3[] p, RenderFace face, float[] lights, Color fallback)
@@ -4770,15 +4974,16 @@ public sealed class BiohazardModelViewerForm : Form
 
                 Color color = flat;
                 if (face.Clut < 0) { depth[index] = z; pixels[index] = flat.ToArgb(); continue; }
-                if (_texture != null && TexturesVisible)
+                IViewerTexture? tex = face.Texture ?? _texture;
+                if (tex != null && TexturesVisible)
                 {
                     int u = (int)MathF.Round(w0 * face.UV[0].X + w1 * face.UV[1].X + w2 * face.UV[2].X) + face.Page * 128;
                     int v = (int)MathF.Round(w0 * face.UV[0].Y + w1 * face.UV[1].Y + w2 * face.UV[2].Y);
-                    u = ((u % _texture.Width) + _texture.Width) % _texture.Width;
-                    v = ((v % _texture.Height) + _texture.Height) % _texture.Height;
+                    u = ((u % tex.Width) + tex.Width) % tex.Width;
+                    v = ((v % tex.Height) + tex.Height) % tex.Height;
                     try
                     {
-                        uint argb = _texture.GetPixel(u, v, face.Clut);
+                        uint argb = tex.GetPixel(u, v, face.Clut);
                         color = Color.FromArgb(unchecked((int)argb));
                         if (color.A == 0) continue;
                         color = Color.FromArgb(color.A,
@@ -4786,7 +4991,7 @@ public sealed class BiohazardModelViewerForm : Form
                     }
                     catch
                     {
-                        try { color = Color.FromArgb(unchecked((int)_texture.GetPixel(u, v, face.Page))); }
+                        try { color = Color.FromArgb(unchecked((int)tex.GetPixel(u, v, face.Page))); }
                         catch { color = flat; }
                     }
                 }
