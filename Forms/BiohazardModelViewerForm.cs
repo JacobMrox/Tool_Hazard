@@ -946,17 +946,9 @@ public sealed class BiohazardModelViewerForm : Form
             for (int i = 0; i < mesh.Vertices.Count; i++)
             {
                 var v = mesh.Vertices[i];
-                Vector3 pos = new(v.Position.X, v.Position.Y, v.Position.Z);
-                if (v.BoneWeights.Count > 0)
-                {
-                    var first = v.BoneWeights[0];
-                    if (first.Weight > 0 && first.BoneId < _petModel?.Bones.Count)
-                    {
-                        var bone = _petModel.Bones[first.BoneId];
-                        pos = Vector3.Transform(pos, bone.Matrix);
-                    }
-                }
-                localVerts[i] = pos;
+                // Use raw bind-pose vertex positions for viewing; bone
+                // weights are only needed for animation playback.
+                localVerts[i] = new Vector3(v.Position.X, v.Position.Y, v.Position.Z);
             }
 
             var localNormals = new Vector3[mesh.Vertices.Count];
