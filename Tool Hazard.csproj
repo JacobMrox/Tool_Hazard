@@ -144,4 +144,12 @@
     <None Remove="C:\Users\user\.nuget\packages\sevenzipextractor\1.0.19\build\x86\7z.dll" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Tool Hazard compiles the vendored IntelOrca.Biohazard sources directly.
+         Exclude the standalone library project's own build artifacts so they are
+         never pulled into Tool Hazard's default compile glob. -->
+    <Compile Remove="IntelOrca.Biohazard\obj\**" />
+    <Compile Remove="IntelOrca.Biohazard\bin\**" />
+  </ItemGroup>
+
 </Project>

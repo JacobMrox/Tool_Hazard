@@ -2,10 +2,12 @@
 //Using Intel Orca's Biohazard Net libraries
 using IntelOrca.Biohazard.Room;
 using IntelOrca.Biohazard.Script;
+using IntelOrca.Biohazard.Script.Compilation;
 using Tool_Hazard.IntelOrca.Biohazard;
 using Tool_Hazard.IntelOrca.Biohazard.Extensions;
 using Tool_Hazard.IntelOrca.Biohazard.Room;
 using Tool_Hazard.IntelOrca.Biohazard.Script;
+using Tool_Hazard.IntelOrca.Biohazard.Script.Compilation;
 //using Biohazard.Script;
 
 public static class ScdService
@@ -162,18 +164,59 @@ public static class ScdService
     }
 
 
-    // .S → SCD; convert decompile code back to compiled SCD
-    public static void CompileScd(
-        string asmPath,
-        string scdPath,
-        BioVersion version)
+    // .S → SCD; compile a decompiled Biohazard script back into SCD procedure data.
+    // The script's own "#version" directive selects the target game version.
+    // Returns the paths of the written .scd files (init.scd and/or main.scd).
+    public static string[] CompileScd(string asmPath, string outputDirectory)
     {
-        /*
-        var scd = ScdCompiler.Compile(
-            File.ReadAllText(asmPath),
-            version);
+        if (!File.Exists(asmPath))
+            throw new FileNotFoundException("Script not found.", asmPath);
 
-        File.WriteAllBytes(scdPath, scd.ToBytes());
-        */
+        Directory.CreateDirectory(outputDirectory);
+
+        var compiler = new IntelOrca.Biohazard.Script.Compilation.ScdCompiler();
+        var includer = new SimpleFileIncluder(Path.GetDirectoryName(asmPath)!);
+        var result = compiler.Generate(includer, asmPath);
+
+        if (result != 0 || compiler.Errors.ErrorCount != 0)
+        {
+            var messages = string.Join(
+                Environment.NewLine,
+                compiler.Errors.Errors
+                    .Where(e => e.Kind == ErrorKind.Error)
+                    .Select(e => e.ToString()));
+
+            throw new InvalidOperationException(
+                $"Script compilation failed:{Environment.NewLine}{Environment.NewLine}{messages}");
+        }
+
+        var written = new List<string>();
+        foreach (var operation in compiler.Operations)
+        {
+            if (operation is not ScdRdtEditOperation scdOperation)
+                continue;
+
+            var fileName = scdOperation.Kind switch
+            {
+                BioScriptKind.Init => "init.scd",
+                BioScriptKind.Main => "main.scd",
+                BioScriptKind.Event => "event.scd",
+                _ => null
+            };
+
+            // Operations carrying raw Rdt2 SCD bytes always have a non-empty
+            // Data payload; container/event (Rdt1) operations don't.
+            if (fileName is null || scdOperation.Data.Data.Length == 0)
+                continue;
+
+            var outPath = Path.Combine(outputDirectory, fileName);
+            File.WriteAllBytes(outPath, scdOperation.Data.Data.ToArray());
+            written.Add(outPath);
+        }
+
+        if (written.Count == 0)
+            throw new InvalidOperationException("The compiled script produced no SCD data.");
+
+        return written.ToArray();
     }
 }

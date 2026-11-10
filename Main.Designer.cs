@@ -454,17 +454,17 @@
             // 
             // pLWToolStripMenuItem2
             // 
-            pLWToolStripMenuItem2.Enabled = false;
             pLWToolStripMenuItem2.Name = "pLWToolStripMenuItem2";
             pLWToolStripMenuItem2.Size = new Size(188, 26);
             pLWToolStripMenuItem2.Text = "PLW";
+            pLWToolStripMenuItem2.Click += PlwExportRe1_Click;
             // 
             // vHVBToolStripMenuItem2
             // 
-            vHVBToolStripMenuItem2.Enabled = false;
             vHVBToolStripMenuItem2.Name = "vHVBToolStripMenuItem2";
             vHVBToolStripMenuItem2.Size = new Size(188, 26);
             vHVBToolStripMenuItem2.Text = "VH/VB";
+            vHVBToolStripMenuItem2.Click += vHVBToolStripMenuItem_Click;
             // 
             // toolStripSeparator7
             // 
@@ -631,7 +631,6 @@
             // 
             // convertToBIO3ToolStripMenuItem
             // 
-            convertToBIO3ToolStripMenuItem.Enabled = false;
             convertToBIO3ToolStripMenuItem.Name = "convertToBIO3ToolStripMenuItem";
             convertToBIO3ToolStripMenuItem.Size = new Size(208, 26);
             convertToBIO3ToolStripMenuItem.Text = "Convert to BIO3";
@@ -677,10 +676,10 @@
             // 
             // recompileSToSCDToolStripMenuItem1
             // 
-            recompileSToSCDToolStripMenuItem1.Enabled = false;
             recompileSToSCDToolStripMenuItem1.Name = "recompileSToSCDToolStripMenuItem1";
             recompileSToSCDToolStripMenuItem1.Size = new Size(236, 26);
             recompileSToSCDToolStripMenuItem1.Text = "Recompile .S to .SCD";
+            recompileSToSCDToolStripMenuItem1.Click += RecompileScd_Click;
             // 
             // toolStripSeparator20
             // 
@@ -696,7 +695,6 @@
             // 
             // mD1ToolStripMenuItem
             // 
-            mD1ToolStripMenuItem.Enabled = false;
             mD1ToolStripMenuItem.Name = "mD1ToolStripMenuItem";
             mD1ToolStripMenuItem.Size = new Size(281, 26);
             mD1ToolStripMenuItem.Text = "MD1";
@@ -783,10 +781,10 @@
             // 
             // plwToolStripMenuItem1
             // 
-            plwToolStripMenuItem1.Enabled = false;
             plwToolStripMenuItem1.Name = "plwToolStripMenuItem1";
             plwToolStripMenuItem1.Size = new Size(281, 26);
             plwToolStripMenuItem1.Text = "PLW";
+            plwToolStripMenuItem1.Click += PlwExportRe2_Click;
             // 
             // tIMToolStripMenuItem2
             // 
@@ -952,10 +950,10 @@
             // 
             // convertToBIO2ToolStripMenuItem
             // 
-            convertToBIO2ToolStripMenuItem.Enabled = false;
             convertToBIO2ToolStripMenuItem.Name = "convertToBIO2ToolStripMenuItem";
             convertToBIO2ToolStripMenuItem.Size = new Size(208, 26);
             convertToBIO2ToolStripMenuItem.Text = "Convert to BIO2";
+            convertToBIO2ToolStripMenuItem.Click += convertToBIO2ToolStripMenuItem_Click;
             // 
             // toolStripSeparator3
             // 
@@ -997,10 +995,10 @@
             // 
             // recompileSToSCDToolStripMenuItem
             // 
-            recompileSToSCDToolStripMenuItem.Enabled = false;
             recompileSToSCDToolStripMenuItem.Name = "recompileSToSCDToolStripMenuItem";
             recompileSToSCDToolStripMenuItem.Size = new Size(236, 26);
             recompileSToSCDToolStripMenuItem.Text = "Recompile S. to SCD";
+            recompileSToSCDToolStripMenuItem.Click += RecompileScd_Click;
             // 
             // toolStripSeparator16
             // 
@@ -1016,7 +1014,6 @@
             // 
             // mD2ToolStripMenuItem
             // 
-            mD2ToolStripMenuItem.Enabled = false;
             mD2ToolStripMenuItem.Name = "mD2ToolStripMenuItem";
             mD2ToolStripMenuItem.Size = new Size(281, 26);
             mD2ToolStripMenuItem.Text = "MD2";
@@ -1110,10 +1107,10 @@
             // 
             // pLWToolStripMenuItem
             // 
-            pLWToolStripMenuItem.Enabled = false;
             pLWToolStripMenuItem.Name = "pLWToolStripMenuItem";
             pLWToolStripMenuItem.Size = new Size(281, 26);
             pLWToolStripMenuItem.Text = "PLW";
+            pLWToolStripMenuItem.Click += PlwExportRe3_Click;
             // 
             // tIMToolStripMenuItem3
             // 
@@ -1212,10 +1209,10 @@
             // 
             // hMDToolStripMenuItem
             // 
-            hMDToolStripMenuItem.Enabled = false;
             hMDToolStripMenuItem.Name = "hMDToolStripMenuItem";
             hMDToolStripMenuItem.Size = new Size(188, 26);
             hMDToolStripMenuItem.Text = "HMD";
+            hMDToolStripMenuItem.Click += HmdViewer_Click;
             // 
             // toolStripSeparator26
             // 
@@ -1246,10 +1243,10 @@
             // 
             // aFSPS2DCToolStripMenuItem
             // 
-            aFSPS2DCToolStripMenuItem.Enabled = false;
             aFSPS2DCToolStripMenuItem.Name = "aFSPS2DCToolStripMenuItem";
             aFSPS2DCToolStripMenuItem.Size = new Size(183, 26);
             aFSPS2DCToolStripMenuItem.Text = "AFS (PS2/DC)";
+            aFSPS2DCToolStripMenuItem.Click += AfsExplorer_Click;
             // 
             // aRCHDMTToolStripMenuItem
             // 
@@ -1390,7 +1387,6 @@
             // pMDPC2007ToolStripMenuItem
             // 
             pMDPC2007ToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { toSMDToolStripMenuItem, sMDToPMDToolStripMenuItem });
-            pMDPC2007ToolStripMenuItem.Enabled = false;
             pMDPC2007ToolStripMenuItem.Name = "pMDPC2007ToolStripMenuItem";
             pMDPC2007ToolStripMenuItem.Size = new Size(314, 26);
             pMDPC2007ToolStripMenuItem.Text = "PMD (PC-2007)";
@@ -1400,6 +1396,7 @@
             toSMDToolStripMenuItem.Name = "toSMDToolStripMenuItem";
             toSMDToolStripMenuItem.Size = new Size(180, 26);
             toSMDToolStripMenuItem.Text = "PMD To SMD";
+            toSMDToolStripMenuItem.Click += PmdToSmd_Click;
             // 
             // sMDToPMDToolStripMenuItem
             // 
@@ -1598,10 +1595,10 @@
             // 
             // aFSToolStripMenuItem
             // 
-            aFSToolStripMenuItem.Enabled = false;
             aFSToolStripMenuItem.Name = "aFSToolStripMenuItem";
             aFSToolStripMenuItem.Size = new Size(176, 26);
             aFSToolStripMenuItem.Text = "AFS Explorer";
+            aFSToolStripMenuItem.Click += AfsExplorer_Click;
             // 
             // helpToolStripMenuItem
             // 
@@ -1626,10 +1623,10 @@
             // 
             // checkForUpdatesToolStripMenuItem
             // 
-            checkForUpdatesToolStripMenuItem.Enabled = false;
             checkForUpdatesToolStripMenuItem.Name = "checkForUpdatesToolStripMenuItem";
             checkForUpdatesToolStripMenuItem.Size = new Size(217, 26);
             checkForUpdatesToolStripMenuItem.Text = "Check for Updates";
+            checkForUpdatesToolStripMenuItem.Click += CheckForUpdates_Click;
             // 
             // playStartupSoundToolStripMenuItem
             // 

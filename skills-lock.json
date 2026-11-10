@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "skills": {
+    "argent-metro-debugger": {
+      "source": "software-mansion/argent",
+      "sourceType": "github",
+      "skillPath": "packages/skills/skills/argent-metro-debugger/SKILL.md",
+      "computedHash": "b1049073d1604fb959f36480b95045ac7f39a6f005bb8eb5c4590d834558e889"
+    },
+    "find-skills": {
+      "source": "vercel-labs/skills",
+      "sourceType": "github",
+      "skillPath": "skills/find-skills/SKILL.md",
+      "computedHash": "913b9d37d0d54047dd65222bb8c67b2bf04e3cb87dcad1729068d7a8b2c8c396",
+      "installMode": "copy"
+    },
+    "reverse-engineering-tools": {
+      "source": "gmh5225/awesome-game-security",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/reverse-engineering/SKILL.md",
+      "computedHash": "58de4f3729e4f48927fbc419be9ea1438d6b8a6feb66dea58862cda19d25fa81"
+    }
+  }
+}

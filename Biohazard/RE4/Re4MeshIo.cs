@@ -58,7 +58,10 @@ namespace Tool_Hazard.Biohazard.RE4
             }
         }
 
-        public static void ExportSmd(Re4BinModel model, string path)
+        public static void ExportSmd(Re4BinModel model, string path) => ExportSmd(model.Parts, path);
+
+        // Part-list overload so non-BIN meshes (e.g. RE4 2007 PMD) can be written as SMD too.
+        public static void ExportSmd(IEnumerable<Re4MeshPart> parts, string path)
         {
             using var w = new StreamWriter(path, false, new UTF8Encoding(false));
             w.WriteLine("version 1");
@@ -70,7 +73,7 @@ namespace Tool_Hazard.Biohazard.RE4
             w.WriteLine("0 0 0 0 0 0 0");
             w.WriteLine("end");
             w.WriteLine("triangles");
-            foreach (var part in model.Parts.OrderBy(p => p.MaterialIndex))
+            foreach (var part in parts.OrderBy(p => p.MaterialIndex))
             {
                 for (int t = 0; t < part.Indices.Length; t += 3)
                 {

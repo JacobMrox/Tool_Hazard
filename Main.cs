@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Linq;
 using System.Media;
 using System.Text;
+using System.Text.Json;
 using Tool_Hazard.Biohazard;
 using Tool_Hazard.Biohazard.emd;
 using Tool_Hazard.Biohazard.GCA;
@@ -15,6 +16,7 @@ using Tool_Hazard.Nintendo;
 using Tool_Hazard.Sony_PS1;
 using Tool_Hazard.White_Day;
 using Tool_Hazard.IntelOrca.Biohazard;
+using Tool_Hazard.IntelOrca.Biohazard.Model;
 
 namespace Tool_Hazard
 {
@@ -855,72 +857,305 @@ namespace Tool_Hazard
         //RDT Conversion menu hooks
 
         private void convertToBIO3ToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            MessageBox.Show("This is an experimental functionality and as such it may not work correctly.", "Experimental Code", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-            //Bio2 to Bio3 RDT Conversion (basically unpack a ofd selected rdt to a specific selecter out folder path and then usag the .hdr file got unpacked, e.g. if we extracted x.rdt to a specific folder, its likely we got outpath/x/x.hdr so that is used to repack as the usage is explained in the other menu hooks... the different is this will be automatic conversion without having to do it manually
-            using var ofd = new OpenFileDialog
-            {
-                Filter = "RDT Files (*.rdt)|*.rdt",
-                Title = "Select Bio2 RDT File"
-            };
-            if (ofd.ShowDialog() != DialogResult.OK) return;
+            => ConvertRdtBetweenVersions(BioVersion.Biohazard2, BioVersion.Biohazard3, "BIO3");
 
-            using var fbd = new FolderBrowserDialog { Description = "Select Temp Extraction Folder" };
-            if (fbd.ShowDialog() != DialogResult.OK) return;
-
-            // 1) Unpack Bio2
-            string rdtName = Path.GetFileNameWithoutExtension(ofd.FileName);
-            MessageBox.Show("RDT Name:\n\n" + rdtName, "DEBUG", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-            string outputDir = Path.Combine(fbd.SelectedPath, rdtName);
-            MessageBox.Show("directory set to:\n\n" + outputDir, "DEBUG", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-            Directory.CreateDirectory(outputDir);
-            var unpacker = new RdtUnpacker(BioVersion.Biohazard2, ofd.FileName, outputDir);
-            unpacker.Unpack();
-
-            // HDR path inside temp
-            var hdrPath = Path.Combine(outputDir,
-                Path.GetFileNameWithoutExtension(ofd.FileName) + ".hdr");
-            var newRDTpath = Path.Combine(outputDir,
-    Path.GetFileNameWithoutExtension(ofd.FileName) + ".RDT");
-            MessageBox.Show("HDR File Path:\n\n" + hdrPath, "DEBUG", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-
-            // 2) Repack as Bio3
-            var packer = new RdtPacker(BioVersion.Biohazard3, hdrPath);
-            packer.Pack();
-
-            MessageBox.Show("Converted Bio2 → Bio3 successfully!\n\n" + newRDTpath, "Success!", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-        }
         private void convertToBIO2ToolStripMenuItem_Click(object sender, EventArgs e)
+            => ConvertRdtBetweenVersions(BioVersion.Biohazard3, BioVersion.Biohazard2, "BIO2");
+
+        // Experimental RE2 <-> RE3 RDT conversion: unpack with the source version's
+        // RdtUnpacker, then rebuild the folder with the target version's RdtPacker.
+        private void ConvertRdtBetweenVersions(BioVersion sourceVersion, BioVersion targetVersion, string targetLabel)
         {
-            //same as above but for Bio3/RE3 to Bio2/RE2
             using var ofd = new OpenFileDialog
             {
-                Filter = "RDT Files (*.rdt)|*.rdt",
-                Title = "Select Bio3 RDT File"
+                Title = $"Select a {sourceVersion} RDT file",
+                Filter = "RDT files (*.rdt)|*.rdt|All files (*.*)|*.*"
             };
-            if (ofd.ShowDialog() != DialogResult.OK) return;
 
-            using var tempFolder = new FolderBrowserDialog { Description = "Select Temp Extraction Folder" };
-            if (tempFolder.ShowDialog() != DialogResult.OK) return;
+            if (ofd.ShowDialog(this) != DialogResult.OK)
+                return;
 
-            // 1) Unpack Bio3
-            var unpacker = new RdtUnpacker(BioVersion.Biohazard3, ofd.FileName, tempFolder.SelectedPath + Path.GetFileNameWithoutExtension(ofd.FileName));
-            unpacker.Unpack();
+            using var fbd = new FolderBrowserDialog
+            {
+                Description = "Select a working folder for the conversion"
+            };
 
-            // HDR path inside temp
-            var hdrPath = Path.Combine(tempFolder.SelectedPath,
-                Path.GetFileNameWithoutExtension(ofd.FileName) + ".hdr");
+            if (fbd.ShowDialog(this) != DialogResult.OK)
+                return;
 
-            // 2) Repack as Bio2
-            var packer = new RdtPacker(BioVersion.Biohazard2, hdrPath);
-            packer.Pack();
+            string name = Path.GetFileNameWithoutExtension(ofd.FileName);
+            string workDir = Path.Combine(fbd.SelectedPath, name + "_to" + targetLabel);
 
-            MessageBox.Show("Converted Bio3 → Bio2 successfully!");
+            try
+            {
+                Directory.CreateDirectory(workDir);
+                UpdateStatus($"Converting {name}.rdt to {targetLabel}...");
 
-            //statusStrip1.Update("Converted Bio3 → Bio2 successfully!");
-            //statusStrip1.Text = "Importing data file"; //see next line
+                var unpacker = new RdtUnpacker(sourceVersion, ofd.FileName, workDir, showDialogs: false);
+                if (!unpacker.Unpack())
+                    return;
 
+                // The source-preserving repack only works when source and target share a
+                // chunk layout (RE2 and RE3 do not), so rebuild from the decomposed blocks.
+                File.Delete(Path.Combine(workDir, "_source.RDT"));
+
+                var packer = new RdtPacker(targetVersion, workDir, showDialogs: false);
+                if (!packer.Pack())
+                    return;
+
+                using var sfd = new SaveFileDialog
+                {
+                    Title = "Save the converted RDT",
+                    Filter = "RDT files (*.rdt)|*.rdt",
+                    FileName = name + "_" + targetLabel + ".rdt",
+                    InitialDirectory = fbd.SelectedPath
+                };
+
+                if (sfd.ShowDialog(this) != DialogResult.OK)
+                    return;
+
+                File.Move(packer.TargetPath, sfd.FileName, overwrite: true);
+                UpdateStatus($"Converted to {targetLabel}: {Path.GetFileName(sfd.FileName)}");
+
+                MessageBox.Show(this,
+                    $"Conversion finished.\n\n{sourceVersion} -> {targetLabel}\n\n{sfd.FileName}\n\n" +
+                    "Note: RDT conversion is experimental - always verify the result in-game.",
+                    "RDT conversion",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                UpdateStatus("RDT conversion failed.");
+                MessageBox.Show(this,
+                    $"Conversion error:\n\n{ex.Message}",
+                    "RDT conversion",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
         }
+
+        // --- SCD script recompilation (.S -> .SCD) ----------------------------
+
+        private void RecompileScd_Click(object sender, EventArgs e)
+        {
+            using var ofd = new OpenFileDialog
+            {
+                Title = "Select a decompiled script (.s)",
+                Filter = "Decompiled scripts (*.s)|*.s|All files (*.*)|*.*"
+            };
+
+            if (ofd.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            using var fbd = new FolderBrowserDialog
+            {
+                Description = "Select the output folder for the compiled .scd file(s)"
+            };
+
+            if (fbd.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            try
+            {
+                var written = ScdService.CompileScd(ofd.FileName, fbd.SelectedPath);
+                UpdateStatus($"Recompiled {Path.GetFileName(ofd.FileName)} -> {written.Length} SCD file(s)");
+                MessageBox.Show(this,
+                    $"Compiled script written to:\n\n{string.Join("\n", written)}",
+                    "Recompile .S to .SCD",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this,
+                    ex.Message,
+                    "Recompile failed",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+        }
+
+        // --- PLW weapon model export -----------------------------------------
+
+        private void PlwExportRe1_Click(object sender, EventArgs e) => ExportPlw(BioVersion.Biohazard1);
+        private void PlwExportRe2_Click(object sender, EventArgs e) => ExportPlw(BioVersion.Biohazard2);
+        private void PlwExportRe3_Click(object sender, EventArgs e) => ExportPlw(BioVersion.Biohazard3);
+
+        private void ExportPlw(BioVersion version)
+        {
+            using var ofd = new OpenFileDialog
+            {
+                Title = "Open a PLW weapon model",
+                Filter = "PLW weapon models (*.plw;*.emw)|*.plw;*.emw|All files (*.*)|*.*"
+            };
+
+            if (ofd.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            try
+            {
+                var model = new PlwFile(version, ofd.FileName);
+
+                using var sfd = new SaveFileDialog
+                {
+                    Title = "Export weapon model as OBJ",
+                    Filter = "Wavefront OBJ (*.obj)|*.obj",
+                    FileName = Path.ChangeExtension(Path.GetFileName(ofd.FileName), ".obj")
+                };
+
+                if (sfd.ShowDialog(this) != DialogResult.OK)
+                    return;
+
+                new ObjExporter().Export(model.GetMesh(0), sfd.FileName, 3);
+
+                // RE2/RE3 PLW files carry an embedded TIM texture.
+                try
+                {
+                    model.GetTim(0).Save(Path.ChangeExtension(sfd.FileName, ".tim"));
+                }
+                catch
+                {
+                    // No embedded texture in this file.
+                }
+
+                UpdateStatus($"PLW exported: {Path.GetFileName(sfd.FileName)}");
+                MessageBox.Show(this,
+                    $"Exported weapon model:\n\n{sfd.FileName}",
+                    "PLW export",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this,
+                    ex.ToString(),
+                    "PLW export failed",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+        }
+
+        // --- AFS explorer (PS2 / Dreamcast / Code Veronica) ------------------
+
+        private void AfsExplorer_Click(object sender, EventArgs e)
+        {
+            new AfsExplorerForm().Show(this);
+        }
+
+        // --- RE4 2007 PMD -> SMD ----------------------------------------------
+
+        private void PmdToSmd_Click(object sender, EventArgs e)
+        {
+            using var ofd = new OpenFileDialog
+            {
+                Title = "Open an RE4 (2007) PMD mesh",
+                Filter = "RE4 2007 PMD meshes (*.pmd)|*.pmd|All files (*.*)|*.*"
+            };
+
+            if (ofd.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            try
+            {
+                var model = Re4PmdModel.Load(ofd.FileName);
+
+                using var sfd = new SaveFileDialog
+                {
+                    Title = "Export PMD as StudioMDL Data",
+                    Filter = "StudioMDL Data (*.smd)|*.smd",
+                    FileName = Path.ChangeExtension(Path.GetFileName(ofd.FileName), ".smd")
+                };
+
+                if (sfd.ShowDialog(this) != DialogResult.OK)
+                    return;
+
+                Re4MeshIo.ExportSmd(model.Parts, sfd.FileName);
+                UpdateStatus($"PMD exported: {Path.GetFileName(sfd.FileName)}");
+                MessageBox.Show(this,
+                    $"Exported SMD:\n\n{sfd.FileName}",
+                    "PMD To SMD",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this,
+                    ex.ToString(),
+                    "PMD To SMD failed",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+        }
+
+        // --- Survivor HMD model viewer ----------------------------------------
+
+        private void HmdViewer_Click(object sender, EventArgs e)
+        {
+            new BiohazardModelViewerForm().Show(this);
+        }
+
+        // --- Update checker ---------------------------------------------------
+
+        private async void CheckForUpdates_Click(object sender, EventArgs e)
+        {
+            const string releasesUrl = "https://github.com/JacobMrox/Tool_Hazard/releases";
+            const string apiUrl = "https://api.github.com/repos/JacobMrox/Tool_Hazard/releases/latest";
+
+            try
+            {
+                using var http = new HttpClient();
+                http.DefaultRequestHeaders.UserAgent.ParseAdd("Tool-Hazard-UpdateCheck");
+                http.Timeout = TimeSpan.FromSeconds(20);
+
+                var json = await http.GetStringAsync(apiUrl);
+                using var doc = JsonDocument.Parse(json);
+                var root = doc.RootElement;
+
+                string tag = root.GetProperty("tag_name").GetString() ?? "";
+                string url = root.TryGetProperty("html_url", out var htmlUrl) ? htmlUrl.GetString() : null;
+                url ??= releasesUrl;
+
+                var current = Assembly.GetEntryAssembly()?.GetName().Version;
+                string currentText = current is null
+                    ? "unknown"
+                    : $"{current.Major}.{current.Minor}.{current.Build}";
+
+                if (Version.TryParse(tag.TrimStart('v', 'V'), out var latest) &&
+                    current is not null &&
+                    latest > new Version(current.Major, current.Minor, current.Build))
+                {
+                    var result = MessageBox.Show(this,
+                        $"A newer Tool Hazard release is available:\n\n" +
+                        $"Installed: {currentText}\n" +
+                        $"Latest:    {latest}\n\n" +
+                        "Open the releases page?",
+                        "Update available",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Information);
+
+                    if (result == DialogResult.Yes)
+                        Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true });
+                }
+                else
+                {
+                    MessageBox.Show(this,
+                        $"You are running the latest release ({currentText}).\n\nLatest on GitHub: {tag}",
+                        "Up to date",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this,
+                    $"Update check failed:\n\n{ex.Message}",
+                    "Check for Updates",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+            }
+        }
+
 
         //Biohazard RDT Script Data (SCD) Menu hooks
 
