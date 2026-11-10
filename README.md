@@ -22,6 +22,9 @@ Tool Hazardは、C#（.NET 8、WinForms）で書かれた、最新のオール�
 
 <img width="1023" height="702" alt="image" src="https://github.com/user-attachments/assets/bf017227-77af-423e-89d3-7cf0dd6d6a55" />
 
+<img width="1023" height="702" alt="image" src="https://github.com/user-attachments/assets/4ea1b292-2266-4d03-b8bf-63e28f208d03" />
+
+
 
 🇸🇦 العربية
 
