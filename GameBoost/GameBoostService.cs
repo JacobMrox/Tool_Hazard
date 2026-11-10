@@ -246,6 +246,42 @@ public static class GameBoostService
         }
     }
 
+    /// <summary>Runs a process and reports its exit code alongside the combined output.</summary>
+    private static (int ExitCode, string Output) RunExeWithExit(string fileName, string arguments, int timeoutMs = 20_000)
+    {
+        try
+        {
+            using var process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = fileName,
+                    Arguments = arguments,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true
+                }
+            };
+
+            process.Start();
+            Task<string> stdout = process.StandardOutput.ReadToEndAsync();
+            Task<string> stderr = process.StandardError.ReadToEndAsync();
+
+            if (!process.WaitForExit(timeoutMs))
+            {
+                try { process.Kill(true); } catch { }
+                return (-1, "(timed out)");
+            }
+
+            return (process.ExitCode, stdout.GetAwaiter().GetResult() + stderr.GetAwaiter().GetResult());
+        }
+        catch (Exception ex)
+        {
+            return (-1, ex.Message);
+        }
+    }
+
     private static string RunPowerShell(string script, int timeoutMs = 120_000)
     {
         string? file = null;
@@ -320,13 +356,74 @@ public static class GameBoostService
         return plans;
     }
 
-    private static string? FindPowerPlan(string name)
-        => ListPowerPlans()
-            .FirstOrDefault(p => p.Name.Contains(name, StringComparison.OrdinalIgnoreCase))
-            .Guid;
-
     private static bool IsPerformancePlan(string name)
         => name.Contains("Performance", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Switches to the High performance power plan.
+    /// <para>
+    /// On OEM laptops (Dell, HP and others) the built-in scheme is still registered but
+    /// HIDDEN, so <c>powercfg /LIST</c> never shows it. The previous implementation only
+    /// looked at that listing, then duplicated the scheme when it came up empty - but
+    /// duplicating a hidden scheme produces another hidden scheme, so the follow-up lookup
+    /// could never find one and the tweak always failed. A hidden scheme can still be
+    /// activated by GUID, so try that first and only create a visible copy as a fallback.
+    /// </para>
+    /// </summary>
+    private static void ActivateHighPerformance()
+    {
+        foreach (string guid in EnumerateHighPerformanceGuids())
+        {
+            if (TrySetActivePlan(guid))
+                return;
+        }
+
+        string? created = DuplicatePowerPlan(HighPerformanceGuid);
+        if (created != null && TrySetActivePlan(created))
+            return;
+
+        throw new InvalidOperationException(
+            "Windows would not switch to the High performance power plan.");
+    }
+
+    private static IEnumerable<string> EnumerateHighPerformanceGuids()
+    {
+        yield return HighPerformanceGuid;
+
+        foreach (var plan in ListPowerPlans())
+        {
+            if (IsPerformancePlan(plan.Name) &&
+                !string.Equals(plan.Guid, HighPerformanceGuid, StringComparison.OrdinalIgnoreCase))
+            {
+                yield return plan.Guid;
+            }
+        }
+    }
+
+    private static bool TrySetActivePlan(string guid)
+    {
+        if (!Guid.TryParse(guid, out _))
+            return false;
+
+        var (exitCode, _) = RunExeWithExit("powercfg", $"/SETACTIVE {guid}");
+        return exitCode == 0;
+    }
+
+    /// <summary>Duplicates a power scheme and returns the GUID powercfg assigned to the copy.</summary>
+    private static string? DuplicatePowerPlan(string sourceGuid)
+    {
+        var (exitCode, output) = RunExeWithExit("powercfg", $"/DUPLICATESCHEME {sourceGuid}");
+        if (exitCode != 0)
+            return null;
+
+        int index = output.IndexOf("GUID:", StringComparison.OrdinalIgnoreCase);
+        if (index < 0)
+            return null;
+
+        string text = output[(index + 5)..].Trim();
+        string guid = new(text.TakeWhile(c => c != ' ' && c != '\t' && c != '\r' && c != '\n').ToArray());
+        return Guid.TryParse(guid, out _) ? guid : null;
+    }
 
     // ---------------------------------------------------------------------
     // Status
@@ -588,17 +685,7 @@ public static class GameBoostService
                 if (previous != null)
                     BoostState.Set("power.previous", previous);
 
-                string? high = FindPowerPlan("High performance");
-                if (high == null)
-                {
-                    RunExe("powercfg", $"-DUPLICATESCHEME {HighPerformanceGuid}");
-                    high = FindPowerPlan("High performance");
-                }
-
-                if (high == null)
-                    throw new InvalidOperationException("Windows did not create the High performance plan.");
-
-                RunExe("powercfg", $"/SETACTIVE {high}");
+                ActivateHighPerformance();
                 break;
             }
 

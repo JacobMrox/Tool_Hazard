@@ -37,11 +37,27 @@ try {
 # 4. High performance power plan.
 #    Ultimate Performance is intentionally not used: on a laptop it raises idle clocks
 #    and heat for no measurable gain over High performance.
+#    NOTE: OEM laptops (Dell, HP, ...) usually keep the built-in scheme registered but
+#    HIDDEN, so "powercfg /LIST" does not show it. It can still be activated by GUID,
+#    and duplicating a hidden scheme only produces another hidden copy - so try the
+#    GUID first and fall back to a copy only if that fails.
 try {
     $high = "8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c"
-    if (-not (powercfg /LIST | Select-String $high)) { powercfg /DUPLICATESCHEME $high | Out-Null }
+    $activated = $false
     powercfg /SETACTIVE $high
-    Write-Host "High performance plan active" -ForegroundColor Green
+    if ($LASTEXITCODE -eq 0) { $activated = $true }
+
+    if (-not $activated) {
+        $copy = powercfg /DUPLICATESCHEME $high
+        $copyGuid = ([regex]::Match($copy, 'GUID:\s*([0-9a-fA-F-]{36})')).Groups[1].Value
+        if ($copyGuid) {
+            powercfg /SETACTIVE $copyGuid
+            if ($LASTEXITCODE -eq 0) { $activated = $true }
+        }
+    }
+
+    if ($activated) { Write-Host "High performance plan active" -ForegroundColor Green }
+    else { Write-Warning "Could not activate the High performance plan." }
 } catch { Write-Warning $_ }
 
 # 5. Telemetry service disabled (does not affect Windows Update or Defender).
