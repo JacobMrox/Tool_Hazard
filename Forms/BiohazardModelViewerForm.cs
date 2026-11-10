@@ -63,24 +63,6 @@ public sealed class BiohazardModelViewerForm : Form
         var clearTexture = new ToolStripMenuItem("Clear texture", null, (_, _) => { _texture = null; _texturePath = null; LoadSelectedMesh(); });
         var exit = new ToolStripMenuItem("Exit", null, (_, _) => Close());
         file.DropDownItems.AddRange(new ToolStripItem[] { open, saveAs, new ToolStripSeparator(), openTexture, clearTexture, new ToolStripSeparator(), exit });
-        var re4Menu = new ToolStripMenuItem("RE4 (JADERLINK)");
-        var re4OpenBin = new ToolStripMenuItem("Open RE4 BIN (UHD/GC-Wii/PS4/PS2)...", null, (_, _) => PromptRe4Open("bin"));
-        var re4OpenPmd = new ToolStripMenuItem("Open RE4 2007 PMD...", null, (_, _) => PromptRe4Open("pmd"));
-        var re4OpenSmd = new ToolStripMenuItem("Open scenario SMD (binary) / text SMD...", null, (_, _) => PromptRe4Open("smd"));
-        var re4OpenTpl = new ToolStripMenuItem("Load RE4 TPL...", null, (_, _) => PromptRe4Open("tpl"));
-        var re4OpenPack = new ToolStripMenuItem("Load RE4 PACK textures (multi)...", null, (_, _) => PromptRe4Pack());
-        var re4OpenSmx = new ToolStripMenuItem("Inspect RE4 SMX...", null, (_, _) => PromptRe4Smx());
-        re4Menu.DropDownItems.AddRange(new ToolStripItem[]
-        {
-            re4OpenBin, re4OpenPmd, re4OpenSmd, new ToolStripSeparator(),
-            re4OpenTpl, re4OpenPack, re4OpenSmx, new ToolStripSeparator(),
-            new ToolStripMenuItem("Export RE4 mesh (OBJ)...", null, (_, _) => ExportRe4Mesh("obj")),
-            new ToolStripMenuItem("Export RE4 mesh (SMD)...", null, (_, _) => ExportRe4Mesh("smd")),
-            new ToolStripMenuItem("Import mesh (OBJ creates view, native BIN patches in place)...", null, (_, _) => ImportRe4Mesh()),
-            new ToolStripMenuItem("Export RE4 texture (PNG)...", null, (_, _) => ExportRe4Texture()),
-            new ToolStripMenuItem("Replace RE4 PACK texture (PNG/BMP -> DDS/TGA)...", null, (_, _) => ReplaceRe4PackTexture()),
-            new ToolStripMenuItem("Save RE4 BIN / TPL / PACK as...", null, (_, _) => SaveRe4As())
-        });
         var view = new ToolStripMenuItem("View");
         var smooth = new ToolStripMenuItem("Smooth shading") { CheckOnClick = true, Checked = true };
         smooth.CheckedChanged += (_, _) => _viewport.SmoothShading = smooth.Checked;
@@ -118,7 +100,7 @@ public sealed class BiohazardModelViewerForm : Form
             new ToolStripMenuItem("Replace classic native animation bank...", null, (_, _) => ReplaceClassicAnimationBank()),
             new ToolStripMenuItem("Replace compatible Survivor NAC bank...", null, (_, _) => ReplaceSurvivorAnimationBank())
         });
-        menu.Items.AddRange(new ToolStripItem[] { file, view, meshMenu, textureMenu, animationMenu, re4Menu });
+        menu.Items.AddRange(new ToolStripItem[] { file, view, meshMenu, textureMenu, animationMenu });
         MainMenuStrip = menu;
 
         var sidebar = new Panel { Dock = DockStyle.Right, Width = 230, Padding = new Padding(8) };
@@ -168,8 +150,8 @@ public sealed class BiohazardModelViewerForm : Form
     {
         using var dialog = new OpenFileDialog
         {
-            Title = "Open Biohazard model (classic or RE4)",
-            Filter = "Biohazard models (*.emd;*.pld;*.nab;*.hmd)|*.emd;*.pld;*.nab;*.hmd|RE4 models (*.bin;*.pmd;*.smx)|*.bin;*.pmd;*.smx|Scenario / generic (*.smd;*.obj)|*.smd;*.obj|All files (*.*)|*.*"
+            Title = "Open Biohazard model (classic or RE4 / White Day PET)",
+            Filter = "All supported models (*.emd;*.pld;*.nab;*.hmd;*.bin;*.pmd;*.smx;*.smd;*.obj;*.pet)|*.emd;*.pld;*.nab;*.hmd;*.bin;*.pmd;*.smx;*.smd;*.obj;*.pet|Biohazard models (*.emd;*.pld;*.nab;*.hmd)|*.emd;*.pld;*.nab;*.hmd|RE4 models (*.bin;*.pmd;*.smx)|*.bin;*.pmd;*.smx|Scenario / generic (*.smd;*.obj)|*.smd;*.obj|White Day PET (*.pet)|*.pet|All files (*.*)|*.*"
         };
         if (dialog.ShowDialog(this) == DialogResult.OK) Open(dialog.FileName);
     }

@@ -91,9 +91,12 @@ namespace Tool_Hazard.White_Day
                         int count = br.ReadByte();
                         for (int i = 0; i < count; i++)
                         {
+                            if (blockMs.Position >= blockMs.Length) break;
                             var bone = new WhiteDayPetBone();
                             bone.Name = ReadCString(br);
+                            if (blockMs.Position >= blockMs.Length) break;
                             bone.Parent = br.ReadByte();
+                            if (blockMs.Position + 48 > blockMs.Length) break;
                             float[] m = new float[12];
                             for (int j = 0; j < 12; j++) m[j] = br.ReadSingle();
                             // PET stores a 3x4 matrix in column-major order (DirectX style).
@@ -125,13 +128,15 @@ namespace Tool_Hazard.White_Day
                         {
                             var mesh = new WhiteDayPetMesh { Name = $"Mesh {i}" };
                             int numVertices = br.ReadInt32();
+                            if (numVertices < 0 || numVertices > 1000000) break;
                             for (int v = 0; v < numVertices; v++)
                             {
+                                if (blockMs.Position + 16 > blockMs.Length) break;
                                 var vertex = new WhiteDayPetVertex();
                                 vertex.Position = new Vector4(br.ReadSingle(), br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
                                 // Bone weights: pairs of (weight, boneId) until weight sum reaches 0xFF.
                                 int wsum = 0;
-                                while (wsum < 0xFF && blockMs.Position < blockMs.Length)
+                                while (wsum < 0xFF && blockMs.Position + 2 <= blockMs.Length)
                                 {
                                     byte weight = br.ReadByte();
                                     byte boneId = br.ReadByte();
@@ -148,9 +153,12 @@ namespace Tool_Hazard.White_Day
                                 mesh.Vertices.Add(vertex);
                             }
 
+                            if (blockMs.Position + 4 > blockMs.Length) break;
                             int numPolygons = br.ReadInt32();
+                            if (numPolygons < 0 || numPolygons > 1000000) break;
                             for (int p = 0; p < numPolygons; p++)
                             {
+                                if (blockMs.Position + 72 > blockMs.Length) break;
                                 var polygon = new WhiteDayPetPolygon();
                                 var indices = new WhiteDayPetPolygonIndex[3];
                                 for (int c = 0; c < 3; c++)
@@ -168,6 +176,7 @@ namespace Tool_Hazard.White_Day
                             }
 
                             // Texture map: one byte per polygon.
+                            if (blockMs.Position + numPolygons > blockMs.Length) break;
                             mesh.TexMap = br.ReadBytes(numPolygons);
                             model.Meshes.Add(mesh);
                         }
@@ -194,7 +203,7 @@ namespace Tool_Hazard.White_Day
         private static string ReadCString(BinaryReader br)
         {
             var sb = new StringBuilder();
-            while (true)
+            while (br.BaseStream.Position < br.BaseStream.Length)
             {
                 byte b = br.ReadByte();
                 if (b == 0) break;
