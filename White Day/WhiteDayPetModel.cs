@@ -47,6 +47,10 @@ namespace Tool_Hazard.White_Day
         public List<WhiteDayPetBone> Bones = new();
         public List<WhiteDayPetMesh> Meshes = new();
         public string Description = "";
+        // Diagnostic: raw count byte read from the MESH block
+        public int MeshBlockCount;
+        // Diagnostic: numVertices of first mesh (if any)
+        public int FirstMeshNumVertices;
 
         public static WhiteDayPetModel Load(string path)
         {
@@ -119,6 +123,7 @@ namespace Tool_Hazard.White_Day
                     case "MESH":
                     {
                         int count = br.ReadByte();
+                        model.MeshBlockCount = count;
                         // meshid + 4 unknown uint32s
                         if (blockMs.Length - blockMs.Position >= 20)
                         {
@@ -129,6 +134,7 @@ namespace Tool_Hazard.White_Day
                         {
                             var mesh = new WhiteDayPetMesh { Name = $"Mesh {i}" };
                             int numVertices = br.ReadInt32();
+                            if (i == 0) model.FirstMeshNumVertices = numVertices;
                             if (numVertices < 0 || numVertices > 1000000) break;
                             for (int v = 0; v < numVertices; v++)
                             {
