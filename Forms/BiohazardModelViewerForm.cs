@@ -941,43 +941,12 @@ public sealed class BiohazardModelViewerForm : Form
         {
             if (mesh.Vertices.Count == 0 || mesh.Polygons.Count == 0) continue;
 
-            // Compute world matrices for all bones by walking up the parent chain.
-            // White Day PET vertices are in bone-local space and must be
-            // transformed by their bone's world matrix to get to world space.
-            // (Matches io_scene_mpet's calc_bonemat behavior.)
-            var boneWorldMats = new Matrix4x4[_petModel?.Bones.Count ?? 0];
-            if (_petModel != null)
-            {
-                for (int b = 0; b < _petModel.Bones.Count; b++)
-                {
-                    var bone = _petModel.Bones[b];
-                    Matrix4x4 m = bone.Matrix;
-                    int parent = bone.Parent;
-                    while (parent != 255 && parent < _petModel.Bones.Count)
-                    {
-                        m = _petModel.Bones[parent].Matrix * m;
-                        parent = _petModel.Bones[parent].Parent;
-                    }
-                    boneWorldMats[b] = m;
-                }
-            }
-
+            // Use raw bind-pose vertex positions for viewing.
             var localVerts = new Vector3[mesh.Vertices.Count];
             for (int i = 0; i < mesh.Vertices.Count; i++)
             {
                 var v = mesh.Vertices[i];
-                Vector3 pos = new(v.Position.X, v.Position.Y, v.Position.Z);
-                if (v.BoneWeights.Count > 0)
-                {
-                    var first = v.BoneWeights[0];
-                    if (first.Weight > 0 && first.BoneId < boneWorldMats.Length)
-                    {
-                        float w = first.Weight / 255f;
-                        Vector3 transformed = Vector3.Transform(pos, boneWorldMats[first.BoneId]);
-                        pos = Vector3.Lerp(pos, transformed, w);
-                    }
-                }
-                localVerts[i] = pos;
+                localVerts[i] = new Vector3(v.Position.X, v.Position.Y, v.Position.Z);
             }
 
             var localNormals = new Vector3[mesh.Vertices.Count];
