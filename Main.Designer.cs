@@ -1295,7 +1295,7 @@
             // 
             // pETToolStripMenuItem
             // 
-            pETToolStripMenuItem.Enabled = false;
+            pETToolStripMenuItem.Enabled = true;
             pETToolStripMenuItem.Name = "pETToolStripMenuItem";
             pETToolStripMenuItem.Size = new Size(331, 26);
             pETToolStripMenuItem.Text = "PET";

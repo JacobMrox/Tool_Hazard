@@ -8,6 +8,7 @@ using IntelOrca.Biohazard.Model;
 using Tool_Hazard.IntelOrca.Biohazard;
 using Tool_Hazard.IntelOrca.Biohazard.Model;
 using Tool_Hazard.Biohazard.RE4;
+using Tool_Hazard.White_Day;
 
 namespace Tool_Hazard.Forms;
 
@@ -34,6 +35,9 @@ public sealed class BiohazardModelViewerForm : Form
     private readonly Dictionary<string, Bitmap> _re4PackTextures = new(StringComparer.OrdinalIgnoreCase);
     private List<Re4MeshPart>? _re4GenericParts;
     private string? _re4KindLabel;
+    private WhiteDayPetModel? _petModel;
+    private string? _petKindLabel;
+    private readonly Dictionary<string, Bitmap> _petTextures = new(StringComparer.OrdinalIgnoreCase);
     private TimFile? _texture;
     private string? _texturePath;
     private string? _path;
@@ -46,7 +50,7 @@ public sealed class BiohazardModelViewerForm : Form
 
     public BiohazardModelViewerForm(string? initialPath = null)
     {
-        Text = "Biohazard Model Viewer - RE1 / RE2 / RE3 / Survivor PC / RE4";
+        Text = "Biohazard Model Viewer - RE1 / RE2 / RE3 / Survivor PC / RE4 / White Day";
         StartPosition = FormStartPosition.CenterScreen;
         MinimumSize = new Size(760, 500);
         Size = new Size(1050, 720);
@@ -178,6 +182,11 @@ public sealed class BiohazardModelViewerForm : Form
             if (ext == ".bin" || ext == ".pmd" || ext == ".smx" || ext == ".obj" || (ext == ".smd" && Re4Detect.IsTextSmd(path)))
             {
                 OpenRe4(path);
+                return;
+            }
+            if (Path.GetExtension(path).Equals(".pet", StringComparison.OrdinalIgnoreCase))
+            {
+                OpenPet(path);
                 return;
             }
             if (ext == ".smd" && Re4ScenarioSmd.IsScenarioSmd(File.ReadAllBytes(path)))
@@ -866,6 +875,179 @@ public sealed class BiohazardModelViewerForm : Form
         }
     }
 
+    // ---- White Day PET integration ----
+    // PET files use the Ntreev PangYa .mpet/.pet block format (TEXT/BONE/MESH/...)
+    // decoded by WhiteDayPetModel in Tool_Hazard.White_Day. Textures are separate
+    // .jpg/.bmp files referenced by name, loaded from the PET file's folder.
+
+    private void OpenPet(string path)
+    {
+        try
+        {
+            ClearPetState();
+            _model = null; _survivor = null; _survivorHmd = null;
+            _re4Bin = null; _re4Pmd = null; _re4GenericParts = null; _re4Scenario = null;
+            _texture = null; _texturePath = null;
+            _re4PackTextures.Clear();
+            _path = path;
+            SetPlaying(false);
+            _animations.Clear(); _animation.Items.Clear();
+            _animation.Enabled = _playPause.Enabled = _timeline.Enabled = false;
+            UpdateTimeline(0, 0);
+
+            _petModel = WhiteDayPetModel.Load(path);
+            _petKindLabel = $"White Day PET - {Path.GetFileName(path)}";
+            LoadPetTextures(path);
+
+            _mesh.BeginUpdate();
+            _mesh.Items.Clear();
+            for (int i = 0; i < _petModel.Meshes.Count; i++) _mesh.Items.Add(_petModel.Meshes[i].Name);
+            if (_petModel.Meshes.Count == 0) _mesh.Items.Add("(no meshes)");
+            _mesh.EndUpdate();
+            if (_petModel.Meshes.Count > 0) _mesh.SelectedIndex = 0;
+            else LoadPetSelectedMesh();
+            Text = $"Biohazard Model Viewer - {Path.GetFileName(path)}";
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, $"PET open failed:\n{ex.Message}", "Biohazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private void ClearPetState()
+    {
+        _petModel = null;
+        _petKindLabel = null;
+        _petTextures.Clear();
+    }
+
+    private void LoadPetTextures(string petPath)
+    {
+        if (_petModel == null) return;
+        string dir = Path.GetDirectoryName(petPath) ?? ".";
+        foreach (string name in _petModel.Textures)
+        {
+            if (string.IsNullOrWhiteSpace(name)) continue;
+            string full = Path.IsPathRooted(name) ? name : Path.Combine(dir, name);
+            if (!File.Exists(full))
+            {
+                string? found = Directory.GetFiles(dir, "*", SearchOption.TopDirectoryOnly)
+                    .FirstOrDefault(f => string.Equals(Path.GetFileName(f), name, StringComparison.OrdinalIgnoreCase));
+                if (found == null) continue;
+                full = found;
+            }
+            try
+            {
+                using var bmp = new Bitmap(full);
+                _petTextures[Path.GetFileName(name).ToLowerInvariant()] = new Bitmap(bmp);
+            }
+            catch { /* skip unreadable textures */ }
+        }
+    }
+
+    private List<RenderPart> BuildPetRenderParts(List<WhiteDayPetMesh> meshes)
+    {
+        var renderParts = new List<RenderPart>();
+        foreach (var mesh in meshes)
+        {
+            if (mesh.Vertices.Count == 0 || mesh.Polygons.Count == 0) continue;
+
+            // Bone-weight skin the vertices to the first bone with weight > 0.
+            var localVerts = new Vector3[mesh.Vertices.Count];
+            for (int i = 0; i < mesh.Vertices.Count; i++)
+            {
+                var v = mesh.Vertices[i];
+                Vector3 pos = new(v.Position.X, v.Position.Y, v.Position.Z);
+                if (v.BoneWeights.Count > 0)
+                {
+                    var first = v.BoneWeights[0];
+                    if (first.Weight > 0 && first.BoneId < _petModel?.Bones.Count)
+                    {
+                        var bone = _petModel.Bones[first.BoneId];
+                        pos = Vector3.Transform(pos, bone.Matrix);
+                    }
+                }
+                localVerts[i] = pos;
+            }
+
+            var localNormals = new Vector3[mesh.Vertices.Count];
+            for (int i = 0; i < mesh.Vertices.Count; i++)
+                localNormals[i] = Vector3.UnitY;
+
+            var faces = new List<RenderFace>();
+            foreach (var poly in mesh.Polygons)
+            {
+                if (poly.Indices.Length < 3) continue;
+                var faceIndices = new int[3];
+                var faceUvs = new Vector2[3];
+                for (int c = 0; c < 3; c++)
+                {
+                    faceIndices[c] = (int)poly.Indices[c].Index;
+                    faceUvs[c] = new Vector2(poly.Indices[c].Uv.X, 1f - poly.Indices[c].Uv.Y);
+                }
+                faces.Add(new RenderFace(faceIndices, faceUvs, 0, 0));
+                // If quad, add second triangle.
+                if (poly.Indices.Length == 4)
+                {
+                    faces.Add(new RenderFace(
+                        new[] { (int)poly.Indices[2].Index, (int)poly.Indices[1].Index, (int)poly.Indices[3].Index },
+                        new[] { faceUvs[2], faceUvs[1], faceUvs[3] }, 0, 0));
+                }
+            }
+
+            var rp = new RenderPart(localVerts, faces, localNormals);
+            rp.ApplyTransform(Matrix4x4.Identity);
+            renderParts.Add(rp);
+        }
+        return renderParts;
+    }
+
+    private void LoadPetSelectedMesh()
+    {
+        if (_petModel == null) return;
+        var meshes = _petModel.Meshes;
+        if (meshes.Count == 0) return;
+        int sel = Math.Clamp(_mesh.SelectedIndex, 0, meshes.Count - 1);
+        var parts = BuildPetRenderParts(new List<WhiteDayPetMesh> { meshes[sel] });
+        _renderParts = parts;
+        _parts.Items.Clear();
+        for (int i = 0; i < parts.Count; i++) _parts.Items.Add($"Part {i:D2}", true);
+        var tex = ResolvePetTexture(meshes[sel]);
+        _viewport.SetModel(parts, tex);
+        int tris = parts.Sum(p => p.Faces.Count);
+        int verts = parts.Sum(p => p.LocalVertices.Length);
+        string texDesc = tex is PetBitmapTexture pbtDesc ? pbtDesc.Description ?? "None" : "None";
+        _details.Text = $"Game: White Day (2001)\r\nType: PET model\r\n{_petKindLabel}\r\nMeshes: {meshes.Count:N0}  Vertices: {verts:N0}  Triangles: {tris:N0}  Bones: {_petModel.Bones.Count:N0}\r\nTexture: {texDesc}";
+    }
+
+    private IViewerTexture? ResolvePetTexture(WhiteDayPetMesh mesh)
+    {
+        if (_petTextures.Count == 0) return null;
+        byte texIndex = mesh.TexMap.Length > 0 ? mesh.TexMap[0] : (byte)0;
+        string? key = null;
+        if (_petModel != null && texIndex < _petModel.Textures.Count)
+            key = _petModel.Textures[texIndex];
+        if (key != null && _petTextures.TryGetValue(key.ToLowerInvariant(), out var bmp))
+            return new PetBitmapTexture(bmp) { Description = key };
+        return null;
+    }
+
+    private sealed class PetBitmapTexture : IViewerTexture
+    {
+        private readonly Bitmap _bmp;
+        public string? Description;
+        public int Width => _bmp.Width;
+        public int Height => _bmp.Height;
+        public int PaletteCount => 1;
+        public PetBitmapTexture(Bitmap bmp) => _bmp = bmp;
+        public uint GetPixel(int x, int y, int palette)
+        {
+            x = Math.Clamp(x, 0, _bmp.Width - 1);
+            y = Math.Clamp(y, 0, _bmp.Height - 1);
+            return unchecked((uint)_bmp.GetPixel(x, y).ToArgb());
+        }
+    }
+
     private sealed class Re4BitmapTexture : IViewerTexture
     {
         private readonly Bitmap _atlas;
@@ -1225,6 +1407,38 @@ public sealed class BiohazardModelViewerForm : Form
 
     private void ViewTexture()
     {
+        if (_petModel != null)
+        {
+            try
+            {
+                if (_petTextures.Count == 0)
+                {
+                    MessageBox.Show(this, "No PET textures loaded. Make sure texture files are beside the PET.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+                int sel = Math.Clamp(_mesh.SelectedIndex, 0, Math.Max(0, _petModel.Meshes.Count - 1));
+                var tex = ResolvePetTexture(_petModel.Meshes[sel]);
+                if (tex is PetBitmapTexture pbt && pbt.Width > 1 && pbt.Height > 1)
+                {
+                    var petPreview = new Form { Text = $"PET texture - {pbt.Width}x{pbt.Height}", StartPosition = FormStartPosition.CenterParent,
+                        ClientSize = new Size(Math.Clamp(pbt.Width * 2, 480, 1100), Math.Clamp(pbt.Height * 2, 360, 800)) };
+                    var petPicture = new PictureBox { Dock = DockStyle.Fill, BackColor = Color.FromArgb(32, 32, 32), SizeMode = PictureBoxSizeMode.Zoom, Image = new Bitmap(pbt.Width, pbt.Height) };
+                    petPreview.FormClosed += (_, _) => petPicture.Image?.Dispose();
+                    petPreview.Controls.Add(petPicture);
+                    petPreview.Show(this);
+                }
+                else
+                {
+                    MessageBox.Show(this, "No PET texture is bound to this mesh.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                return;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, $"Texture view failed:\n{ex.Message}", Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+        }
         if (_re4Bin != null || _re4Pmd != null || _re4GenericParts != null || _re4Scenario != null)
         {
             try
@@ -1273,6 +1487,40 @@ public sealed class BiohazardModelViewerForm : Form
 
     private void ExportTexture()
     {
+        if (_petModel != null)
+        {
+            try
+            {
+                if (_petTextures.Count == 0)
+                {
+                    MessageBox.Show(this, "No PET textures loaded.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+                int sel = Math.Clamp(_mesh.SelectedIndex, 0, Math.Max(0, _petModel.Meshes.Count - 1));
+                var tex = ResolvePetTexture(_petModel.Meshes[sel]);
+                if (tex is PetBitmapTexture pbt)
+                {
+                    using var saveDlg = new SaveFileDialog { Title = "Export PET texture", Filter = "PNG image (*.png)|*.png|Bitmap image (*.bmp)|*.bmp",
+                        FileName = $"pet_texture_{sel}.png" };
+                    if (saveDlg.ShowDialog(this) != DialogResult.OK) return;
+                    using var bmp = new Bitmap(pbt.Width, pbt.Height);
+                    using (var g = System.Drawing.Graphics.FromImage(bmp))
+                        g.DrawImage(new Bitmap(_petTextures.Values.First()), 0, 0);
+                    bmp.Save(saveDlg.FileName, Path.GetExtension(saveDlg.FileName).Equals(".bmp", StringComparison.OrdinalIgnoreCase)
+                        ? System.Drawing.Imaging.ImageFormat.Bmp : System.Drawing.Imaging.ImageFormat.Png);
+                }
+                else
+                {
+                    MessageBox.Show(this, "No PET texture is bound to this mesh.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                return;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, $"PET texture export failed:\n{ex.Message}", Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+        }
         if (_re4Bin != null || _re4Pmd != null || _re4GenericParts != null || _re4Scenario != null)
         {
             ExportRe4Texture();
@@ -1298,6 +1546,23 @@ public sealed class BiohazardModelViewerForm : Form
         try
         {
             using var bitmap = new Bitmap(dialog.FileName);
+            if (_petModel != null)
+            {
+                int sel = Math.Clamp(_mesh.SelectedIndex, 0, Math.Max(0, _petModel.Meshes.Count - 1));
+                var tex = ResolvePetTexture(_petModel.Meshes[sel]);
+                if (tex is PetBitmapTexture pbt)
+                {
+                    string key = pbt.Description ?? (_petModel.Meshes[sel].TexMap.Length > 0 ? _petModel.Textures[Math.Clamp(_petModel.Meshes[sel].TexMap[0], 0, _petModel.Textures.Count - 1)] : "");
+                    _petTextures[key.ToLowerInvariant()] = new Bitmap(bitmap);
+                    LoadPetSelectedMesh();
+                    MessageBox.Show(this, $"Replaced PET texture '{key}'.", "PET texture", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                {
+                    MessageBox.Show(this, "No PET texture is bound to this mesh.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                return;
+            }
             if (_survivor != null)
             {
                 _survivor.Texture.Replace(bitmap, _survivor.Data);
@@ -2027,6 +2292,15 @@ public sealed class BiohazardModelViewerForm : Form
             }
             return;
         }
+        if (_petModel != null && _path != null)
+        {
+            using var petDialog = new SaveFileDialog { FileName = Path.GetFileName(_path), Filter = "White Day PET (*.pet)|*.pet|All files (*.*)|*.*" };
+            if (petDialog.ShowDialog(this) == DialogResult.OK)
+            {
+                SavePet(petDialog.FileName);
+            }
+            return;
+        }
         if (_model == null || _path == null) return;
         using var dialog = new SaveFileDialog { FileName = Path.GetFileName(_path), Filter = "Biohazard model (*.emd;*.pld)|*.emd;*.pld|All files (*.*)|*.*" };
         if (dialog.ShowDialog(this) == DialogResult.OK) _model.Save(dialog.FileName);
@@ -2098,6 +2372,11 @@ public sealed class BiohazardModelViewerForm : Form
             catch (Exception ex) { MessageBox.Show(this, $"Mesh export failed:\n{ex.Message}", "Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error); }
             return;
         }
+        if (_petModel != null)
+        {
+            ExportPetMesh(selectedPart);
+            return;
+        }
         IModelMesh? export = GetEditableMesh(selectedPart);
         if (export == null) return;
         string ext = native ? NativeExtension(export.Version) : "obj";
@@ -2117,6 +2396,11 @@ public sealed class BiohazardModelViewerForm : Form
         if (_survivor != null)
         {
             ReplaceSurvivorMesh(selectedPart, native);
+            return;
+        }
+        if (_petModel != null)
+        {
+            ReplacePetMesh(selectedPart, native);
             return;
         }
         if (_model == null || _mesh.SelectedIndex < 0) return;
@@ -2206,6 +2490,256 @@ public sealed class BiohazardModelViewerForm : Form
         }
     }
 
+    private void ExportPetMesh(bool selectedPart)
+    {
+        if (_petModel == null || _petModel.Meshes.Count == 0) return;
+        int sel = selectedPart ? SelectedPartIndex() : -1;
+        if (selectedPart && sel < 0) return;
+        var meshes = selectedPart ? new List<WhiteDayPetMesh> { _petModel.Meshes[sel] } : _petModel.Meshes;
+        string defaultName = selectedPart ? $"pet_part_{sel:D2}.obj" : $"{Path.GetFileNameWithoutExtension(_path ?? "pet")}.obj";
+        using var dialog = new SaveFileDialog { FileName = defaultName, Filter = "Wavefront OBJ (*.obj)|*.obj" };
+        if (dialog.ShowDialog(this) != DialogResult.OK) return;
+        try
+        {
+            using var writer = new StreamWriter(dialog.FileName, false, new UTF8Encoding(false));
+            writer.WriteLine("# White Day PET mesh export");
+            int vertexOffset = 1;
+            foreach (var mesh in meshes)
+            {
+                writer.WriteLine($"o {mesh.Name}");
+                // Vertices (skinned to first bone)
+                for (int i = 0; i < mesh.Vertices.Count; i++)
+                {
+                    var v = mesh.Vertices[i];
+                    Vector3 pos = new(v.Position.X, v.Position.Y, v.Position.Z);
+                    if (v.BoneWeights.Count > 0)
+                    {
+                        var first = v.BoneWeights[0];
+                        if (first.Weight > 0 && first.BoneId < _petModel.Bones.Count)
+                            pos = Vector3.Transform(pos, _petModel.Bones[first.BoneId].Matrix);
+                    }
+                    writer.WriteLine(FormattableString.Invariant($"v {pos.X:R} {pos.Y:R} {pos.Z:R}"));
+                }
+                // UVs
+                foreach (var poly in mesh.Polygons)
+                {
+                    foreach (var idx in poly.Indices)
+                        writer.WriteLine(FormattableString.Invariant($"vt {idx.Uv.X:R} {1f - idx.Uv.Y:R}"));
+                }
+                // Normals
+                foreach (var poly in mesh.Polygons)
+                {
+                    foreach (var idx in poly.Indices)
+                        writer.WriteLine(FormattableString.Invariant($"vn {idx.Normal.X:R} {idx.Normal.Y:R} {idx.Normal.Z:R}"));
+                }
+                // Faces
+                int uvOffset = 0;
+                foreach (var poly in mesh.Polygons)
+                {
+                    uvOffset += poly.Indices.Length;
+                }
+                uvOffset = 0;
+                foreach (var poly in mesh.Polygons)
+                {
+                    writer.Write("f");
+                    for (int c = 0; c < poly.Indices.Length; c++)
+                    {
+                        int vi = vertexOffset + (int)poly.Indices[c].Index;
+                        int vti = vertexOffset + uvOffset + c;
+                        int vni = vertexOffset + uvOffset + c;
+                        writer.Write($" {vi}/{vti}/{vni}");
+                    }
+                    writer.WriteLine();
+                    if (poly.Indices.Length == 4)
+                    {
+                        // Second triangle for quad
+                        writer.Write($"f {vertexOffset + (int)poly.Indices[2].Index}/{vertexOffset + uvOffset + 2}/{vertexOffset + uvOffset + 2} ");
+                        writer.Write($"{vertexOffset + (int)poly.Indices[1].Index}/{vertexOffset + uvOffset + 1}/{vertexOffset + uvOffset + 1} ");
+                        writer.WriteLine($"{vertexOffset + (int)poly.Indices[3].Index}/{vertexOffset + uvOffset + 3}/{vertexOffset + uvOffset + 3}");
+                    }
+                    uvOffset += poly.Indices.Length;
+                }
+                vertexOffset += mesh.Vertices.Count;
+            }
+            MessageBox.Show(this, $"PET mesh exported to {dialog.FileName}.", "PET Export", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, $"PET mesh export failed:\n{ex.Message}", "Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private void ReplacePetMesh(bool selectedPart, bool native)
+    {
+        if (_petModel == null) return;
+        using var dialog = new OpenFileDialog { Filter = native ? "Wavefront OBJ (*.obj)|*.obj|All files (*.*)|*.*" : "Wavefront OBJ (*.obj)|*.obj|All files (*.*)|*.*" };
+        if (dialog.ShowDialog(this) != DialogResult.OK) return;
+        try
+        {
+            string ext = Path.GetExtension(dialog.FileName).ToLowerInvariant();
+            if (ext != ".obj") throw new InvalidDataException("Only OBJ import is supported for PET.");
+            var imported = new WavefrontObjFile(dialog.FileName);
+            // Rebuild PET meshes from imported OBJ (simple replacement of all meshes with the imported geometry).
+            var newMeshes = new List<WhiteDayPetMesh>();
+            foreach (var obj in imported.Objects)
+            {
+                var mesh = new WhiteDayPetMesh { Name = obj.Name };
+                var verts = new List<WhiteDayPetVertex>();
+                var uvs = new List<Vector2>();
+                var norms = new List<Vector3>();
+                foreach (var tri in obj.Triangles)
+                {
+                    AddVertex(verts, uvs, norms, imported, tri.a); AddVertex(verts, uvs, norms, imported, tri.b); AddVertex(verts, uvs, norms, imported, tri.c);
+                }
+                foreach (var quad in obj.Quads)
+                {
+                    AddVertex(verts, uvs, norms, imported, quad.a); AddVertex(verts, uvs, norms, imported, quad.b); AddVertex(verts, uvs, norms, imported, quad.c);
+                    AddVertex(verts, uvs, norms, imported, quad.c); AddVertex(verts, uvs, norms, imported, quad.d); AddVertex(verts, uvs, norms, imported, quad.a);
+                }
+                mesh.Vertices = verts;
+                // Build polygons: each group of 3 vertices = one triangle
+                var polys = new List<WhiteDayPetPolygon>();
+                for (int i = 0; i < verts.Count; i += 3)
+                {
+                    var poly = new WhiteDayPetPolygon
+                    {
+                        Indices = new WhiteDayPetPolygonIndex[3]
+                        {
+                            new() { Index = (uint)i, Normal = norms[i], Uv = uvs[i] },
+                            new() { Index = (uint)(i + 1), Normal = norms[i + 1], Uv = uvs[i + 1] },
+                            new() { Index = (uint)(i + 2), Normal = norms[i + 2], Uv = uvs[i + 2] },
+                        }
+                    };
+                    polys.Add(poly);
+                }
+                mesh.Polygons = polys;
+                mesh.TexMap = new byte[polys.Count];
+                newMeshes.Add(mesh);
+            }
+            _petModel.Meshes = newMeshes;
+            LoadPetSelectedMesh();
+            MessageBox.Show(this, "PET mesh replaced from OBJ. Save to write the PET file.", "PET Import", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, $"PET mesh import failed:\n{ex.Message}", "Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    static void AddVertex(List<WhiteDayPetVertex> verts, List<Vector2> uvs, List<Vector3> norms, WavefrontObjFile obj, WavefrontObjFile.FaceVertex fv)
+    {
+        var p = obj.Vertices[fv.Vertex];
+        var n = obj.Normals[fv.Normal];
+        var t = obj.TextureCoordinates[fv.Texture];
+        verts.Add(new WhiteDayPetVertex { Position = new Vector4((float)p.x, (float)p.y, (float)p.z, 1f), BoneWeights = new List<(byte, byte)> { (255, 0) } });
+        uvs.Add(new Vector2((float)t.u, (float)t.v));
+        norms.Add(new Vector3((float)n.x, (float)n.y, (float)n.z));
+    }
+
+    private void SavePet(string path)
+    {
+        if (_petModel == null) return;
+        try
+        {
+            using var fs = new FileStream(path, FileMode.Create);
+            using var bw = new BinaryWriter(fs);
+
+            // TEXT block
+            var textMs = new MemoryStream();
+            using var textWriter = new BinaryWriter(textMs);
+            textWriter.Write(_petModel.Textures.Count);
+            foreach (var tn in _petModel.Textures)
+            {
+                var nameBytes = Encoding.GetEncoding("EUC-KR").GetBytes(tn);
+                var padded = new byte[44];
+                Array.Copy(nameBytes, padded, Math.Min(nameBytes.Length, 43));
+                textWriter.Write(padded);
+            }
+            WriteBlock(bw, "TEXT", textMs.ToArray());
+
+            // BONE block
+            var boneMs = new MemoryStream();
+            using var boneWriter = new BinaryWriter(boneMs);
+            boneWriter.Write((byte)_petModel.Bones.Count);
+            foreach (var bone in _petModel.Bones)
+            {
+                WriteCString(boneWriter, bone.Name);
+                boneWriter.Write(bone.Parent);
+                // Store matrix as 12 floats in column-major order (DirectX style)
+                // Matrix4x4 is row-major: M11 M12 M13 M14 / M21 M22 M23 M24 / M31 M32 M33 M34 / M41 M42 M43 M44
+                // Column-major: [M11 M21 M31 M41] [M12 M22 M32 M42] [M13 M23 M33 M43] [M14 M24 M34 M44]
+                // But we only store 12 floats (3x4): columns 0,1,2 and translation column
+                float[] m = new float[12];
+                m[0] = bone.Matrix.M11; m[1] = bone.Matrix.M21; m[2] = bone.Matrix.M31; m[3] = bone.Matrix.M41;
+                m[4] = bone.Matrix.M12; m[5] = bone.Matrix.M22; m[6] = bone.Matrix.M32; m[7] = bone.Matrix.M42;
+                m[8] = bone.Matrix.M13; m[9] = bone.Matrix.M23; m[10] = bone.Matrix.M33; m[11] = bone.Matrix.M43;
+                foreach (float f in m) boneWriter.Write(f);
+            }
+            WriteBlock(bw, "BONE", boneMs.ToArray());
+
+            // MESH block
+            var meshMs = new MemoryStream();
+            using var meshWriter = new BinaryWriter(meshMs);
+            meshWriter.Write((byte)_petModel.Meshes.Count);
+            meshWriter.Write(0u); // meshid
+            meshWriter.Write(0u); meshWriter.Write(0u); meshWriter.Write(0u); meshWriter.Write(0u); // unknown
+            foreach (var mesh in _petModel.Meshes)
+            {
+                meshWriter.Write(mesh.Vertices.Count);
+                foreach (var v in mesh.Vertices)
+                {
+                    meshWriter.Write(v.Position.X); meshWriter.Write(v.Position.Y); meshWriter.Write(v.Position.Z); meshWriter.Write(v.Position.W);
+                    // Write bone weights: at least 2 pairs, sum = 0xFF
+                    if (v.BoneWeights.Count > 0)
+                    {
+                        var first = v.BoneWeights[0];
+                        meshWriter.Write(first.Weight); meshWriter.Write(first.BoneId);
+                    }
+                    else
+                    {
+                        meshWriter.Write((byte)255); meshWriter.Write((byte)0);
+                    }
+                    // Pad to at least 2 weights
+                    while (v.BoneWeights.Count < 2)
+                    {
+                        meshWriter.Write((byte)0); meshWriter.Write((byte)0);
+                    }
+                }
+                meshWriter.Write(mesh.Polygons.Count);
+                foreach (var poly in mesh.Polygons)
+                {
+                    foreach (var idx in poly.Indices)
+                    {
+                        meshWriter.Write(idx.Index);
+                        meshWriter.Write(idx.Normal.X); meshWriter.Write(idx.Normal.Y); meshWriter.Write(idx.Normal.Z);
+                        meshWriter.Write(idx.Uv.X); meshWriter.Write(idx.Uv.Y);
+                    }
+                }
+                foreach (var t in mesh.TexMap) meshWriter.Write(t);
+            }
+            WriteBlock(bw, "MESH", meshMs.ToArray());
+
+            MessageBox.Show(this, $"PET saved to {path}.", "PET Save", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, $"PET save failed:\n{ex.Message}", "Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    static void WriteBlock(BinaryWriter bw, string id, byte[] data)
+    {
+        bw.Write(Encoding.ASCII.GetBytes(id));
+        bw.Write(data.Length);
+        bw.Write(data);
+    }
+
+    static void WriteCString(BinaryWriter bw, string s)
+    {
+        foreach (char c in s) bw.Write((byte)c);
+        bw.Write((byte)0);
+    }
+
     private int TexturePages => Math.Max(1, (_texture?.Width ?? 256) / 128);
     private static string NativeExtension(BioVersion version) => version switch { BioVersion.Biohazard1 => "tmd", BioVersion.Biohazard2 => "md1", _ => "md2" };
     private static IModelMesh ReadNativeMesh(BioVersion version, string path)
@@ -2239,6 +2773,7 @@ public sealed class BiohazardModelViewerForm : Form
     {
         if (_survivorHmd != null) { LoadSurvivorHmd(); return; }
         if (_survivor != null) { LoadSurvivorMesh(); return; }
+        if (_petModel != null) { LoadPetSelectedMesh(); return; }
         if (_re4Bin != null || _re4Pmd != null || _re4GenericParts != null || _re4Scenario != null) { LoadRe4SelectedMesh(); return; }
         if (_model == null || _mesh.SelectedIndex < 0) return;
         try

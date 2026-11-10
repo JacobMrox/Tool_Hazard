@@ -121,6 +121,9 @@ namespace Tool_Hazard
                 Properties.Settings.Default.PlayStartupSound = playStartupSoundToolStripMenuItem.Checked;
                 Properties.Settings.Default.Save();
             };
+
+            // White Day PET model viewer — opens the unified Model Viewer with a PET file prompt.
+            pETToolStripMenuItem.Click += pETToolStripMenuItem_Click;
         }
         // --------------------------------------------------------------------
         // Helpers
@@ -463,6 +466,22 @@ namespace Tool_Hazard
             using (var fontEditor = new WhiteDayFontEditor())
             {
                 fontEditor.ShowDialog();
+            }
+        }
+
+        //White Day PET Model Viewer
+        private void pETToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            using var dialog = new OpenFileDialog
+            {
+                Title = "Open White Day PET model",
+                Filter = "White Day PET (*.pet)|*.pet|All files (*.*)|*.*",
+                Multiselect = false
+            };
+            if (dialog.ShowDialog(this) == DialogResult.OK)
+            {
+                var viewer = new BiohazardModelViewerForm(dialog.FileName);
+                viewer.Show(this);
             }
         }
 
