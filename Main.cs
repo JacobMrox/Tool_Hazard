@@ -78,6 +78,28 @@ namespace Tool_Hazard
                 var (freed, _) = await Task.Run(Tool_Hazard.GameBoost.GameBoostService.CleanTemp);
                 UpdateStatus($"Game Boost: cleaned {(freed / 1024 / 1024):N0} MB of temp files");
             };
+            var gameBoostRevert = new ToolStripMenuItem("Revert Everything");
+            gameBoostRevert.Click += async (_, _) =>
+            {
+                var result = await Tool_Hazard.GameBoost.GameBoostService.RevertAllAsync();
+                UpdateStatus(result.Applied.Count == 0
+                    ? "Game Boost: nothing recorded to revert"
+                    : $"Game Boost: reverted {result.Applied.Count} change(s)");
+            };
+            var gameBoostReport = new ToolStripMenuItem("Save System Report...");
+            gameBoostReport.Click += (_, _) =>
+            {
+                using var dialog = new SaveFileDialog
+                {
+                    Filter = "Text (*.txt)|*.txt|All files (*.*)|*.*",
+                    FileName = $"tool-hazard-gameboost-{DateTime.Now:yyyyMMdd-HHmm}.txt"
+                };
+                if (dialog.ShowDialog(this) != DialogResult.OK)
+                    return;
+
+                File.WriteAllText(dialog.FileName, Tool_Hazard.GameBoost.GameBoostService.BuildReport());
+                UpdateStatus($"Game Boost: report saved to {Path.GetFileName(dialog.FileName)}");
+            };
             var gameBoostScripts = new ToolStripMenuItem("Export PowerShell Scripts to Desktop");
             gameBoostScripts.Click += (_, _) =>
             {
@@ -86,9 +108,9 @@ namespace Tool_Hazard
                 File.WriteAllText(Path.Combine(folder, "Apply-GameBoost.ps1"), Tool_Hazard.GameBoost.GameBoostService.ExportUserScript());
                 File.WriteAllText(Path.Combine(folder, "Apply-GameBoost-Elevated.ps1"), Tool_Hazard.GameBoost.GameBoostService.ExportElevatedScript());
                 File.WriteAllText(Path.Combine(folder, "Revert-GameBoost-Elevated.ps1"), Tool_Hazard.GameBoost.GameBoostService.ExportRevertElevatedScript());
-                MessageBox.Show(this, $"Exported to:\n{folder}\n\nRun Apply-GameBoost.ps1 (user) and Apply-GameBoost-Elevated.ps1 (admin) for HAGS + Ultimate Performance.", "Game Boost", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(this, $"Exported to:\n{folder}\n\nApply-GameBoost.ps1 needs no admin; the Elevated script handles HAGS, the power plan, throttling and the telemetry service.", "Game Boost", MessageBoxButtons.OK, MessageBoxIcon.Information);
             };
-            gameBoostMenuItem.DropDownItems.AddRange(new ToolStripItem[] { gameBoostOpen, gameBoostClean, gameBoostScripts });
+            gameBoostMenuItem.DropDownItems.AddRange(new ToolStripItem[] { gameBoostOpen, gameBoostClean, gameBoostRevert, gameBoostReport, gameBoostScripts });
             toolStripMenuItem2.DropDownItems.Add(gameBoostMenuItem);
 
             // Sync menu check state from saved setting

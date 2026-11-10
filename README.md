@@ -85,12 +85,15 @@ Inizialmente nato come White Day Mod Tool, si è evoluto in un toolkit completo 
   * 2007 `.PMD` meshes and binary scenario `.SMD` containers (embedded BIN/TPL extraction + placed OBJ export), text `.SMD`, generic `.OBJ`, and `.SMX` metadata inspection.
   * Mesh export to OBJ (+MTL)/SMD; OBJ/SMD import patches UHD BINs in place when vertex/triangle counts match, otherwise opens as a generic view.
   * Texture export to PNG/BMP and PNG/BMP replacement re-encoded to DDS (A8R8G8B8) or TGA in place; BIN/TPL saved as patched clones (all untouched sections byte-preserved), PACKs rebuilt with fresh offsets.
-* PC Game Boost (Windows 11 speed + gaming optimizer)
-  * `Extras > Game Boost > Open Game Boost Panel`: live checklist (Power plan, Game Mode, HAGS, Game DVR capture, Visual FX, transparency, mouse accel, background apps, throttling, temp, startup) with one-click Apply/Revert.
-  * User-level (no admin): Game Mode ON + Game DVR background capture OFF, Visual Effects -> Best performance, transparency/animations OFF, mouse raw input (1:1), Taskbar bloat OFF, background apps OFF, power throttling OFF, `%TEMP%` cleanup.
-  * Elevated (admin, via PowerShell scripts in `pc-hardening/`): Hardware GPU Scheduling (HAGS) ON, Ultimate Performance power plan + PCIe ASPM OFF, CPU foreground scheduler boost (`Win32PrioritySeparation=38`), SysMain/WSearch/DiagTrack -> Manual, telemetry + Delivery Optimization policies.
-  * Launch games with Boost: pick any `.exe`, sets High-performance GPU preference, lowers Edge/Discord-class background apps to BelowNormal and launches the game at High priority; Restore Priorities button undoes it.
-  * Exportable PowerShell equivalents (`pc-hardening/Apply-GameBoost.ps1`, `Apply-GameBoost-Elevated.ps1`, `Revert-GameBoost-Elevated.ps1`) so tweaks can be applied without the app.
+* PC Game Boost (Windows 11 performance + gaming optimizer)
+  * `Extras > Game Boost > Open Game Boost Panel`: per-tweak checklist (power plan, HAGS, Game Mode, Game DVR, windowed-game optimisations, power throttling, multimedia network throttling, mouse acceleration, visual effects, background apps, telemetry service, CPU quantum) with Apply Selected / Revert Selected / Apply Recommended.
+  * Every change snapshots the previous registry value first, so **Revert** restores the machine's original state rather than hardcoded defaults. Backups live in `%LOCALAPPDATA%\Tool Hazard\GameBoost\`.
+  * User-level (no admin): Game Mode ON, Game DVR background capture OFF, windowed-game swap-chain upgrade, visual effects -> Best performance, mouse acceleration OFF, background UWP apps OFF.
+  * Elevated (admin): hardware-accelerated GPU scheduling ON (`HwSchMode=2`; 1 means OFF), High performance power plan, power throttling OFF (`HKLM\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling`), multimedia network throttling OFF, `DiagTrack` disabled.
+  * Extras: create a restore point, TRIM the system drive, disable Wi-Fi adapter power saving, per-game high-performance GPU preference, opt-in Defender folder exclusions, startup-app manager, and a saved system report with hardware findings (single-channel RAM, refresh rate, free space).
+  * Launch games with Boost: sets the high-performance GPU preference, drops Edge/Discord-class processes to BelowNormal, and starts the game at High priority.
+  * Security: Defender real-time protection, tamper protection, VBS/HVCI, SmartScreen, exploit mitigations and Windows Update are never modified. Defender exclusions are opt-in only.
+  * Exportable PowerShell equivalents in `pc-hardening/` for applying the same tweaks without the app.
 
 # Planned features
 * ~~Add Multi-Clut TIM support to the Tim/Pix Viewer.~~

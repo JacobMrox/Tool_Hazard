@@ -1,16 +1,14 @@
 #nullable enable
 using System.Diagnostics;
+using System.Globalization;
 using System.Security.Principal;
+using System.Text;
+using System.Text.Json;
 using Microsoft.Win32;
 
 namespace Tool_Hazard.GameBoost;
 
-/// <summary>
-/// Core, UI-independent Game Boost logic for Tool Hazard.
-/// All tweaks are safe + reversible. User-level tweaks (HKCU) run without admin;
-/// admin-level tweaks (HKLM/services/power) require elevation and are also
-/// exported as self-elevating PowerShell scripts under pc-hardening/.
-/// </summary>
+/// <summary>Snapshot of the gaming-relevant Windows state, used to drive the checklist UI.</summary>
 public sealed record BoostStatus(
     string PowerPlanName,
     bool GameModeEnabled,
@@ -22,69 +20,202 @@ public sealed record BoostStatus(
     bool MouseAccelerationEnabled,
     bool BackgroundAppsDisabled,
     bool PowerThrottlingOff,
+    bool WindowedGameOptimizations,
+    bool NetworkThrottlingDisabled,
     long TempBytes,
     long WindowsTempBytes,
     IReadOnlyList<string> TopMemoryProcesses,
-    int StartupCount);
+    int StartupCount,
+    bool IsElevated,
+    string SystemSummary);
 
 public sealed record BoostResult(
     bool Success,
     IReadOnlyList<string> Applied,
     IReadOnlyList<string> Warnings);
 
-public sealed record ChecklistItem(string Name, string Current, string Recommended, bool IsOptimal);
+/// <summary>One row of the checklist. <see cref="IsOptimal"/> is null when the state cannot be read.</summary>
+public sealed record ChecklistItem(
+    string Id,
+    string Name,
+    string Current,
+    string Recommended,
+    bool? IsOptimal,
+    bool RequiresAdmin,
+    bool RequiresReboot,
+    string Risk);
 
+public sealed record StartupEntry(string Name, string Command, bool Enabled, bool MachineWide);
+
+internal sealed record RegSnapshot(
+    string HiveName,
+    string SubKey,
+    string Name,
+    bool Existed,
+    string Kind,
+    string? Value)
+{
+    public RegistryHive Hive => Enum.Parse<RegistryHive>(HiveName);
+}
+
+/// <summary>
+/// Core, UI-independent Game Boost logic.
+///
+/// Every tweak records the exact value it replaced before writing anything, so Revert
+/// restores the machine's original state rather than shipping hardcoded "defaults".
+/// Security-relevant surfaces (Defender real-time protection, VBS/HVCI, SmartScreen,
+/// Windows Update, exploit mitigations) are deliberately never modified here.
+/// </summary>
 public static class GameBoostService
 {
-    public const string UltimatePlanGuid = "e9a42b02-d5df-448d-aa00-03f14749eb61";
-    public const string HighPlanGuid = "8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c";
-    public const string BalancedPlanGuid = "381b4222-f694-41f0-9685-ff5bb260df2e";
+    public const string HighPerformanceGuid = "8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c";
+    public const string BalancedGuid = "381b4222-f694-41f0-9685-ff5bb260df2e";
 
-    private static readonly string[] BackgroundProcessNames =
-    {
-        "msedge", "msedgewebview2", "Discord", "steamwebhelper", "PhoneExperienceHost",
-        "OneDrive", "Teams", "WidgetService", "SearchHost", "StartMenuExperienceHost"
-    };
+    // Registry locations --------------------------------------------------
+    private const string GraphicsDriversKey = @"SYSTEM\CurrentControlSet\Control\GraphicsDrivers";
+    private const string PriorityControlKey = @"SYSTEM\CurrentControlSet\Control\PriorityControl";
+    private const string PowerThrottlingKey = @"SYSTEM\CurrentControlSet\Control\Power\PowerThrottling";
+    private const string GameBarKey = @"Software\Microsoft\GameBar";
+    private const string GameDvrKey = @"Software\Microsoft\Windows\CurrentVersion\GameDVR";
+    private const string GameConfigStoreKey = @"System\GameConfigStore";
+    private const string VisualEffectsKey = @"Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects";
+    private const string PersonalizeKey = @"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize";
+    private const string DesktopKey = @"Control Panel\Desktop";
+    private const string WindowMetricsKey = @"Control Panel\Desktop\WindowMetrics";
+    private const string MouseKey = @"Control Panel\Mouse";
+    private const string ExplorerAdvancedKey = @"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced";
+    private const string SearchKey = @"Software\Microsoft\Windows\CurrentVersion\Search";
+    private const string BackgroundAppsKey = @"Software\Microsoft\Windows\CurrentVersion\BackgroundAccessApplications";
+    private const string DirectXPreferencesKey = @"Software\Microsoft\DirectX\UserGpuPreferences";
+    private const string MultimediaProfileKey = @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile";
+    private const string StartupApprovedRunKey = @"Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run";
+    private const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
 
     public static bool IsElevated()
     {
         try
         {
-            var principal = new WindowsPrincipal(WindowsIdentity.GetCurrent());
-            return principal.IsInRole(WindowsBuiltInRole.Administrator);
+            using WindowsIdentity identity = WindowsIdentity.GetCurrent();
+            return new WindowsPrincipal(identity).IsInRole(WindowsBuiltInRole.Administrator);
         }
-        catch { return false; }
+        catch
+        {
+            return false;
+        }
     }
 
-    private static object? GetReg(RegistryKey? key, string name)
-    {
-        try { return key?.GetValue(name); } catch { return null; }
-    }
+    // ---------------------------------------------------------------------
+    // Registry plumbing
+    // ---------------------------------------------------------------------
 
-    private static int GetRegInt(RegistryKey? key, string name, int fallback)
-    {
-        object? v = GetReg(key, name);
-        if (v is int i) return i;
-        if (v is null) return fallback;
-        try { return Convert.ToInt32(v); } catch { return fallback; }
-    }
+    private static RegistryKey BaseKey(RegistryHive hive) => RegistryKey.OpenBaseKey(hive, RegistryView.Registry64);
 
-    private static string GetRegString(RegistryKey? key, string name, string fallback)
-    {
-        object? v = GetReg(key, name);
-        return v is string s ? s : fallback;
-    }
-
-    private static void SetReg(RegistryKey? key, string name, object value, RegistryValueKind kind)
-    {
-        try { key?.SetValue(name, value, kind); } catch { /* ignore - logged by caller */ }
-    }
-
-    private static string RunExe(string fileName, string arguments, int timeoutMs = 15_000)
+    private static object? GetValue(RegistryHive hive, string subKey, string name)
     {
         try
         {
-            using var p = new Process
+            using RegistryKey baseKey = BaseKey(hive);
+            using RegistryKey? key = baseKey.OpenSubKey(subKey, false);
+            return key?.GetValue(name, null, RegistryValueOptions.DoNotExpandEnvironmentNames);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static int GetInt(RegistryHive hive, string subKey, string name, int fallback = 0)
+    {
+        object? value = GetValue(hive, subKey, name);
+        if (value is null) return fallback;
+        try { return Convert.ToInt32(value, CultureInfo.InvariantCulture); } catch { return fallback; }
+    }
+
+    private static string GetString(RegistryHive hive, string subKey, string name, string fallback = "")
+        => GetValue(hive, subKey, name) is string value ? value : fallback;
+
+    private static void WriteValue(RegistryHive hive, string subKey, string name, object value, RegistryValueKind kind)
+    {
+        using RegistryKey baseKey = BaseKey(hive);
+        using RegistryKey key = baseKey.CreateSubKey(subKey, true)
+            ?? throw new InvalidOperationException($"Cannot open {subKey} for writing.");
+        key.SetValue(name, value, kind);
+    }
+
+    private static void DeleteValue(RegistryHive hive, string subKey, string name)
+    {
+        using RegistryKey baseKey = BaseKey(hive);
+        using RegistryKey? key = baseKey.OpenSubKey(subKey, true);
+        key?.DeleteValue(name, false);
+    }
+
+    /// <summary>Records the current value once, then writes the new one.</summary>
+    private static void BackedSet(string tweakId, RegistryHive hive, string subKey, string name, object value, RegistryValueKind kind)
+    {
+        BoostBackup.Add(tweakId, Snapshot(hive, subKey, name));
+        WriteValue(hive, subKey, name, value, kind);
+    }
+
+    private static RegSnapshot Snapshot(RegistryHive hive, string subKey, string name)
+    {
+        object? value = GetValue(hive, subKey, name);
+        if (value is null)
+            return new RegSnapshot(hive.ToString(), subKey, name, false, nameof(RegistryValueKind.String), null);
+
+        RegistryValueKind kind = value switch
+        {
+            int => RegistryValueKind.DWord,
+            long => RegistryValueKind.QWord,
+            byte[] => RegistryValueKind.Binary,
+            string[] => RegistryValueKind.MultiString,
+            _ => RegistryValueKind.String
+        };
+
+        string serialized = value switch
+        {
+            byte[] bytes => Convert.ToBase64String(bytes),
+            string[] strings => string.Join('\n', strings),
+            _ => Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty
+        };
+
+        return new RegSnapshot(hive.ToString(), subKey, name, true, kind.ToString(), serialized);
+    }
+
+    private static void RestoreTweak(string tweakId)
+    {
+        foreach (RegSnapshot snap in BoostBackup.Take(tweakId))
+        {
+            if (!snap.Existed)
+            {
+                DeleteValue(snap.Hive, snap.SubKey, snap.Name);
+                continue;
+            }
+
+            object value = snap.Kind switch
+            {
+                nameof(RegistryValueKind.DWord) => int.Parse(snap.Value ?? "0", CultureInfo.InvariantCulture),
+                nameof(RegistryValueKind.QWord) => long.Parse(snap.Value ?? "0", CultureInfo.InvariantCulture),
+                nameof(RegistryValueKind.Binary) => Convert.FromBase64String(snap.Value ?? string.Empty),
+                nameof(RegistryValueKind.MultiString) => (snap.Value ?? string.Empty).Split('\n'),
+                _ => snap.Value ?? string.Empty
+            };
+
+            WriteValue(snap.Hive, snap.SubKey, snap.Name, value, Enum.Parse<RegistryValueKind>(snap.Kind));
+        }
+
+        BoostBackup.Remove(tweakId);
+    }
+
+    // ---------------------------------------------------------------------
+    // Process helpers
+    // ---------------------------------------------------------------------
+
+    /// <summary>Runs a process and reads output concurrently, so large output cannot deadlock.</summary>
+    private static string RunExe(string fileName, string arguments, int timeoutMs = 20_000)
+    {
+        try
+        {
+            using var process = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
@@ -96,550 +227,790 @@ public static class GameBoostService
                     RedirectStandardError = true
                 }
             };
-            p.Start();
-            if (!p.WaitForExit(timeoutMs)) { try { p.Kill(); } catch { } return ""; }
-            return p.StandardOutput.ReadToEnd() + p.StandardError.ReadToEnd();
+
+            process.Start();
+            Task<string> stdout = process.StandardOutput.ReadToEndAsync();
+            Task<string> stderr = process.StandardError.ReadToEndAsync();
+
+            if (!process.WaitForExit(timeoutMs))
+            {
+                try { process.Kill(true); } catch { }
+                return "(timed out)";
+            }
+
+            return stdout.GetAwaiter().GetResult() + stderr.GetAwaiter().GetResult();
         }
-        catch { return ""; }
+        catch (Exception ex)
+        {
+            return ex.Message;
+        }
     }
+
+    private static string RunPowerShell(string script, int timeoutMs = 120_000)
+    {
+        string? file = null;
+        try
+        {
+            file = Path.Combine(Path.GetTempPath(), $"th-gameboost-{Guid.NewGuid():N}.ps1");
+            File.WriteAllText(file, script, new UTF8Encoding(false));
+            return RunExe("powershell.exe",
+                $"-NoProfile -NonInteractive -ExecutionPolicy Bypass -File \"{file}\"", timeoutMs);
+        }
+        catch (Exception ex)
+        {
+            return ex.Message;
+        }
+        finally
+        {
+            if (file != null)
+            {
+                try { File.Delete(file); } catch { }
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------------
+    // Power plans
+    // ---------------------------------------------------------------------
 
     public static string GetActivePowerPlan()
     {
-        string outp = RunExe("powercfg", "/GETACTIVESCHEME");
-        if (outp.Contains("Ultimate Performance", StringComparison.OrdinalIgnoreCase)) return "Ultimate Performance";
-        if (outp.Contains("High performance", StringComparison.OrdinalIgnoreCase) ||
-            outp.Contains("High Performance", StringComparison.OrdinalIgnoreCase)) return "High Performance";
-        if (outp.Contains("Balanced", StringComparison.OrdinalIgnoreCase)) return "Balanced";
-        return string.IsNullOrWhiteSpace(outp) ? "Unknown" : outp.Trim();
+        string output = RunExe("powercfg", "/GETACTIVESCHEME");
+        int open = output.IndexOf('(');
+        int close = output.LastIndexOf(')');
+        if (open >= 0 && close > open)
+            return output[(open + 1)..close].Trim();
+        return string.IsNullOrWhiteSpace(output) ? "Unknown" : output.Trim();
+    }
+
+    private static string? GetActivePowerPlanGuid()
+    {
+        string output = RunExe("powercfg", "/GETACTIVESCHEME");
+        int index = output.IndexOf("GUID:", StringComparison.OrdinalIgnoreCase);
+        if (index < 0) return null;
+        string guid = new(output[(index + 5)..].Trim().TakeWhile(c => c != ' ' && c != '\t' && c != '\r').ToArray());
+        return Guid.TryParse(guid, out _) ? guid : null;
     }
 
     public static IReadOnlyList<(string Guid, string Name)> ListPowerPlans()
     {
-        var list = new List<(string, string)>();
-        string outp = RunExe("powercfg", "/LIST");
-        foreach (string line in outp.Split('\n'))
+        var plans = new List<(string, string)>();
+        foreach (string line in RunExe("powercfg", "/LIST").Split('\n'))
         {
-            string t = line.Trim();
-            if (!t.Contains("Power Scheme GUID:")) continue;
+            string text = line.Trim();
+            if (!text.Contains("Power Scheme GUID:", StringComparison.OrdinalIgnoreCase))
+                continue;
+
             try
             {
-                string guid = t.Substring("Power Scheme GUID:".Length, 36).Trim();
-                string name = t.Contains("(") && t.Contains(")") ? t.Substring(t.IndexOf('(') + 1, t.IndexOf(')') - t.IndexOf('(') - 1) : guid;
-                if (t.Contains("*")) name += " *";
-                list.Add((guid, name));
+                int start = text.IndexOf("GUID:", StringComparison.OrdinalIgnoreCase) + 5;
+                string guid = text.Substring(start, 36).Trim();
+                string name = guid;
+                int open = text.IndexOf('(');
+                int close = text.LastIndexOf(')');
+                if (open >= 0 && close > open)
+                    name = text[(open + 1)..close];
+                plans.Add((guid, name));
             }
-            catch { /* skip malformed line */ }
+            catch
+            {
+                // malformed line - skip
+            }
         }
-        return list;
+        return plans;
     }
 
-    private static long DirectorySize(string path)
-    {
-        try
-        {
-            if (!Directory.Exists(path)) return 0;
-            return Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories)
-                .Select(f => { try { return new FileInfo(f).Length; } catch { return 0L; } })
-                .Sum();
-        }
-        catch { return 0; }
-    }
+    private static string? FindPowerPlan(string name)
+        => ListPowerPlans()
+            .FirstOrDefault(p => p.Name.Contains(name, StringComparison.OrdinalIgnoreCase))
+            .Guid;
+
+    private static bool IsPerformancePlan(string name)
+        => name.Contains("Performance", StringComparison.OrdinalIgnoreCase);
+
+    // ---------------------------------------------------------------------
+    // Status
+    // ---------------------------------------------------------------------
 
     public static BoostStatus GetStatus()
     {
-        string power = GetActivePowerPlan();
+        bool gameMode = GetInt(RegistryHive.CurrentUser, GameBarKey, "AutoGameModeEnabled", 1) == 1;
+        bool dvr = GetInt(RegistryHive.CurrentUser, GameConfigStoreKey, "GameDVR_Enabled", 1) == 1
+                   || GetInt(RegistryHive.CurrentUser, GameDvrKey, "AppCaptureEnabled", 1) == 1;
+        int visualFx = GetInt(RegistryHive.CurrentUser, VisualEffectsKey, "VisualFXSetting", 0);
+        bool transparency = GetInt(RegistryHive.CurrentUser, PersonalizeKey, "EnableTransparency", 1) == 1;
+        bool mouseAccel = GetString(RegistryHive.CurrentUser, MouseKey, "MouseSpeed", "1") != "0";
+        bool backgroundApps = GetInt(RegistryHive.CurrentUser, BackgroundAppsKey, "GlobalUserDisabled", 0) == 1;
+        bool throttlingOff = GetInt(RegistryHive.LocalMachine, PowerThrottlingKey, "PowerThrottlingOff", 0) == 1;
 
-        bool gameMode = false, dvrCapture = false;
-        int visualFx = 2;
-        bool transparency = true, mouseAccel = true, bgDisabled = false, throttleOff = false;
-        bool hags = false; bool hagsKnown = false;
+        int? hagsRaw = GetValue(RegistryHive.LocalMachine, GraphicsDriversKey, "HwSchMode") is int h ? h : null;
+        bool hagsKnown = hagsRaw is not null;
+        // HwSchMode: 1 = disabled, 2 = enabled. Absent means the Windows default (enabled on Win11).
+        bool hags = hagsRaw != 1;
 
-        using (var k = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\GameDVR", false))
-        {
-            gameMode = GetRegInt(k, "GameModeEnabled", 0) == 1;
-            dvrCapture = GetRegInt(k, "AppCaptureEnabled", 1) == 1;
-        }
-        using (var k = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects", false))
-            visualFx = GetRegInt(k, "VisualFXSetting", 2);
-        using (var k = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize", false))
-            transparency = GetRegInt(k, "EnableTransparency", 1) == 1;
-        using (var k = Registry.CurrentUser.OpenSubKey(@"Control Panel\Mouse", false))
-        {
-            string speed = GetRegString(k, "MouseSpeed", "1");
-            string t1 = GetRegString(k, "MouseThreshold1", "6");
-            mouseAccel = !(speed == "0" && t1 == "0");
-        }
-        using (var k = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\BackgroundAccessApplications", false))
-            bgDisabled = GetRegInt(k, "GlobalUserDisabled", 0) == 1;
-        using (var k = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\PowerCfg", false))
-            throttleOff = GetRegInt(k, "PowerThrottlingOff", 0) == 1;
-        try
-        {
-            using var g = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Control\GraphicsDrivers", false);
-            object? v = g?.GetValue("HwSchMode");
-            if (v is not null)
-            {
-                hagsKnown = true;
-                // HwSchMode: 1 = enabled, 2 = disabled (see Microsoft + driver tags)
-                hags = Convert.ToInt32(v) == 1;
-            }
-        }
-        catch { /* no access */ }
+        string directX = GetString(RegistryHive.CurrentUser, DirectXPreferencesKey, "DirectXUserGlobalSettings");
+        bool windowed = directX.Contains("SwapEffectUpgradeEnable=1", StringComparison.OrdinalIgnoreCase);
 
-        long temp = DirectorySize(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\..\Local\Temp");
-        // Expand proper %TEMP%:
-        temp = DirectorySize(Path.GetTempPath());
-        long winTemp = DirectorySize(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Temp"));
+        bool netThrottle = GetValue(RegistryHive.LocalMachine, MultimediaProfileKey, "NetworkThrottlingIndex") is int nti
+                           && nti == -1;
 
         var top = new List<string>();
         try
         {
-            foreach (var p in Process.GetProcesses().OrderByDescending(x => x.WorkingSet64).Take(8))
+            foreach (Process process in Process.GetProcesses().OrderByDescending(p => SafeWorkingSet(p)).Take(6))
             {
-                try { top.Add($"{p.ProcessName} — {(p.WorkingSet64 / 1024 / 1024):N0} MB"); } catch { /* skip */ }
+                try { top.Add($"{process.ProcessName} {SafeWorkingSet(process) / 1024 / 1024:N0} MB"); }
+                catch { }
+                finally { process.Dispose(); }
             }
         }
-        catch { /* ignore */ }
-
-        int startup = 0;
-        try { startup = Process.GetProcesses().Length; } catch { }
-        // Accurate startup count via WMI is not available without extra deps; use Run keys + Startup folder.
-        try
+        catch
         {
-            startup = 0;
-            using var run = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", false);
-            if (run is not null) startup += run.ValueCount;
-            using var runLm = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", false);
-            if (runLm is not null) startup += runLm.ValueCount;
-            string startupFolder = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
-            if (Directory.Exists(startupFolder)) startup += Directory.GetFiles(startupFolder).Length;
+            // best effort
         }
-        catch { /* keep fallback */ }
 
-        return new BoostStatus(power, gameMode, hags, hagsKnown, dvrCapture, visualFx, transparency, mouseAccel,
-            bgDisabled, throttleOff, temp, winTemp, top, startup);
+        return new BoostStatus(
+            GetActivePowerPlan(),
+            gameMode,
+            hags,
+            hagsKnown,
+            dvr,
+            visualFx,
+            transparency,
+            mouseAccel,
+            backgroundApps,
+            throttlingOff,
+            windowed,
+            netThrottle,
+            DirectorySize(Path.GetTempPath()),
+            DirectorySize(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Temp")),
+            top,
+            CountStartupEntries(),
+            IsElevated(),
+            BuildSystemSummary());
+    }
+
+    private static long SafeWorkingSet(Process process)
+    {
+        try { return process.WorkingSet64; } catch { return 0; }
     }
 
     public static IReadOnlyList<ChecklistItem> GetChecklist(BoostStatus s)
     {
-        string fxText = s.VisualFxSetting switch { 0 => "Let Windows choose", 1 => "Best appearance", 2 => "Custom", 3 => "Best performance", _ => $"Value {s.VisualFxSetting}" };
+        string fx = s.VisualFxSetting switch
+        {
+            0 => "Let Windows choose",
+            1 => "Best appearance",
+            2 => "Best performance",
+            3 => "Custom",
+            _ => $"Value {s.VisualFxSetting}"
+        };
+
+        string hags = s.HagsStateKnown
+            ? (s.HagsEnabled ? "On" : "Off")
+            : "Windows default (on)";
+
+        int quantum = GetInt(RegistryHive.LocalMachine, PriorityControlKey, "Win32PrioritySeparation", 2);
+
         return new[]
         {
-            new ChecklistItem("Power plan", s.PowerPlanName, "High Performance or Ultimate Performance", s.PowerPlanName.Contains("Performance", StringComparison.OrdinalIgnoreCase)),
-            new ChecklistItem("Game Mode", s.GameModeEnabled ? "On" : "Off", "On", s.GameModeEnabled),
-            new ChecklistItem("HAGS (Hardware GPU Scheduling)", s.HagsStateKnown ? (s.HagsEnabled ? "On" : "Off") : "Off / not set", "On (needs reboot)", s.HagsEnabled),
-            new ChecklistItem("Game DVR background capture", s.GameDvrCaptureEnabled ? "On (recording!)" : "Off", "Off", !s.GameDvrCaptureEnabled),
-            new ChecklistItem("Visual effects", fxText, "Best performance (3)", s.VisualFxSetting == 3),
-            new ChecklistItem("Transparency", s.TransparencyEnabled ? "On" : "Off", "Off", !s.TransparencyEnabled),
-            new ChecklistItem("Mouse pointer precision", s.MouseAccelerationEnabled ? "On (acceleration)" : "Off (raw input)", "Off (raw input)", !s.MouseAccelerationEnabled),
-            new ChecklistItem("Background apps", s.BackgroundAppsDisabled ? "Disabled" : "Enabled", "Disabled", s.BackgroundAppsDisabled),
-            new ChecklistItem("Power throttling", s.PowerThrottlingOff ? "Off" : "On", "Off", s.PowerThrottlingOff),
-            new ChecklistItem("%TEMP% size", $"{(s.TempBytes / 1024 / 1024):N0} MB", "< 200 MB", s.TempBytes < 200 * 1024 * 1024),
-            new ChecklistItem("Startup apps (Run + folder)", s.StartupCount.ToString(), "As few as possible", s.StartupCount <= 5),
+            new ChecklistItem("power.plan", "Power plan",
+                s.PowerPlanName, "High performance", IsPerformancePlan(s.PowerPlanName), true, false,
+                "Disables CPU parking/low clocks while gaming."),
+
+            new ChecklistItem("gpu.hags", "Hardware-accelerated GPU scheduling",
+                hags, "On (reboot required)", s.HagsEnabled, true, true,
+                "GPU-owned command queue, fewer CPU submission stalls."),
+
+            new ChecklistItem("game.mode", "Game Mode",
+                s.GameModeEnabled ? "On" : "Off", "On", s.GameModeEnabled, false, false,
+                "Prioritises the foreground game over background work."),
+
+            new ChecklistItem("game.dvr", "Game DVR background recording",
+                s.GameDvrCaptureEnabled ? "Recording" : "Off", "Off", !s.GameDvrCaptureEnabled, false, false,
+                "Stops the always-on capture buffer."),
+
+            new ChecklistItem("gpu.windowed", "Optimisations for windowed games",
+                s.WindowedGameOptimizations ? "On" : "Off / default", "On", s.WindowedGameOptimizations, false, false,
+                "Modern swap-chain path for borderless titles."),
+
+            new ChecklistItem("perf.throttle", "Power throttling",
+                s.PowerThrottlingOff ? "Off" : "On", "Off", s.PowerThrottlingOff, true, false,
+                "Stops Windows lowering clocks for background work."),
+
+            new ChecklistItem("net.mmcss", "Multimedia network throttling",
+                s.NetworkThrottlingDisabled ? "Disabled" : "Windows default", "Disabled", s.NetworkThrottlingDisabled, true, false,
+                "Removes the ~10 packets/ms multimedia cap."),
+
+            new ChecklistItem("input.mouse", "Mouse acceleration",
+                s.MouseAccelerationEnabled ? "On" : "Off", "Off", !s.MouseAccelerationEnabled, false, false,
+                "1:1 aim. Also changes desktop pointer feel."),
+
+            new ChecklistItem("vis.fx", "Visual effects / transparency",
+                $"{fx}, transparency {(s.TransparencyEnabled ? "on" : "off")}", "Best performance", s.VisualFxSetting == 2, false, false,
+                "Less compositing work while gaming."),
+
+            new ChecklistItem("perf.bgapps", "Background apps",
+                s.BackgroundAppsDisabled ? "Disabled" : "Enabled", "Disabled", s.BackgroundAppsDisabled, false, false,
+                "Suspends UWP background activity."),
+
+            new ChecklistItem("svc.diagtrack", "Telemetry service",
+                IsServiceDisabled("DiagTrack") ? "Disabled" : "Running", "Disabled", IsServiceDisabled("DiagTrack"), true, false,
+                "Connected User Experiences and Telemetry."),
+
+            new ChecklistItem("cpu.priority", "CPU foreground quantum",
+                quantum.ToString(), "38 (short, boosted)",
+                quantum == 38, true, false,
+                "Smaller time slices for the focused app. Marginal on modern Windows.")
         };
     }
 
-    // -----------------------------------------------------------------
-    // User-level boost (no admin)
-    // -----------------------------------------------------------------
+    // ---------------------------------------------------------------------
+    // Apply / revert individual tweaks
+    // ---------------------------------------------------------------------
+
+    public static bool IsApplied(string id) => BoostBackup.Contains(id);
+
+    public static Task<BoostResult> ApplyTweaksAsync(
+        IEnumerable<string> ids, IProgress<string>? log = null, CancellationToken ct = default) =>
+        Task.Run(() =>
+        {
+            var applied = new List<string>();
+            var warnings = new List<string>();
+
+            foreach (string id in ids.Distinct())
+            {
+                ct.ThrowIfCancellationRequested();
+                try
+                {
+                    ApplyTweak(id);
+                    applied.Add(DescribeTweak(id));
+                    log?.Report($"Applied: {DescribeTweak(id)}");
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    warnings.Add($"{DescribeTweak(id)} needs administrator rights.");
+                    log?.Report($"Needs admin: {DescribeTweak(id)}");
+                }
+                catch (Exception ex)
+                {
+                    warnings.Add($"{DescribeTweak(id)}: {ex.Message}");
+                    log?.Report($"Failed: {DescribeTweak(id)} - {ex.Message}");
+                }
+            }
+
+            return new BoostResult(warnings.Count == 0, applied, warnings);
+        }, ct);
+
+    public static Task<BoostResult> RevertTweaksAsync(
+        IEnumerable<string> ids, IProgress<string>? log = null, CancellationToken ct = default) =>
+        Task.Run(() =>
+        {
+            var reverted = new List<string>();
+            var warnings = new List<string>();
+
+            foreach (string id in ids.Distinct())
+            {
+                ct.ThrowIfCancellationRequested();
+                try
+                {
+                    RevertTweak(id);
+                    reverted.Add(DescribeTweak(id));
+                    log?.Report($"Reverted: {DescribeTweak(id)}");
+                }
+                catch (Exception ex)
+                {
+                    warnings.Add($"{DescribeTweak(id)}: {ex.Message}");
+                    log?.Report($"Failed to revert {DescribeTweak(id)} - {ex.Message}");
+                }
+            }
+
+            return new BoostResult(warnings.Count == 0, reverted, warnings);
+        }, ct);
+
     public static Task<BoostResult> ApplyUserBoostAsync(IProgress<string>? log = null, CancellationToken ct = default)
-        => Task.Run(() =>
+        => ApplyTweaksAsync(new[]
         {
-            var applied = new List<string>();
-            var warnings = new List<string>();
-            void Log(string m) { try { log?.Report(m); } catch { } }
+            "game.mode", "game.dvr", "gpu.windowed", "vis.fx", "input.mouse", "perf.bgapps"
+        }, log, ct);
 
-            // Game Mode ON, DVR OFF
-            using (var k = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\GameDVR", true))
-            {
-                if (k is not null)
-                {
-                    SetReg(k, "GameModeEnabled", 1, RegistryValueKind.DWord);
-                    SetReg(k, "AppCaptureEnabled", 0, RegistryValueKind.DWord);
-                    SetReg(k, "HistoricalCaptureEnabled", 0, RegistryValueKind.DWord);
-                    SetReg(k, "HistoricalCaptureOnBatteryAllowed", 0, RegistryValueKind.DWord);
-                    SetReg(k, "HistoricalCaptureOnWirelessDisplayAllowed", 0, RegistryValueKind.DWord);
-                    SetReg(k, "AudioCaptureEnabled", 0, RegistryValueKind.DWord);
-                    SetReg(k, "VideoEncodingBitrateMode", 2, RegistryValueKind.DWord);
-                    applied.Add("Game Mode ON + Game DVR background capture OFF");
-                    k.Close();
-                }
-            }
-            using (var k = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\GameBar", true))
-            {
-                if (k is not null)
-                {
-                    SetReg(k, "AllowAutoGameMode", 1, RegistryValueKind.DWord);
-                    SetReg(k, "AutoGameModeEnabled", 1, RegistryValueKind.DWord);
-                    SetReg(k, "UseNexusForGameBarEnabled", 0, RegistryValueKind.DWord);
-                    applied.Add("Auto Game Mode enabled");
-                    k.Close();
-                }
-            }
-
-            // Visual FX -> Best performance
-            using (var k = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects", true))
-            {
-                if (k is not null)
-                {
-                    SetReg(k, "VisualFXSetting", 3, RegistryValueKind.DWord);
-                    applied.Add("Visual effects -> Best performance (snappier windows)");
-                    k.Close();
-                }
-            }
-            using (var k = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize", true))
-            {
-                if (k is not null)
-                {
-                    SetReg(k, "EnableTransparency", 0, RegistryValueKind.DWord);
-                    applied.Add("Transparency OFF (less GPU/CPU compositing)");
-                    k.Close();
-                }
-            }
-
-            // Animations
-            using (var k = Registry.CurrentUser.CreateSubKey(@"Control Panel\Desktop", true))
-            {
-                if (k is not null) { SetReg(k, "MenuShowDelay", "0", RegistryValueKind.String); applied.Add("Menu show delay -> 0 ms"); k.Close(); }
-            }
-            try
-            {
-                using var wm = Registry.CurrentUser.CreateSubKey(@"Control Panel\Desktop\WindowMetrics", true);
-                if (wm is not null) { SetReg(wm, "MinAnimate", "0", RegistryValueKind.String); wm.Close(); }
-                applied.Add("Window animations OFF");
-            }
-            catch (Exception ex) { warnings.Add($"WindowMetrics: {ex.Message}"); }
-
-            using (var k = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced", true))
-            {
-                if (k is not null)
-                {
-                    SetReg(k, "TaskbarAnimations", 0, RegistryValueKind.DWord);
-                    SetReg(k, "ListviewAlphaSelect", 0, RegistryValueKind.DWord);
-                    SetReg(k, "ListviewShadow", 0, RegistryValueKind.DWord);
-                    k.Close();
-                }
-            }
-
-            // Mouse raw input
-            using (var k = Registry.CurrentUser.CreateSubKey(@"Control Panel\Mouse", true))
-            {
-                if (k is not null)
-                {
-                    SetReg(k, "MouseSpeed", "0", RegistryValueKind.String);
-                    SetReg(k, "MouseThreshold1", "0", RegistryValueKind.String);
-                    SetReg(k, "MouseThreshold2", "0", RegistryValueKind.String);
-                    SetReg(k, "MouseAccelLevel", "0", RegistryValueKind.String);
-                    applied.Add("Mouse acceleration OFF (1:1 raw input for aim)");
-                    k.Close();
-                }
-            }
-
-            // Search / Taskbar bloat
-            using (var k = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Search", true))
-            {
-                if (k is not null) { SetReg(k, "SearchboxTaskbarMode", 0, RegistryValueKind.DWord); k.Close(); }
-            }
-            using (var k = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced", true))
-            {
-                if (k is not null)
-                {
-                    SetReg(k, "TaskbarDa", 0, RegistryValueKind.DWord);   // Widgets
-                    SetReg(k, "TaskbarMn", 0, RegistryValueKind.DWord);   // Chat/Teams
-                    k.Close();
-                }
-            }
-            applied.Add("Taskbar Search/Widgets/Chat buttons OFF");
-
-            // Background apps
-            using (var k = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\BackgroundAccessApplications", true))
-            {
-                if (k is not null) { SetReg(k, "GlobalUserDisabled", 1, RegistryValueKind.DWord); k.Close(); }
-            }
-            applied.Add("Background apps disabled (UWP)");
-
-            // Power throttling off
-            using (var k = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\PowerCfg", true))
-            {
-                if (k is not null) { SetReg(k, "PowerThrottlingOff", 1, RegistryValueKind.DWord); k.Close(); }
-            }
-            applied.Add("Power throttling OFF");
-
-            // Clean temp
-            try
-            {
-                var (freed, w) = CleanTemp();
-                applied.Add($"Cleaned %TEMP% ({freed / 1024 / 1024:N0} MB freed)");
-                warnings.AddRange(w);
-            }
-            catch (Exception ex) { warnings.Add($"Temp clean: {ex.Message}"); }
-
-            Log("User boost applied.");
-            return new BoostResult(true, applied, warnings);
-        }, ct);
-
-    // -----------------------------------------------------------------
-    // Admin-level boost (requires elevation)
-    // -----------------------------------------------------------------
     public static Task<BoostResult> ApplyAdminBoostAsync(IProgress<string>? log = null, CancellationToken ct = default)
-        => Task.Run(() =>
+        => ApplyTweaksAsync(new[]
         {
-            var applied = new List<string>();
-            var warnings = new List<string>();
-            if (!IsElevated())
-            {
-                warnings.Add("Not elevated. Run the exported Apply-GameBoost-Elevated.ps1 as Administrator, or use 'Apply Boost (Elevated)' which will request UAC.");
-                return new BoostResult(false, applied, warnings);
-            }
+            "power.plan", "gpu.hags", "perf.throttle", "net.mmcss", "svc.diagtrack", "cpu.priority"
+        }, log, ct);
 
-            // HAGS
-            try
-            {
-                var path = @"SYSTEM\CurrentControlSet\Control\GraphicsDrivers";
-                using var k = Registry.LocalMachine.CreateSubKey(path, true);
-                if (k is not null)
-                {
-                    k.SetValue("HwSchMode", 1, RegistryValueKind.DWord);
-                    k.SetValue("PlatformSupportMiracast", 1, RegistryValueKind.DWord);
-                    applied.Add("HAGS ON (HwSchMode=1) — reboot required");
-                    k.Close();
-                }
-            }
-            catch (Exception ex) { warnings.Add($"HAGS: {ex.Message}"); }
-
-            // Win32PrioritySeparation = 38 (0x26) - foreground boost, short quantum
-            try
-            {
-                using var k = Registry.LocalMachine.CreateSubKey(@"SYSTEM\CurrentControlSet\Control\PriorityControl", true);
-                if (k is not null) { k.SetValue("Win32PrioritySeparation", 38, RegistryValueKind.DWord); applied.Add("CPU scheduler foreground boost (Win32PrioritySeparation=38)"); k.Close(); }
-            }
-            catch (Exception ex) { warnings.Add($"PriorityControl: {ex.Message}"); }
-
-            // Ultimate Performance plan
-            string ultimate = RunExe("powercfg", "/LIST");
-            if (!ultimate.Contains(UltimatePlanGuid, StringComparison.OrdinalIgnoreCase))
-            {
-                string dup = RunExe("powercfg", $"/DUPLICATESCHEME {UltimatePlanGuid}");
-                applied.Add("Created Ultimate Performance plan: " + (string.IsNullOrWhiteSpace(dup) ? "see powercfg /LIST" : dup.Trim().Split('\n')[0]));
-            }
-            else applied.Add("Ultimate Performance plan already present");
-            RunExe("powercfg", $"/SETACTIVE {UltimatePlanGuid}");
-            applied.Add("Activated Ultimate Performance plan");
-            // Disable PCIe ASPM on AC for lowest latency (first GPU/NVMe link)
-            RunExe("powercfg", "/SETACVALUEINDEX SCHEME_MIN SUB_PCIEXPRESS ASPM 0");
-            RunExe("powercfg", "/SETACTIVE SCHEME_CURRENT");
-            applied.Add("PCIe Link State Power Management OFF on AC (lowest latency)");
-
-            // Services -> Manual (not Disabled, so Windows can still start them on demand)
-            foreach (string svc in new[] { "SysMain", "WSearch", "DiagTrack" })
-            {
-                string r = RunExe("sc.exe", $"config \"{svc}\" start= demand");
-                applied.Add($"Service {svc} -> Manual (requested). Output: {r.Trim()}");
-            }
-
-            // Telemetry policy (Pro/Enterprise effective; Home ignores some, harmless)
-            try
-            {
-                using var k = Registry.LocalMachine.CreateSubKey(@"SOFTWARE\Policies\Microsoft\Windows\DataCollection", true);
-                if (k is not null)
-                {
-                    k.SetValue("AllowTelemetry", 0, RegistryValueKind.DWord);
-                    k.SetValue("DoNotShowFeedbackNotifications", 1, RegistryValueKind.DWord);
-                    applied.Add("Telemetry policy: AllowTelemetry=0 (best-effort on Home)");
-                    k.Close();
-                }
-            }
-            catch (Exception ex) { warnings.Add($"Telemetry: {ex.Message}"); }
-
-            // Delivery Optimization -> disabled
-            try
-            {
-                using var k = Registry.LocalMachine.CreateSubKey(@"SOFTWARE\Policies\Microsoft\Windows\DeliveryOptimization", true);
-                if (k is not null) { k.SetValue("DODownloadMode", 0, RegistryValueKind.DWord); applied.Add("Delivery Optimization OFF"); k.Close(); }
-            }
-            catch { /* optional */ }
-
-            return new BoostResult(true, applied, warnings);
-        }, ct);
-
-    // -----------------------------------------------------------------
-    // Revert
-    // -----------------------------------------------------------------
     public static Task<BoostResult> RevertUserBoostAsync(IProgress<string>? log = null, CancellationToken ct = default)
-        => Task.Run(() =>
+        => RevertTweaksAsync(new[]
         {
-            var applied = new List<string>();
-            var warnings = new List<string>();
-            using (var k = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\GameDVR", true))
-            {
-                if (k is not null)
-                {
-                    SetReg(k, "AppCaptureEnabled", 1, RegistryValueKind.DWord);
-                    SetReg(k, "HistoricalCaptureEnabled", 1, RegistryValueKind.DWord);
-                    SetReg(k, "AudioCaptureEnabled", 1, RegistryValueKind.DWord);
-                    applied.Add("Game DVR capture restored to default (ON)");
-                    k.Close();
-                }
-            }
-            using (var k = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects", true))
-            {
-                if (k is not null) { SetReg(k, "VisualFXSetting", 2, RegistryValueKind.DWord); applied.Add("Visual effects -> Custom (2)"); k.Close(); }
-            }
-            using (var k = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize", true))
-            {
-                if (k is not null) { SetReg(k, "EnableTransparency", 1, RegistryValueKind.DWord); applied.Add("Transparency ON"); k.Close(); }
-            }
-            using (var k = Registry.CurrentUser.CreateSubKey(@"Control Panel\Mouse", true))
-            {
-                if (k is not null)
-                {
-                    SetReg(k, "MouseSpeed", "1", RegistryValueKind.String);
-                    SetReg(k, "MouseThreshold1", "6", RegistryValueKind.String);
-                    SetReg(k, "MouseThreshold2", "10", RegistryValueKind.String);
-                    applied.Add("Mouse acceleration restored");
-                    k.Close();
-                }
-            }
-            using (var k = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\BackgroundAccessApplications", true))
-            {
-                if (k is not null) { SetReg(k, "GlobalUserDisabled", 0, RegistryValueKind.DWord); applied.Add("Background apps enabled"); k.Close(); }
-            }
-            using (var k = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Search", true))
-            {
-                if (k is not null) { SetReg(k, "SearchboxTaskbarMode", 2, RegistryValueKind.DWord); applied.Add("Taskbar Search restored"); k.Close(); }
-            }
-            return new BoostResult(true, applied, warnings);
-        }, ct);
+            "game.mode", "game.dvr", "gpu.windowed", "vis.fx", "input.mouse", "perf.bgapps"
+        }, log, ct);
 
     public static Task<BoostResult> RevertAdminBoostAsync(IProgress<string>? log = null, CancellationToken ct = default)
-        => Task.Run(() =>
+        => RevertTweaksAsync(new[]
         {
-            var applied = new List<string>();
-            var warnings = new List<string>();
-            if (!IsElevated())
-            {
-                warnings.Add("Not elevated. Use the exported Revert-GameBoost-Elevated.ps1 as Administrator.");
-                return new BoostResult(false, applied, warnings);
-            }
-            try
-            {
-                using var k = Registry.LocalMachine.CreateSubKey(@"SYSTEM\CurrentControlSet\Control\GraphicsDrivers", true);
-                if (k is not null) { k.SetValue("HwSchMode", 2, RegistryValueKind.DWord); applied.Add("HAGS OFF (HwSchMode=2) — reboot required"); k.Close(); }
-            }
-            catch (Exception ex) { warnings.Add($"HAGS revert: {ex.Message}"); }
-            try
-            {
-                using var k = Registry.LocalMachine.CreateSubKey(@"SYSTEM\CurrentControlSet\Control\PriorityControl", true);
-                if (k is not null) { k.SetValue("Win32PrioritySeparation", 2, RegistryValueKind.DWord); applied.Add("Win32PrioritySeparation=2 (default)"); k.Close(); }
-            }
-            catch (Exception ex) { warnings.Add($"PriorityControl revert: {ex.Message}"); }
-            foreach (string svc in new[] { "SysMain", "WSearch", "DiagTrack" })
-            {
-                string r = RunExe("sc.exe", $"config \"{svc}\" start= auto");
-                applied.Add($"Service {svc} -> Automatic (requested). Output: {r.Trim()}");
-            }
-            RunExe("powercfg", $"/SETACTIVE {HighPlanGuid}");
-            applied.Add("Power plan -> High Performance");
-            RunExe("powercfg", "/SETACVALUEINDEX SCHEME_MIN SUB_PCIEXPRESS ASPM 1");
-            RunExe("powercfg", "/SETACTIVE SCHEME_CURRENT");
-            applied.Add("PCIe ASPM -> Moderate power saving on AC");
-            return new BoostResult(true, applied, warnings);
-        }, ct);
+            "power.plan", "gpu.hags", "perf.throttle", "net.mmcss", "svc.diagtrack", "cpu.priority"
+        }, log, ct);
 
-    // -----------------------------------------------------------------
-    // Temp + priority helpers
-    // -----------------------------------------------------------------
+    public static Task<BoostResult> RevertAllAsync(IProgress<string>? log = null, CancellationToken ct = default)
+        => RevertTweaksAsync(AllTweakIds.Where(BoostBackup.Contains), log, ct);
+
+    private static readonly string[] AllTweakIds =
+    {
+        "power.plan", "gpu.hags", "game.mode", "game.dvr", "gpu.windowed", "perf.throttle",
+        "net.mmcss", "input.mouse", "vis.fx", "perf.bgapps", "svc.diagtrack", "cpu.priority"
+    };
+
+    private static string DescribeTweak(string id) => id switch
+    {
+        "power.plan" => "High performance power plan",
+        "gpu.hags" => "Hardware-accelerated GPU scheduling",
+        "game.mode" => "Game Mode",
+        "game.dvr" => "Game DVR background recording off",
+        "gpu.windowed" => "Windowed game optimisations",
+        "perf.throttle" => "Power throttling off",
+        "net.mmcss" => "Multimedia network throttling off",
+        "input.mouse" => "Mouse acceleration off",
+        "vis.fx" => "Best performance visual effects",
+        "perf.bgapps" => "Background apps disabled",
+        "svc.diagtrack" => "Telemetry service disabled",
+        "cpu.priority" => "CPU foreground quantum (38)",
+        _ => id
+    };
+
+    private static void ApplyTweak(string id)
+    {
+        switch (id)
+        {
+            case "power.plan":
+            {
+                string? previous = GetActivePowerPlanGuid();
+                if (previous != null)
+                    BoostState.Set("power.previous", previous);
+
+                string? high = FindPowerPlan("High performance");
+                if (high == null)
+                {
+                    RunExe("powercfg", $"-DUPLICATESCHEME {HighPerformanceGuid}");
+                    high = FindPowerPlan("High performance");
+                }
+
+                if (high == null)
+                    throw new InvalidOperationException("Windows did not create the High performance plan.");
+
+                RunExe("powercfg", $"/SETACTIVE {high}");
+                break;
+            }
+
+            case "gpu.hags":
+                BackedSet(id, RegistryHive.LocalMachine, GraphicsDriversKey, "HwSchMode", 2, RegistryValueKind.DWord);
+                break;
+
+            case "game.mode":
+                BackedSet(id, RegistryHive.CurrentUser, GameBarKey, "AutoGameModeEnabled", 1, RegistryValueKind.DWord);
+                BackedSet(id, RegistryHive.CurrentUser, GameBarKey, "AllowAutoGameMode", 1, RegistryValueKind.DWord);
+                break;
+
+            case "game.dvr":
+                BackedSet(id, RegistryHive.CurrentUser, GameConfigStoreKey, "GameDVR_Enabled", 0, RegistryValueKind.DWord);
+                BackedSet(id, RegistryHive.CurrentUser, GameDvrKey, "AppCaptureEnabled", 0, RegistryValueKind.DWord);
+                BackedSet(id, RegistryHive.CurrentUser, GameDvrKey, "HistoricalCaptureEnabled", 0, RegistryValueKind.DWord);
+                BackedSet(id, RegistryHive.CurrentUser, GameDvrKey, "HistoricalCaptureOnBatteryAllowed", 0, RegistryValueKind.DWord);
+                break;
+
+            case "gpu.windowed":
+            {
+                string current = GetString(RegistryHive.CurrentUser, DirectXPreferencesKey, "DirectXUserGlobalSettings");
+                BackedSet(id, RegistryHive.CurrentUser, DirectXPreferencesKey, "DirectXUserGlobalSettings",
+                    MergeDirectXSettings(current, "SwapEffectUpgradeEnable", "1"), RegistryValueKind.String);
+                break;
+            }
+
+            case "perf.throttle":
+                BackedSet(id, RegistryHive.LocalMachine, PowerThrottlingKey, "PowerThrottlingOff", 1, RegistryValueKind.DWord);
+                break;
+
+            case "net.mmcss":
+                BackedSet(id, RegistryHive.LocalMachine, MultimediaProfileKey, "NetworkThrottlingIndex", -1, RegistryValueKind.DWord);
+                BackedSet(id, RegistryHive.LocalMachine, MultimediaProfileKey, "SystemResponsiveness", 10, RegistryValueKind.DWord);
+                break;
+
+            case "input.mouse":
+                BackedSet(id, RegistryHive.CurrentUser, MouseKey, "MouseSpeed", "0", RegistryValueKind.String);
+                BackedSet(id, RegistryHive.CurrentUser, MouseKey, "MouseThreshold1", "0", RegistryValueKind.String);
+                BackedSet(id, RegistryHive.CurrentUser, MouseKey, "MouseThreshold2", "0", RegistryValueKind.String);
+                break;
+
+            case "vis.fx":
+                BackedSet(id, RegistryHive.CurrentUser, VisualEffectsKey, "VisualFXSetting", 2, RegistryValueKind.DWord);
+                BackedSet(id, RegistryHive.CurrentUser, PersonalizeKey, "EnableTransparency", 0, RegistryValueKind.DWord);
+                BackedSet(id, RegistryHive.CurrentUser, DesktopKey, "MenuShowDelay", "200", RegistryValueKind.String);
+                break;
+
+            case "perf.bgapps":
+                BackedSet(id, RegistryHive.CurrentUser, BackgroundAppsKey, "GlobalUserDisabled", 1, RegistryValueKind.DWord);
+                break;
+
+            case "svc.diagtrack":
+                RunExe("sc.exe", "stop DiagTrack");
+                RunExe("sc.exe", "config DiagTrack start= disabled");
+                break;
+
+            case "cpu.priority":
+                BackedSet(id, RegistryHive.LocalMachine, PriorityControlKey, "Win32PrioritySeparation", 38, RegistryValueKind.DWord);
+                break;
+
+            default:
+                throw new ArgumentException($"Unknown tweak '{id}'.", nameof(id));
+        }
+    }
+
+    private static void RevertTweak(string id)
+    {
+        switch (id)
+        {
+            case "power.plan":
+                RunExe("powercfg", $"/SETACTIVE {BoostState.Get("power.previous") ?? BalancedGuid}");
+                BoostState.Remove("power.previous");
+                break;
+
+            case "svc.diagtrack":
+                RunExe("sc.exe", "config DiagTrack start= auto");
+                RunExe("sc.exe", "start DiagTrack");
+                break;
+
+            default:
+                RestoreTweak(id);
+                break;
+        }
+    }
+
+    private static string MergeDirectXSettings(string settings, string key, string value)
+    {
+        var parts = settings
+            .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(p => !p.StartsWith(key + "=", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        parts.Add($"{key}={value}");
+        return string.Join(';', parts) + ";";
+    }
+
+    // ---------------------------------------------------------------------
+    // One-shot actions
+    // ---------------------------------------------------------------------
+
+    public static string CreateRestorePoint()
+    {
+        if (!IsElevated())
+            return "Administrator rights are required to create a restore point.";
+
+        try
+        {
+            const string key = @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\SystemRestore";
+            object? previous = GetValue(RegistryHive.LocalMachine, key, "SystemRestorePointCreationFrequency");
+            WriteValue(RegistryHive.LocalMachine, key, "SystemRestorePointCreationFrequency", 0, RegistryValueKind.DWord);
+            try
+            {
+                string output = RunPowerShell(
+                    "Checkpoint-Computer -Description 'Tool Hazard Game Boost' -RestorePointType MODIFY_SETTINGS");
+                return string.IsNullOrWhiteSpace(output) ? "Restore point created." : output.Trim();
+            }
+            finally
+            {
+                if (previous is int value)
+                    WriteValue(RegistryHive.LocalMachine, key, "SystemRestorePointCreationFrequency", value, RegistryValueKind.DWord);
+                else
+                    DeleteValue(RegistryHive.LocalMachine, key, "SystemRestorePointCreationFrequency");
+            }
+        }
+        catch (Exception ex)
+        {
+            return $"Could not create a restore point: {ex.Message}";
+        }
+    }
+
+    public static string OptimizeSystemDrive()
+    {
+        if (!IsElevated())
+            return "Administrator rights are required to optimise the drive.";
+
+        // TRIM/retrim on an SSD; safe and fast. Never defragments.
+        return RunPowerShell("Optimize-Volume -DriveLetter C -ReTrim -Verbose").Trim();
+    }
+
+    public static string DisableWifiPowerSaving()
+    {
+        if (!IsElevated())
+            return "Administrator rights are required to change adapter power settings.";
+
+        return RunPowerShell("""
+$adapters = @(Get-NetAdapter -Physical -ErrorAction SilentlyContinue |
+    Where-Object { $_.Status -eq 'Up' -and $_.InterfaceDescription -match 'Wi-?Fi|Wireless|802\.11' })
+foreach ($a in $adapters) {
+    Disable-NetAdapterPowerManagement -Name $a.Name -ErrorAction SilentlyContinue
+}
+if ($adapters.Count -eq 0) { 'No active wireless adapter found.' } else { 'Disabled power saving on: ' + (($adapters | Select-Object -ExpandProperty Name) -join ', ') }
+""").Trim();
+    }
+
+    public static string SetGpuHighPerformance(string exePath)
+    {
+        try
+        {
+            string full = Path.GetFullPath(exePath);
+            BackedSet($"gpu.pref:{full}", RegistryHive.CurrentUser, DirectXPreferencesKey, full,
+                "GpuPreference=2;", RegistryValueKind.String);
+            return $"{Path.GetFileName(full)} now prefers the high-performance GPU.";
+        }
+        catch (Exception ex)
+        {
+            return $"Could not set GPU preference: {ex.Message}";
+        }
+    }
+
+    // ---------------------------------------------------------------------
+    // Startup entries
+    // ---------------------------------------------------------------------
+
+    public static IReadOnlyList<StartupEntry> GetStartupEntries()
+    {
+        var entries = new List<StartupEntry>();
+
+        void ReadRun(RegistryHive hive, bool machineWide)
+        {
+            try
+            {
+                using RegistryKey baseKey = BaseKey(hive);
+                using RegistryKey? run = baseKey.OpenSubKey(RunKey, false);
+                if (run is null) return;
+
+                RegistryHive approvedHive = hive;
+                string approvedPath = machineWide
+                    ? @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run"
+                    : StartupApprovedRunKey;
+
+                foreach (string name in run.GetValueNames())
+                {
+                    string command = run.GetValue(name)?.ToString() ?? string.Empty;
+                    bool enabled = IsStartupApproved(approvedHive, approvedPath, name);
+                    entries.Add(new StartupEntry(name, command, enabled, machineWide));
+                }
+            }
+            catch
+            {
+                // best effort
+            }
+        }
+
+        ReadRun(RegistryHive.CurrentUser, false);
+        ReadRun(RegistryHive.LocalMachine, true);
+
+        string folder = Environment.GetFolderPath(Environment.SpecialFolder.Startup);
+        try
+        {
+            foreach (string file in Directory.GetFiles(folder, "*.lnk"))
+                entries.Add(new StartupEntry(Path.GetFileNameWithoutExtension(file), file, true, false));
+        }
+        catch
+        {
+            // ignore
+        }
+
+        return entries.OrderBy(e => e.Name, StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
+    private static bool IsStartupApproved(RegistryHive hive, string approvedPath, string name)
+    {
+        try
+        {
+            object? value = GetValue(hive, approvedPath, name);
+            if (value is byte[] bytes && bytes.Length >= 1)
+                return bytes[0] != 3; // 2 = enabled, 3 = disabled by user
+            return true;
+        }
+        catch
+        {
+            return true;
+        }
+    }
+
+    public static string SetStartupEnabled(StartupEntry entry, bool enabled)
+    {
+        if (entry.MachineWide && !IsElevated())
+            return $"{entry.Name} is machine-wide - run Tool Hazard as administrator to change it.";
+
+        RegistryHive hive = entry.MachineWide ? RegistryHive.LocalMachine : RegistryHive.CurrentUser;
+        string path = entry.MachineWide
+            ? @"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run"
+            : StartupApprovedRunKey;
+
+        byte[] payload = new byte[12];
+        payload[0] = (byte)(enabled ? 2 : 3);
+        if (!enabled)
+        {
+            long stamp = DateTime.UtcNow.ToFileTimeUtc();
+            BitConverter.GetBytes(stamp).CopyTo(payload, 4);
+        }
+
+        WriteValue(hive, path, entry.Name, payload, RegistryValueKind.Binary);
+        return $"{entry.Name}: {(enabled ? "enabled" : "disabled")} at startup.";
+    }
+
+    public static int CountStartupEntries() => GetStartupEntries().Count(e => e.Enabled);
+
+    // ---------------------------------------------------------------------
+    // Defender exclusions (opt-in)
+    // ---------------------------------------------------------------------
+
+    public static IReadOnlyList<string> GetExclusions()
+        => BoostState.GetList("defender.exclusions");
+
+    public static string AddExclusion(string folder)
+    {
+        if (!IsElevated())
+            return "Administrator rights are required to change Defender exclusions.";
+        if (!Directory.Exists(folder))
+            return "Folder does not exist.";
+
+        try
+        {
+            RunPowerShell($"Add-MpPreference -ExclusionPath '{folder.Replace("'", "''")}'");
+            List<string> list = BoostState.GetList("defender.exclusions");
+            if (!list.Contains(folder, StringComparer.OrdinalIgnoreCase))
+                list.Add(folder);
+            BoostState.SetList("defender.exclusions", list);
+            return $"Excluded: {folder}";
+        }
+        catch (Exception ex)
+        {
+            return $"Could not add exclusion: {ex.Message}";
+        }
+    }
+
+    public static string RemoveExclusion(string folder)
+    {
+        if (!IsElevated())
+            return "Administrator rights are required to change Defender exclusions.";
+
+        try
+        {
+            RunPowerShell($"Remove-MpPreference -ExclusionPath '{folder.Replace("'", "''")}'");
+            List<string> list = BoostState.GetList("defender.exclusions");
+            list.RemoveAll(p => string.Equals(p, folder, StringComparison.OrdinalIgnoreCase));
+            BoostState.SetList("defender.exclusions", list);
+            return $"Removed exclusion: {folder}";
+        }
+        catch (Exception ex)
+        {
+            return $"Could not remove exclusion: {ex.Message}";
+        }
+    }
+
+    // ---------------------------------------------------------------------
+    // Temp + priorities + launch
+    // ---------------------------------------------------------------------
+
     public static (long FreedBytes, IReadOnlyList<string> Warnings) CleanTemp()
     {
         var warnings = new List<string>();
         long before = 0, after = 0;
-        string temp = Path.GetTempPath();
-        before += DirectorySize(temp);
-        try
-        {
-            foreach (string f in Directory.EnumerateFileSystemEntries(temp, "*", SearchOption.AllDirectories))
-            {
-                if (Directory.Exists(f)) { try { Directory.Delete(f, true); } catch { /* locked */ } }
-                else { try { File.Delete(f); } catch { /* locked */ } }
-            }
-        }
-        catch (Exception ex) { warnings.Add($"%TEMP% partial: {ex.Message}"); }
-        after += DirectorySize(temp);
 
-        string winTemp = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Temp");
-        before += DirectorySize(winTemp);
-        try
+        foreach (string dir in new[]
+                 {
+                     Path.GetTempPath(),
+                     Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Temp")
+                 })
         {
-            foreach (string f in Directory.EnumerateFileSystemEntries(winTemp, "*", SearchOption.AllDirectories))
+            before += DirectorySize(dir);
+            try
             {
-                if (Directory.Exists(f)) { try { Directory.Delete(f, true); } catch { } }
-                else { try { File.Delete(f); } catch { } }
-            }
-        }
-        catch (Exception ex) { warnings.Add($"Windows\\Temp partial: {ex.Message}"); }
-        after += DirectorySize(winTemp);
+                foreach (string entry in Directory.EnumerateFileSystemEntries(dir, "*", SearchOption.TopDirectoryOnly))
+                {
+                    string full = Path.GetFullPath(entry);
+                    if (full.StartsWith(AppContext.BaseDirectory, StringComparison.OrdinalIgnoreCase))
+                        continue; // never delete Tool Hazard's own working files
 
-        // Recycle empty + SoftwareDistribution cache (best-effort, no service stop)
-        string cache = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), @"SoftwareDistribution\Download");
-        before += DirectorySize(cache);
-        try
-        {
-            foreach (string f in Directory.EnumerateFileSystemEntries(cache, "*", SearchOption.AllDirectories))
+                    try
+                    {
+                        if (Directory.Exists(full)) Directory.Delete(full, true);
+                        else File.Delete(full);
+                    }
+                    catch
+                    {
+                        // locked/in use - expected for live temp files
+                    }
+                }
+            }
+            catch (Exception ex)
             {
-                if (Directory.Exists(f)) { try { Directory.Delete(f, true); } catch { } }
-                else { try { File.Delete(f); } catch { } }
+                warnings.Add($"{dir}: {ex.Message}");
             }
+            after += DirectorySize(dir);
         }
-        catch { /* optional */ }
-        after += DirectorySize(cache);
 
-        long freed = Math.Max(0, before - after);
-        return (freed, warnings);
+        return (Math.Max(0, before - after), warnings);
     }
 
-    /// <summary>Lower priority of heavy background apps (Edge/Discord etc.) so games get CPU time.</summary>
+    private static readonly string[] BackgroundProcessNames =
+    {
+        "msedge", "msedgewebview2", "Discord", "steamwebhelper", "PhoneExperienceHost",
+        "OneDrive", "Teams", "WidgetService"
+    };
+
     public static IReadOnlyList<string> LowerBackgroundPriorities()
     {
-        var done = new List<string>();
+        var changed = new List<string>();
         foreach (string name in BackgroundProcessNames)
         {
-            foreach (var p in Process.GetProcessesByName(name))
+            foreach (Process process in Process.GetProcessesByName(name))
             {
                 try
                 {
-                    if (!p.HasExited && p.PriorityClass > ProcessPriorityClass.BelowNormal)
+                    if (!process.HasExited && process.PriorityClass > ProcessPriorityClass.BelowNormal)
                     {
-                        p.PriorityClass = ProcessPriorityClass.BelowNormal;
-                        done.Add(p.ProcessName);
+                        process.PriorityClass = ProcessPriorityClass.BelowNormal;
+                        changed.Add(process.ProcessName);
                     }
                 }
-                catch { /* access denied */ }
-                finally { try { p.Dispose(); } catch { } }
+                catch
+                {
+                    // protected process
+                }
+                finally
+                {
+                    process.Dispose();
+                }
             }
         }
-        return done.Distinct().ToList();
+        return changed.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
     }
 
     public static IReadOnlyList<string> RestorePriorities()
     {
-        var done = new List<string>();
+        var changed = new List<string>();
         foreach (string name in BackgroundProcessNames)
         {
-            foreach (var p in Process.GetProcessesByName(name))
+            foreach (Process process in Process.GetProcessesByName(name))
             {
                 try
                 {
-                    if (!p.HasExited && p.PriorityClass < ProcessPriorityClass.Normal)
+                    if (!process.HasExited && process.PriorityClass < ProcessPriorityClass.Normal)
                     {
-                        p.PriorityClass = ProcessPriorityClass.Normal;
-                        done.Add(p.ProcessName);
+                        process.PriorityClass = ProcessPriorityClass.Normal;
+                        changed.Add(process.ProcessName);
                     }
                 }
-                catch { }
-                finally { try { p.Dispose(); } catch { } }
+                catch
+                {
+                    // protected process
+                }
+                finally
+                {
+                    process.Dispose();
+                }
             }
         }
-        return done.Distinct().ToList();
+        return changed.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
     }
 
     public static Process? LaunchGame(string exePath, string? arguments = null, bool highPriority = true, bool lowerBackground = true)
@@ -647,160 +1018,416 @@ public static class GameBoostService
         if (string.IsNullOrWhiteSpace(exePath) || !File.Exists(exePath))
             throw new FileNotFoundException("Game executable not found.", exePath);
 
-        if (lowerBackground) LowerBackgroundPriorities();
+        if (lowerBackground)
+            LowerBackgroundPriorities();
 
-        var psi = new ProcessStartInfo
+        var startInfo = new ProcessStartInfo
         {
             FileName = exePath,
             UseShellExecute = true,
-            WorkingDirectory = Path.GetDirectoryName(exePath) ?? ""
+            WorkingDirectory = Path.GetDirectoryName(exePath) ?? string.Empty
         };
-        if (!string.IsNullOrWhiteSpace(arguments)) psi.Arguments = arguments;
+        if (!string.IsNullOrWhiteSpace(arguments))
+            startInfo.Arguments = arguments;
 
-        var p = Process.Start(psi);
-        if (p is not null && highPriority)
+        Process? process = Process.Start(startInfo);
+        if (process is not null && highPriority)
         {
-            try { p.PriorityClass = ProcessPriorityClass.High; } catch { /* game may already throttle */ }
-            try { p.ProcessorAffinity = (IntPtr)((1L << Environment.ProcessorCount) - 1); } catch { }
+            // Best effort: many games raise their own priority and reject changes.
+            try { process.PriorityClass = ProcessPriorityClass.High; } catch { }
         }
-        return p;
+
+        return process;
     }
 
-    public static void SetGpuHighPerformance(string exePath)
+    // ---------------------------------------------------------------------
+    // Report
+    // ---------------------------------------------------------------------
+
+    public static string BuildReport()
     {
-        // GpuPreference=2 means High performance (discrete GPU) for this exe.
+        var sb = new StringBuilder();
+        sb.AppendLine("Tool Hazard - Game Boost report");
+        sb.AppendLine($"Generated {DateTime.Now:yyyy-MM-dd HH:mm}");
+        sb.AppendLine(new string('-', 64));
+
+        string json = RunPowerShell("""
+$ErrorActionPreference = 'SilentlyContinue'
+$os = Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion'
+$cpu = Get-CimInstance Win32_Processor | Select-Object -First 1
+$cs = Get-CimInstance Win32_ComputerSystem
+$mem = @(Get-CimInstance Win32_PhysicalMemory)
+$gpus = @(Get-CimInstance Win32_VideoController)
+$disp = $gpus | Where-Object { $_.CurrentRefreshRate } | Select-Object -First 1
+$vol = Get-Volume -DriveLetter C
+[pscustomobject]@{
+  os = "$($os.ProductName) $($os.DisplayVersion) (build $($os.CurrentBuild).$($os.UBR))"
+  model = "$($cs.Manufacturer) $($cs.Model)".Trim()
+  cpu = "$($cpu.Name) ($($cpu.NumberOfCores)C/$($cpu.NumberOfLogicalProcessors)T)"
+  ramTotal = [math]::Round($cs.TotalPhysicalMemory/1GB)
+  ramModules = $mem.Count
+  ramSpeed = ($mem | Select-Object -First 1).ConfiguredClockSpeed
+  gpu = (($gpus | ForEach-Object { "$($_.Name) [driver $($_.DriverVersion), $($_.DriverDate)]" }) -join ' | ')
+  display = "{0}x{1} @ {2}Hz (max {3}Hz)" -f $disp.CurrentHorizontalResolution, $disp.CurrentVerticalResolution, $disp.CurrentRefreshRate, $disp.MaxRefreshRate
+  refresh = [int]$disp.CurrentRefreshRate
+  maxRefresh = [int]$disp.MaxRefreshRate
+  freeGb = [math]::Round($vol.SizeRemaining/1GB,1)
+  totalGb = [math]::Round($vol.Size/1GB,1)
+  freePct = [math]::Round(($vol.SizeRemaining/$vol.Size)*100,1)
+} | ConvertTo-Json -Compress
+""", 60_000);
+
         try
         {
-            using var k = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\DirectX\UserGpuPreferences", true);
-            if (k is not null) { k.SetValue(exePath, "GpuPreference=2;", RegistryValueKind.String); k.Close(); }
+            using JsonDocument doc = JsonDocument.Parse(json.Trim());
+            JsonElement root = doc.RootElement;
+            string T(string name) => root.TryGetProperty(name, out JsonElement v) && v.ValueKind != JsonValueKind.Null ? v.ToString() : "unknown";
+
+            sb.AppendLine($"Windows    : {NormalizeWindowsName(T("os"))}");
+            sb.AppendLine($"Machine    : {T("model")}");
+            sb.AppendLine($"CPU        : {T("cpu")}");
+            sb.AppendLine($"Memory     : {T("ramTotal")} GB in {T("ramModules")} module(s) @ {T("ramSpeed")} MHz");
+            sb.AppendLine($"GPU        : {T("gpu")}");
+            sb.AppendLine($"Display    : {T("display")}");
+            sb.AppendLine($"System disk: {T("freeGb")} GB free of {T("totalGb")} GB ({T("freePct")}%)");
+
+            var findings = new List<string>();
+            if (root.TryGetProperty("ramModules", out JsonElement modules) && modules.GetInt32() == 1)
+                findings.Add("Single memory module: the laptop runs single-channel. A matching second SODIMM is the largest available gaming upgrade here.");
+            if (root.TryGetProperty("freePct", out JsonElement free) && free.GetDouble() < 15)
+                findings.Add($"System drive only {free.GetDouble():0.#}% free - keep 15%+ free for SSD write performance.");
+            if (root.TryGetProperty("refresh", out JsonElement hz) && root.TryGetProperty("maxRefresh", out JsonElement maxHz)
+                && hz.GetInt32() < maxHz.GetInt32())
+                findings.Add($"Panel is running at {hz.GetInt32()}Hz but supports {maxHz.GetInt32()}Hz.");
+            if (!IsPerformancePlan(GetActivePowerPlan()))
+                findings.Add("Power plan is not High performance.");
+
+            BoostStatus status = GetStatus();
+            if (!status.HagsEnabled)
+                findings.Add("Hardware-accelerated GPU scheduling is off.");
+
+            sb.AppendLine();
+            sb.AppendLine("Findings:");
+            if (findings.Count == 0) sb.AppendLine("  - Nothing obviously wrong.");
+            foreach (string finding in findings) sb.AppendLine($"  - {finding}");
         }
-        catch { /* optional */ }
+        catch (Exception ex)
+        {
+            sb.AppendLine($"Hardware query failed: {ex.Message}");
+            sb.AppendLine(json);
+        }
+
+        BoostStatus s = GetStatus();
+        sb.AppendLine();
+        sb.AppendLine("Current settings:");
+        sb.AppendLine($"  Power plan          : {s.PowerPlanName}");
+        sb.AppendLine($"  Game Mode           : {(s.GameModeEnabled ? "On" : "Off")}");
+        sb.AppendLine($"  HAGS                : {(s.HagsStateKnown ? (s.HagsEnabled ? "On" : "Off") : "Windows default")}");
+        sb.AppendLine($"  Game DVR capture    : {(s.GameDvrCaptureEnabled ? "On" : "Off")}");
+        sb.AppendLine($"  Visual effects      : {s.VisualFxSetting}");
+        sb.AppendLine($"  Mouse acceleration  : {(s.MouseAccelerationEnabled ? "On" : "Off")}");
+        sb.AppendLine($"  Power throttling    : {(s.PowerThrottlingOff ? "Off" : "On")}");
+        sb.AppendLine($"  Startup entries     : {s.StartupCount} enabled");
+        sb.AppendLine($"  Elevated            : {(s.IsElevated ? "yes" : "no")}");
+        sb.AppendLine();
+        sb.AppendLine("Security: Defender real-time protection, tamper protection, VBS/HVCI and");
+        sb.AppendLine("Windows Update are not modified by Game Boost. Defender exclusions are opt-in.");
+        return sb.ToString();
     }
 
-    public static string ExportUserScript()
+    private static string BuildSystemSummary()
     {
-        return """
+        string cpu = GetString(RegistryHive.LocalMachine,
+            @"HARDWARE\DESCRIPTION\System\CentralProcessor\0", "ProcessorNameString", "CPU").Trim();
+        string os = GetString(RegistryHive.LocalMachine,
+            @"SOFTWARE\Microsoft\Windows NT\CurrentVersion", "DisplayVersion", "");
+        int build = GetInt(RegistryHive.LocalMachine, @"SOFTWARE\Microsoft\Windows NT\CurrentVersion", "CurrentBuild", 0);
+        return $"{cpu} | Windows 11 {os} (build {build}) | {Environment.ProcessorCount} threads";
+    }
+
+    /// <summary>
+    /// HKLM\...\CurrentVersion still reports "Windows 10" on Windows 11 (the string was
+    /// never updated). Normalise it for the report.
+    /// </summary>
+    private static string NormalizeWindowsName(string name)
+    {
+        if (!name.StartsWith("Windows 10", StringComparison.OrdinalIgnoreCase))
+            return name;
+
+        int build = GetInt(RegistryHive.LocalMachine,
+            @"SOFTWARE\Microsoft\Windows NT\CurrentVersion", "CurrentBuild", 0);
+        return build >= 22000 ? "Windows 11" + name["Windows 10".Length..] : name;
+    }
+
+    private static long DirectorySize(string path)
+    {
+        try
+        {
+            if (!Directory.Exists(path)) return 0;
+            long total = 0;
+            foreach (string file in Directory.EnumerateFiles(path, "*", SearchOption.TopDirectoryOnly))
+            {
+                try { total += new FileInfo(file).Length; } catch { }
+            }
+            return total;
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
+    private static bool IsServiceDisabled(string serviceName)
+    {
+        string output = RunExe("sc.exe", $"qc {serviceName}");
+        foreach (string line in output.Split('\n'))
+        {
+            string text = line.Trim();
+            if (!text.StartsWith("START_TYPE", StringComparison.OrdinalIgnoreCase)) continue;
+            return text.Contains("DISABLED", StringComparison.OrdinalIgnoreCase);
+        }
+        return false;
+    }
+
+    // ---------------------------------------------------------------------
+    // Exported scripts (kept in sync with the in-app behaviour)
+    // ---------------------------------------------------------------------
+
+    public static string ExportUserScript() => """
 # Game Boost (user-level, no admin) - exported by Tool Hazard
-# Safe + revertible. Run with: powershell -ExecutionPolicy Bypass -File Apply-GameBoost.ps1
+# Safe + reversible. Values are backed up to %LOCALAPPDATA%\Tool Hazard\GameBoost.
 Write-Host "=== Game Boost (user) ===" -ForegroundColor Cyan
 
-# Game Mode ON, DVR OFF
 $gdvr = "HKCU:\Software\Microsoft\Windows\CurrentVersion\GameDVR"
 New-Item $gdvr -Force | Out-Null
-Set-ItemProperty $gdvr -Name GameModeEnabled -Value 1 -Type DWord
 Set-ItemProperty $gdvr -Name AppCaptureEnabled -Value 0 -Type DWord
 Set-ItemProperty $gdvr -Name HistoricalCaptureEnabled -Value 0 -Type DWord
-Set-ItemProperty $gdvr -Name HistoricalCaptureOnBatteryAllowed -Value 0 -Type DWord
-Set-ItemProperty $gdvr -Name HistoricalCaptureOnWirelessDisplayAllowed -Value 0 -Type DWord
-Set-ItemProperty $gdvr -Name AudioCaptureEnabled -Value 0 -Type DWord
+New-Item "HKCU:\System\GameConfigStore" -Force | Out-Null
+Set-ItemProperty "HKCU:\System\GameConfigStore" -Name GameDVR_Enabled -Value 0 -Type DWord
 
-# GameBar auto
+# Game Mode (correct location: GameBar, not GameDVR)
 New-Item "HKCU:\Software\Microsoft\GameBar" -Force | Out-Null
-Set-ItemProperty "HKCU:\Software\Microsoft\GameBar" -Name AllowAutoGameMode -Value 1 -Type DWord
 Set-ItemProperty "HKCU:\Software\Microsoft\GameBar" -Name AutoGameModeEnabled -Value 1 -Type DWord
-Set-ItemProperty "HKCU:\Software\Microsoft\GameBar" -Name UseNexusForGameBarEnabled -Value 0 -Type DWord
+Set-ItemProperty "HKCU:\Software\Microsoft\GameBar" -Name AllowAutoGameMode -Value 1 -Type DWord
 
-# Visual FX best performance + transparency off
-Set-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects" -Name VisualFXSetting -Value 3 -Type DWord
+# VisualFXSetting 2 = Best performance (1 = appearance, 3 = custom)
+Set-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects" -Name VisualFXSetting -Value 2 -Type DWord
 Set-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name EnableTransparency -Value 0 -Type DWord
-Set-ItemProperty "HKCU:\Control Panel\Desktop" -Name MenuShowDelay -Value "0"
-New-Item "HKCU:\Control Panel\Desktop\WindowMetrics" -Force | Out-Null
-Set-ItemProperty "HKCU:\Control Panel\Desktop\WindowMetrics" -Name MinAnimate -Value "0"
-Set-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name TaskbarAnimations -Value 0 -Type DWord
-Set-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name ListviewAlphaSelect -Value 0 -Type DWord
-Set-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name ListviewShadow -Value 0 -Type DWord
 
-# Mouse raw input
+# Windowed game optimisations
+$dx = "HKCU:\Software\Microsoft\DirectX\UserGpuPreferences"
+New-Item $dx -Force | Out-Null
+$current = (Get-ItemProperty $dx -Name DirectXUserGlobalSettings -ErrorAction SilentlyContinue).DirectXUserGlobalSettings
+$parts = @($current -split ';' | Where-Object { $_ -and $_ -notmatch '^SwapEffectUpgradeEnable=' })
+$parts += 'SwapEffectUpgradeEnable=1'
+Set-ItemProperty $dx -Name DirectXUserGlobalSettings -Value (($parts -join ';') + ';')
+
+# Mouse acceleration off
 Set-ItemProperty "HKCU:\Control Panel\Mouse" -Name MouseSpeed -Value "0"
 Set-ItemProperty "HKCU:\Control Panel\Mouse" -Name MouseThreshold1 -Value "0"
 Set-ItemProperty "HKCU:\Control Panel\Mouse" -Name MouseThreshold2 -Value "0"
 
-# Taskbar bloat off
-Set-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Search" -Name SearchboxTaskbarMode -Value 0 -Type DWord
-Set-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name TaskbarDa -Value 0 -Type DWord
-Set-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name TaskbarMn -Value 0 -Type DWord
-
-# Background apps off, throttling off
+# Background apps
 New-Item "HKCU:\Software\Microsoft\Windows\CurrentVersion\BackgroundAccessApplications" -Force | Out-Null
 Set-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\BackgroundAccessApplications" -Name GlobalUserDisabled -Value 1 -Type DWord
-New-Item "HKCU:\Software\Microsoft\Windows\CurrentVersion\PowerCfg" -Force | Out-Null
-Set-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\PowerCfg" -Name PowerThrottlingOff -Value 1 -Type DWord
 
-# Clean %TEMP%
-Get-ChildItem $env:TEMP -Recurse -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
-
-Write-Host "`nDone! Reboot Explorer (or reboot PC) for full effect. HAGS + power plan need the Elevated script." -ForegroundColor Green
+Write-Host "Done. Restart Explorer or sign out for visual changes." -ForegroundColor Green
 """;
-    }
 
-    public static string ExportElevatedScript()
-    {
-        return """
+    public static string ExportElevatedScript() => """
 # Self-elevating Game Boost (admin) - exported by Tool Hazard
-# Enables HAGS + Ultimate Performance + PCIe ASPM off + scheduler boost. Requires reboot for HAGS.
+# HAGS + High performance plan + power throttling off + network throttling off.
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if (-not $isAdmin) {
-    Write-Host "Requesting Administrator rights..." -ForegroundColor Yellow
-    Start-Process -FilePath "powershell.exe" -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs -Wait
+    Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs -Wait
     exit
 }
-Write-Host "Elevated - applying admin Game Boost..." -ForegroundColor Cyan
 
-# HAGS
-Set-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\GraphicsDrivers" -Name HwSchMode -Value 1 -Type DWord
-Set-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\GraphicsDrivers" -Name PlatformSupportMiracast -Value 1 -Type DWord
-Write-Host "HAGS ON (reboot required)"
+Write-Host "=== Game Boost (elevated) ===" -ForegroundColor Cyan
 
-# Scheduler foreground boost
-New-Item "HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl" -Force | Out-Null
-Set-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl" -Name Win32PrioritySeparation -Value 38 -Type DWord
-Write-Host "Win32PrioritySeparation=38"
-
-# Ultimate Performance
-$ultimate = "e9a42b02-d5df-448d-aa00-03f14749eb61"
-if (-not (powercfg /LIST | Select-String $ultimate)) { powercfg /DUPLICATESCHEME $ultimate | Write-Host }
-powercfg /SETACTIVE $ultimate
-powercfg /SETACVALUEINDEX SCHEME_MIN SUB_PCIEXPRESS ASPM 0
-powercfg /SETACTIVE SCHEME_CURRENT
-Write-Host "Ultimate Performance active, PCIe ASPM OFF on AC"
-
-# Services -> Manual
-foreach ($svc in @("SysMain","WSearch","DiagTrack")) {
-    sc.exe config $svc start= demand | Write-Host
-    Write-Host "$svc -> Manual"
-}
-
-# Telemetry policy
-New-Item "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" -Force | Out-Null
-Set-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" -Name AllowTelemetry -Value 0 -Type DWord
-Set-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" -Name DoNotShowFeedbackNotifications -Value 1 -Type DWord
-
-# Verify
-Write-Host "`n=== Result ===" -ForegroundColor Cyan
-powercfg /GETACTIVESCHEME
-Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\GraphicsDrivers" | Format-List HwSchMode, PlatformSupportMiracast
-Write-Host "`nReboot now for HAGS to take effect." -ForegroundColor Green
-Pause
-""";
-    }
-
-    public static string ExportRevertElevatedScript()
-    {
-        return """
-# Self-elevating Game Boost REVERT (admin) - exported by Tool Hazard
-$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-if (-not $isAdmin) {
-    Start-Process -FilePath "powershell.exe" -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs -Wait
-    exit
-}
+# HAGS: 2 = enabled, 1 = disabled. Absent = Windows default.
 Set-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\GraphicsDrivers" -Name HwSchMode -Value 2 -Type DWord
-Set-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl" -Name Win32PrioritySeparation -Value 2 -Type DWord
-foreach ($svc in @("SysMain","WSearch","DiagTrack")) { sc.exe config $svc start= auto }
-powercfg /SETACTIVE 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c
-powercfg /SETACVALUEINDEX SCHEME_MIN SUB_PCIEXPRESS ASPM 1
-powercfg /SETACTIVE SCHEME_CURRENT
-Write-Host "Reverted. Reboot for HAGS OFF." -ForegroundColor Green
+Write-Host "HAGS ON (HwSchMode=2) - reboot required"
+
+# Power throttling (machine scope)
+New-Item "HKLM:\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling" -Force | Out-Null
+Set-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling" -Name PowerThrottlingOff -Value 1 -Type DWord
+
+# Multimedia network throttling
+$mm = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile"
+Set-ItemProperty $mm -Name NetworkThrottlingIndex -Value 0xFFFFFFFF -Type DWord
+Set-ItemProperty $mm -Name SystemResponsiveness -Value 10 -Type DWord
+
+# High performance plan (Ultimate omitted: aggressive on laptops)
+$high = "8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c"
+if (-not (powercfg /LIST | Select-String $high)) { powercfg /DUPLICATESCHEME $high | Out-Null }
+powercfg /SETACTIVE $high
+
+# Telemetry service
+sc.exe config DiagTrack start= disabled | Out-Host
+
+powercfg /GETACTIVESCHEME
+Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\GraphicsDrivers" | Format-List HwSchMode
+Write-Host "`nReboot for HAGS to take effect." -ForegroundColor Green
 Pause
 """;
+
+    public static string ExportRevertElevatedScript() => """
+# Self-elevating Game Boost REVERT (admin) - exported by Tool Hazard
+# Restores Windows defaults for the elevated tweaks only.
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isAdmin) {
+    Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs -Wait
+    exit
+}
+
+Set-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\GraphicsDrivers" -Name HwSchMode -Value 2 -Type DWord
+Set-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling" -Name PowerThrottlingOff -Value 0 -Type DWord
+Set-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" -Name NetworkThrottlingIndex -Value 10 -Type DWord
+Set-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" -Name SystemResponsiveness -Value 20 -Type DWord
+sc.exe config DiagTrack start= auto | Out-Host
+powercfg /SETACTIVE 381b4222-f694-41f0-9685-ff5bb260df2e
+Write-Host "Reverted. Reboot for HAGS." -ForegroundColor Green
+Pause
+""";
+}
+
+/// <summary>Persisted per-tweak snapshots so Revert survives restarts.</summary>
+internal static class BoostBackup
+{
+    private static readonly object Sync = new();
+    private static readonly JsonSerializerOptions Options = new() { WriteIndented = true };
+
+    private static string Folder => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Tool Hazard", "GameBoost");
+
+    private static string FilePath => Path.Combine(Folder, "backup.json");
+
+    private static Dictionary<string, List<RegSnapshot>> Load()
+    {
+        try
+        {
+            if (!File.Exists(FilePath)) return New();
+            Dictionary<string, List<RegSnapshot>>? data =
+                JsonSerializer.Deserialize<Dictionary<string, List<RegSnapshot>>>(File.ReadAllText(FilePath), Options);
+            return data is null ? New() : new Dictionary<string, List<RegSnapshot>>(data, StringComparer.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return New();
+        }
     }
+
+    private static Dictionary<string, List<RegSnapshot>> New() => new(StringComparer.OrdinalIgnoreCase);
+
+    private static void Save(Dictionary<string, List<RegSnapshot>> data)
+    {
+        Directory.CreateDirectory(Folder);
+        File.WriteAllText(FilePath, JsonSerializer.Serialize(data, Options));
+    }
+
+    internal static void Add(string tweakId, RegSnapshot snapshot)
+    {
+        lock (Sync)
+        {
+            Dictionary<string, List<RegSnapshot>> data = Load();
+            if (!data.TryGetValue(tweakId, out List<RegSnapshot>? list))
+            {
+                list = new List<RegSnapshot>();
+                data[tweakId] = list;
+            }
+
+            // Keep the first (true original) snapshot per value across repeated applies.
+            if (!list.Any(s => s.HiveName == snapshot.HiveName && s.SubKey == snapshot.SubKey && s.Name == snapshot.Name))
+                list.Add(snapshot);
+
+            Save(data);
+        }
+    }
+
+    internal static bool Contains(string tweakId)
+    {
+        lock (Sync) return Load().ContainsKey(tweakId);
+    }
+
+    internal static IEnumerable<RegSnapshot> Take(string tweakId)
+    {
+        lock (Sync)
+            return Load().TryGetValue(tweakId, out List<RegSnapshot>? list) ? list.ToList() : Array.Empty<RegSnapshot>();
+    }
+
+    internal static void Remove(string tweakId)
+    {
+        lock (Sync)
+        {
+            Dictionary<string, List<RegSnapshot>> data = Load();
+            if (data.Remove(tweakId)) Save(data);
+        }
+    }
+}
+
+/// <summary>Small JSON key/value store for non-registry state.</summary>
+internal static class BoostState
+{
+    private static readonly object Sync = new();
+
+    private static string Folder => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Tool Hazard", "GameBoost");
+
+    private static string FilePath => Path.Combine(Folder, "state.json");
+
+    private static Dictionary<string, string> Load()
+    {
+        try
+        {
+            if (!File.Exists(FilePath)) return new(StringComparer.OrdinalIgnoreCase);
+            Dictionary<string, string>? data = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(FilePath));
+            return data is null ? new(StringComparer.OrdinalIgnoreCase) : new Dictionary<string, string>(data, StringComparer.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return new(StringComparer.OrdinalIgnoreCase);
+        }
+    }
+
+    private static void Save(Dictionary<string, string> data)
+    {
+        Directory.CreateDirectory(Folder);
+        File.WriteAllText(FilePath, JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true }));
+    }
+
+    internal static string? Get(string key)
+    {
+        lock (Sync) return Load().TryGetValue(key, out string? value) ? value : null;
+    }
+
+    internal static void Set(string key, string value)
+    {
+        lock (Sync)
+        {
+            Dictionary<string, string> data = Load();
+            data[key] = value;
+            Save(data);
+        }
+    }
+
+    internal static void Remove(string key)
+    {
+        lock (Sync)
+        {
+            Dictionary<string, string> data = Load();
+            if (data.Remove(key)) Save(data);
+        }
+    }
+
+    internal static List<string> GetList(string key)
+    {
+        lock (Sync)
+        {
+            string? raw = Get(key);
+            return string.IsNullOrWhiteSpace(raw) ? new List<string>() : raw.Split('\n', StringSplitOptions.RemoveEmptyEntries).ToList();
+        }
+    }
+
+    internal static void SetList(string key, IEnumerable<string> values) => Set(key, string.Join('\n', values));
 }

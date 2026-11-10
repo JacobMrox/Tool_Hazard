@@ -1,36 +1,26 @@
 # Self-elevating Game Boost REVERT (admin) - Tool Hazard
-# Restores Windows defaults for the admin-level Game Boost changes.
+# Restores the Windows defaults for the elevated Game Boost tweaks only.
+
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if (-not $isAdmin) {
-    Write-Host "Requesting Administrator rights..." -ForegroundColor Yellow
-    Start-Process -FilePath "powershell.exe" -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs -Wait
+    Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs -Wait
     exit
 }
 
-Write-Host "Elevated - reverting admin Game Boost..." -ForegroundColor Cyan
+Write-Host "=== Reverting elevated Game Boost ===" -ForegroundColor Cyan
 
+# 2 = HAGS enabled, which is the Windows 11 default on supported GPUs.
+try { Set-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\GraphicsDrivers" -Name HwSchMode -Value 2 -Type DWord } catch { Write-Warning $_ }
+try { Set-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling" -Name PowerThrottlingOff -Value 0 -Type DWord } catch { Write-Warning $_ }
 try {
-    Set-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\GraphicsDrivers" -Name HwSchMode -Value 2 -Type DWord
-    Write-Host "HAGS OFF (HwSchMode=2) - reboot required"
+    $mm = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile"
+    Set-ItemProperty $mm -Name NetworkThrottlingIndex -Value 10 -Type DWord
+    Set-ItemProperty $mm -Name SystemResponsiveness  -Value 20 -Type DWord
 } catch { Write-Warning $_ }
 
-try {
-    Set-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl" -Name Win32PrioritySeparation -Value 2 -Type DWord
-    Write-Host "Win32PrioritySeparation=2 (default)"
-} catch { Write-Warning $_ }
+try { sc.exe config DiagTrack start= auto | Out-Host } catch { Write-Warning $_ }
+powercfg /SETACTIVE 381b4222-f694-41f0-9685-ff5bb260df2e
 
-foreach ($svc in @("SysMain","WSearch","DiagTrack")) {
-    try {
-        sc.exe config $svc start= auto | Write-Host
-        Write-Host "$svc -> Automatic"
-    } catch { Write-Warning $_ }
-}
-
-# Restore High Performance + PCIe ASPM moderate
-powercfg /SETACTIVE 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c
-powercfg /SETACVALUEINDEX SCHEME_MIN SUB_PCIEXPRESS ASPM 1
-powercfg /SETACTIVE SCHEME_CURRENT
-powercfg /GETACTIVESCHEME
-
-Write-Host "`nReverted admin changes. Reboot for HAGS OFF. For user-level revert, run Apply-GameBoost.ps1 in reverse (or use Tool Hazard > Game Boost > Revert)." -ForegroundColor Green
+Write-Host "Reverted to Windows defaults. Reboot if HAGS was changed." -ForegroundColor Green
+Write-Host "User-level changes: use Tool Hazard > Extras > Game Boost > Revert Everything." -ForegroundColor Yellow
 Pause
