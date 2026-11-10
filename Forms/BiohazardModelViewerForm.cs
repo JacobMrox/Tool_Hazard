@@ -886,8 +886,15 @@ public sealed class BiohazardModelViewerForm : Form
             for (int i = 0; i < _petModel.Meshes.Count; i++) _mesh.Items.Add(_petModel.Meshes[i].Name);
             if (_petModel.Meshes.Count == 0) _mesh.Items.Add("(no meshes)");
             _mesh.EndUpdate();
-            if (_petModel.Meshes.Count > 0) _mesh.SelectedIndex = 0;
-            else LoadPetSelectedMesh();
+            if (_petModel.Meshes.Count > 0)
+            {
+                _mesh.SelectedIndex = 0;
+                LoadPetSelectedMesh();
+            }
+            else
+            {
+                LoadPetSelectedMesh();
+            }
             Text = $"Biohazard Model Viewer - {Path.GetFileName(path)}";
         }
         catch (Exception ex)
