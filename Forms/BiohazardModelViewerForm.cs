@@ -880,7 +880,7 @@ public sealed class BiohazardModelViewerForm : Form
             _petModel = WhiteDayPetModel.Load(path);
             _petKindLabel = $"White Day PET - {Path.GetFileName(path)}";
             LoadPetTextures(path);
-            System.Windows.Forms.MessageBox.Show(this, $"PET loaded: textures={_petModel.Textures.Count}, bones={_petModel.Bones.Count}, meshes={_petModel.Meshes.Count}\nmeshBlockCount={_petModel.MeshBlockCount}, firstMeshNumVertices={_petModel.FirstMeshNumVertices}", "PET Debug", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Information);
+            System.Windows.Forms.MessageBox.Show(this, $"PET loaded: textures={_petModel.Textures.Count}, bones={_petModel.Bones.Count}, meshes={_petModel.Meshes.Count}\nfirstMeshNumVertices={_petModel.FirstMeshNumVertices}", "PET Debug", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Information);
 
             _mesh.BeginUpdate();
             _mesh.Items.Clear();

@@ -47,8 +47,6 @@ namespace Tool_Hazard.White_Day
         public List<WhiteDayPetBone> Bones = new();
         public List<WhiteDayPetMesh> Meshes = new();
         public string Description = "";
-        // Diagnostic: raw count byte read from the MESH block
-        public int MeshBlockCount;
         // Diagnostic: numVertices of first mesh (if any)
         public int FirstMeshNumVertices;
 
@@ -122,54 +120,44 @@ namespace Tool_Hazard.White_Day
 
                     case "MESH":
                     {
-                        long meshBlockStart = blockMs.Position;
+                        // White Day PET MESH block has NO count byte and NO meshid header.
+                        // It starts directly with numVertices (int32), then vertex data.
+                        // Vertex layout: x,y,z as 3 floats (12 bytes) + weight:byte +
+                        // boneId:byte + 2 pad bytes = 16 bytes per vertex.
+                        // Weight 0xFF means wsum reaches 0xFF immediately (one weight pair).
+                        if (blockMs.Position + 4 > blockMs.Length) break;
+                        int numVertices = br.ReadInt32();
+                        model.FirstMeshNumVertices = numVertices;
+                        if (numVertices <= 0 || numVertices > 1000000) break;
 
-                        // Read meshid + 4 unknown uint32s (20-byte header).
-                        // White Day PET does NOT store a mesh count at the start
-                        // of the MESH block (unlike PangYa .mpet files).
-                        if (blockMs.Length - blockMs.Position < 20) break;
-                        br.ReadUInt32(); // meshid
-                        br.ReadUInt32(); br.ReadUInt32(); br.ReadUInt32(); br.ReadUInt32(); // unknown
+                        var mesh = new WhiteDayPetMesh { Name = $"Mesh {model.Meshes.Count}" };
 
-                        // Read meshes sequentially until the block is exhausted.
-                        int meshIndex = 0;
-                        while (blockMs.Position < blockMs.Length)
+                        for (int v = 0; v < numVertices; v++)
                         {
-                            long meshStart = blockMs.Position;
-                            if (blockMs.Position + 4 > blockMs.Length) break;
-                            int numVertices = br.ReadInt32();
-                            if (numVertices <= 0 || numVertices > 1000000) break;
-
-                            if (meshIndex == 0) model.FirstMeshNumVertices = numVertices;
-
-                            var mesh = new WhiteDayPetMesh { Name = $"Mesh {meshIndex}" };
-
-                            for (int v = 0; v < numVertices; v++)
+                            if (blockMs.Position + 16 > blockMs.Length) break;
+                            var vertex = new WhiteDayPetVertex();
+                            vertex.Position = new Vector4(br.ReadSingle(), br.ReadSingle(), br.ReadSingle(), 1f);
+                            // Weight byte + boneId byte + 2 padding bytes.
+                            byte weight = br.ReadByte();
+                            byte boneId = br.ReadByte();
+                            br.ReadByte(); br.ReadByte(); // padding
+                            vertex.BoneWeights.Add((weight, boneId));
+                            // If weight < 0xFF, read additional weight pairs until wsum reaches 0xFF.
+                            int wsum = weight;
+                            while (wsum < 0xFF && blockMs.Position + 2 <= blockMs.Length)
                             {
-                                if (blockMs.Position + 16 > blockMs.Length) break;
-                                var vertex = new WhiteDayPetVertex();
-                                vertex.Position = new Vector4(br.ReadSingle(), br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
-                                // Bone weights: pairs of (weight, boneId) until weight sum reaches 0xFF.
-                                int wsum = 0;
-                                while (wsum < 0xFF && blockMs.Position + 2 <= blockMs.Length)
-                                {
-                                    byte weight = br.ReadByte();
-                                    byte boneId = br.ReadByte();
-                                    wsum += weight;
-                                    vertex.BoneWeights.Add((weight, boneId));
-                                    if (wsum >= 0xFF) break;
-                                }
-                                while (vertex.BoneWeights.Count < 2 && blockMs.Position + 2 <= blockMs.Length)
-                                {
-                                    br.ReadByte(); br.ReadByte();
-                                    vertex.BoneWeights.Add((0, 0));
-                                }
-                                mesh.Vertices.Add(vertex);
+                                byte w2 = br.ReadByte();
+                                byte b2 = br.ReadByte();
+                                wsum += w2;
+                                vertex.BoneWeights.Add((w2, b2));
+                                if (wsum >= 0xFF) break;
                             }
+                            mesh.Vertices.Add(vertex);
+                        }
 
-                            if (blockMs.Position + 4 > blockMs.Length) break;
-                            int numPolygons = br.ReadInt32();
-                            if (numPolygons < 0 || numPolygons > 1000000) break;
+                        if (blockMs.Position + 4 > blockMs.Length) break;
+                        int numPolygons = br.ReadInt32();
+                        if (numPolygons < 0 || numPolygons > 1000000) break;
                             for (int p = 0; p < numPolygons; p++)
                             {
                                 if (blockMs.Position + 72 > blockMs.Length) break;
@@ -193,15 +181,8 @@ namespace Tool_Hazard.White_Day
                             mesh.TexMap = br.ReadBytes(numPolygons);
 
                             model.Meshes.Add(mesh);
-                            meshIndex++;
-
-                            // If no forward progress was made, stop to avoid infinite loop.
-                            if (blockMs.Position == meshStart) break;
+                            break;
                         }
-
-                        model.MeshBlockCount = meshIndex;
-                        break;
-                    }
 
                     case "FANM":
                     case "FRAM":
