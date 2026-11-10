@@ -363,3 +363,5 @@ MigrationBackup/
 FodyWeavers.xsd
 # Local secrets written by `elevenlabs onboard`
 /.env.local
+/.agents/skills
+/.opencode/skills
