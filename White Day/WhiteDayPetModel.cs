@@ -126,7 +126,7 @@ namespace Tool_Hazard.White_Day
                         int count = br.ReadByte();
                         model.MeshBlockCount = count;
 
-                        WhiteDayPetMesh? mesh = TryReadPetMesh(blockMs, br, count, out int readCount);
+                        WhiteDayPetMesh? mesh = TryReadPetMesh(blockMs, br, count, out int readCount, model);
                         if (mesh != null)
                         {
                             model.Meshes.Add(mesh);
@@ -137,7 +137,7 @@ namespace Tool_Hazard.White_Day
                             // The byte we read as count is actually byte 0 of meshid. Rewind and retry.
                             blockMs.Position = meshBlockStart;
                             br = new BinaryReader(blockMs);
-                            mesh = TryReadPetMesh(blockMs, br, 1, out _);
+                            mesh = TryReadPetMesh(blockMs, br, 1, out _, model);
                             if (mesh != null) model.Meshes.Add(mesh);
                         }
                         break;
@@ -174,7 +174,7 @@ namespace Tool_Hazard.White_Day
 
         // Attempts to read a single PET mesh from the block stream.
         // Returns null if the vertex count is invalid (e.g. wrong block alignment).
-        private static WhiteDayPetMesh? TryReadPetMesh(MemoryStream blockMs, BinaryReader br, int expectedCount, out int readCount)
+        private static WhiteDayPetMesh? TryReadPetMesh(MemoryStream blockMs, BinaryReader br, int expectedCount, out int readCount, WhiteDayPetModel model)
         {
             readCount = 0;
 
@@ -185,6 +185,7 @@ namespace Tool_Hazard.White_Day
 
             if (blockMs.Position + 4 > blockMs.Length) return null;
             int numVertices = br.ReadInt32();
+            model.FirstMeshNumVertices = numVertices;
             if (numVertices <= 0 || numVertices > 1000000) return null;
 
             var mesh = new WhiteDayPetMesh { Name = $"Mesh {readCount}" };
