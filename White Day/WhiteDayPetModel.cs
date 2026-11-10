@@ -99,17 +99,18 @@ namespace Tool_Hazard.White_Day
                             if (blockMs.Position + 48 > blockMs.Length) break;
                             float[] m = new float[12];
                             for (int j = 0; j < 12; j++) m[j] = br.ReadSingle();
-                            // PET stores a 3x4 matrix in column-major order (DirectX style).
-                            // Convert to row-major Matrix4x4:
+                            // PET stores a 3x4 matrix in column-major order (DirectX style):
+                            //   col0 = m[0..2], col1 = m[3..5], col2 = m[6..8], col3(translation) = m[9..11]
+                            // Construct row-major Matrix4x4:
                             //   [m0 m3 m6 m9]
                             //   [m1 m4 m7 m10]
                             //   [m2 m5 m8 m11]
                             //   [0  0  0  1]
                             bone.Matrix = new Matrix4x4(
-                                m[0], m[1], m[2], 0,
-                                m[3], m[4], m[5], 0,
-                                m[6], m[7], m[8], 0,
-                                m[9], m[10], m[11], 1);
+                                m[0], m[3], m[6], m[9],
+                                m[1], m[4], m[7], m[10],
+                                m[2], m[5], m[8], m[11],
+                                0, 0, 0, 1);
                             model.Bones.Add(bone);
                         }
                         break;
