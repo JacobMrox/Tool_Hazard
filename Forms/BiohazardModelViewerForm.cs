@@ -880,6 +880,7 @@ public sealed class BiohazardModelViewerForm : Form
             _petModel = WhiteDayPetModel.Load(path);
             _petKindLabel = $"White Day PET - {Path.GetFileName(path)}";
             LoadPetTextures(path);
+            System.Windows.Forms.MessageBox.Show(this, $"PET loaded: textures={_petModel.Textures.Count}, bones={_petModel.Bones.Count}, meshes={_petModel.Meshes.Count}", "PET Debug", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Information);
 
             _mesh.BeginUpdate();
             _mesh.Items.Clear();
@@ -985,11 +986,20 @@ public sealed class BiohazardModelViewerForm : Form
 
     private void LoadPetSelectedMesh()
     {
-        if (_petModel == null) return;
+        if (_petModel == null)
+        {
+            System.Windows.Forms.MessageBox.Show(this, "_petModel is null", "PET Debug", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Warning);
+            return;
+        }
         var meshes = _petModel.Meshes;
-        if (meshes.Count == 0) return;
+        if (meshes.Count == 0)
+        {
+            System.Windows.Forms.MessageBox.Show(this, "PET has 0 meshes", "PET Debug", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Warning);
+            return;
+        }
         int sel = Math.Clamp(_mesh.SelectedIndex, 0, meshes.Count - 1);
         var parts = BuildPetRenderParts(new List<WhiteDayPetMesh> { meshes[sel] });
+        System.Windows.Forms.MessageBox.Show(this, $"Selected mesh {sel}: verts={meshes[sel].Vertices.Count}, polys={meshes[sel].Polygons.Count}, parts={parts.Count}", "PET Debug", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Information);
         _renderParts = parts;
         _parts.Items.Clear();
         for (int i = 0; i < parts.Count; i++) _parts.Items.Add($"Part {i:D2}", true);
