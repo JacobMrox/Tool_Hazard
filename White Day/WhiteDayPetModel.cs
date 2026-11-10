@@ -67,7 +67,7 @@ namespace Tool_Hazard.White_Day
 
                 byte[] blockData = reader.ReadBytes((int)size);
                 using var blockMs = new MemoryStream(blockData);
-                using var br = new BinaryReader(blockMs);
+                var br = new BinaryReader(blockMs);
 
                 switch (id)
                 {
@@ -122,70 +122,23 @@ namespace Tool_Hazard.White_Day
 
                     case "MESH":
                     {
+                        long meshBlockStart = blockMs.Position;
                         int count = br.ReadByte();
                         model.MeshBlockCount = count;
-                        // meshid + 4 unknown uint32s
-                        if (blockMs.Length - blockMs.Position >= 20)
-                        {
-                            uint meshid = br.ReadUInt32();
-                            br.ReadUInt32(); br.ReadUInt32(); br.ReadUInt32(); br.ReadUInt32();
-                        }
-                        for (int i = 0; i < count; i++)
-                        {
-                            var mesh = new WhiteDayPetMesh { Name = $"Mesh {i}" };
-                            int numVertices = br.ReadInt32();
-                            if (i == 0) model.FirstMeshNumVertices = numVertices;
-                            if (numVertices < 0 || numVertices > 1000000) break;
-                            for (int v = 0; v < numVertices; v++)
-                            {
-                                if (blockMs.Position + 16 > blockMs.Length) break;
-                                var vertex = new WhiteDayPetVertex();
-                                vertex.Position = new Vector4(br.ReadSingle(), br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
-                                // Bone weights: pairs of (weight, boneId) until weight sum reaches 0xFF.
-                                int wsum = 0;
-                                while (wsum < 0xFF && blockMs.Position + 2 <= blockMs.Length)
-                                {
-                                    byte weight = br.ReadByte();
-                                    byte boneId = br.ReadByte();
-                                    wsum += weight;
-                                    vertex.BoneWeights.Add((weight, boneId));
-                                    if (wsum >= 0xFF) break;
-                                }
-                                // File leaves space for at least 2 weights; pad if needed.
-                                while (vertex.BoneWeights.Count < 2 && blockMs.Position + 2 <= blockMs.Length)
-                                {
-                                    br.ReadByte(); br.ReadByte();
-                                    vertex.BoneWeights.Add((0, 0));
-                                }
-                                mesh.Vertices.Add(vertex);
-                            }
 
-                            if (blockMs.Position + 4 > blockMs.Length) break;
-                            int numPolygons = br.ReadInt32();
-                            if (numPolygons < 0 || numPolygons > 1000000) break;
-                            for (int p = 0; p < numPolygons; p++)
-                            {
-                                if (blockMs.Position + 72 > blockMs.Length) break;
-                                var polygon = new WhiteDayPetPolygon();
-                                var indices = new WhiteDayPetPolygonIndex[3];
-                                for (int c = 0; c < 3; c++)
-                                {
-                                    var idx = new WhiteDayPetPolygonIndex
-                                    {
-                                        Index = br.ReadUInt32(),
-                                        Normal = new Vector3(br.ReadSingle(), br.ReadSingle(), br.ReadSingle()),
-                                        Uv = new Vector2(br.ReadSingle(), br.ReadSingle()),
-                                    };
-                                    indices[c] = idx;
-                                }
-                                polygon.Indices = indices;
-                                mesh.Polygons.Add(polygon);
-                            }
-
-                            // Texture map: one byte per polygon.
-                            if (blockMs.Position + numPolygons > blockMs.Length) break;
-                            mesh.TexMap = br.ReadBytes(numPolygons);
+                        WhiteDayPetMesh? mesh = TryReadPetMesh(blockMs, br, count, out int readCount);
+                        if (mesh != null)
+                        {
                             model.Meshes.Add(mesh);
+                        }
+                        else if (count == 0)
+                        {
+                            // White Day PET files may not store a count byte in the MESH block.
+                            // The byte we read as count is actually byte 0 of meshid. Rewind and retry.
+                            blockMs.Position = meshBlockStart;
+                            br = new BinaryReader(blockMs);
+                            mesh = TryReadPetMesh(blockMs, br, 1, out _);
+                            if (mesh != null) model.Meshes.Add(mesh);
                         }
                         break;
                     }
@@ -217,6 +170,75 @@ namespace Tool_Hazard.White_Day
                 sb.Append((char)b);
             }
             return sb.ToString();
+        }
+
+        // Attempts to read a single PET mesh from the block stream.
+        // Returns null if the vertex count is invalid (e.g. wrong block alignment).
+        private static WhiteDayPetMesh? TryReadPetMesh(MemoryStream blockMs, BinaryReader br, int expectedCount, out int readCount)
+        {
+            readCount = 0;
+
+            // meshid + 4 unknown uint32s
+            if (blockMs.Length - blockMs.Position < 20) return null;
+            br.ReadUInt32(); // meshid
+            br.ReadUInt32(); br.ReadUInt32(); br.ReadUInt32(); br.ReadUInt32(); // unknown
+
+            if (blockMs.Position + 4 > blockMs.Length) return null;
+            int numVertices = br.ReadInt32();
+            if (numVertices <= 0 || numVertices > 1000000) return null;
+
+            var mesh = new WhiteDayPetMesh { Name = $"Mesh {readCount}" };
+
+            for (int v = 0; v < numVertices; v++)
+            {
+                if (blockMs.Position + 16 > blockMs.Length) return mesh;
+                var vertex = new WhiteDayPetVertex();
+                vertex.Position = new Vector4(br.ReadSingle(), br.ReadSingle(), br.ReadSingle(), br.ReadSingle());
+                // Bone weights: pairs of (weight, boneId) until weight sum reaches 0xFF.
+                int wsum = 0;
+                while (wsum < 0xFF && blockMs.Position + 2 <= blockMs.Length)
+                {
+                    byte weight = br.ReadByte();
+                    byte boneId = br.ReadByte();
+                    wsum += weight;
+                    vertex.BoneWeights.Add((weight, boneId));
+                    if (wsum >= 0xFF) break;
+                }
+                while (vertex.BoneWeights.Count < 2 && blockMs.Position + 2 <= blockMs.Length)
+                {
+                    br.ReadByte(); br.ReadByte();
+                    vertex.BoneWeights.Add((0, 0));
+                }
+                mesh.Vertices.Add(vertex);
+            }
+
+            if (blockMs.Position + 4 > blockMs.Length) return mesh;
+            int numPolygons = br.ReadInt32();
+            if (numPolygons < 0 || numPolygons > 1000000) return mesh;
+            for (int p = 0; p < numPolygons; p++)
+            {
+                if (blockMs.Position + 72 > blockMs.Length) break;
+                var polygon = new WhiteDayPetPolygon();
+                var indices = new WhiteDayPetPolygonIndex[3];
+                for (int c = 0; c < 3; c++)
+                {
+                    indices[c] = new WhiteDayPetPolygonIndex
+                    {
+                        Index = br.ReadUInt32(),
+                        Normal = new Vector3(br.ReadSingle(), br.ReadSingle(), br.ReadSingle()),
+                        Uv = new Vector2(br.ReadSingle(), br.ReadSingle()),
+                    };
+                }
+                polygon.Indices = indices;
+                mesh.Polygons.Add(polygon);
+            }
+
+            // Texture map: one byte per polygon.
+            if (blockMs.Position + numPolygons > blockMs.Length) return mesh;
+            mesh.TexMap = br.ReadBytes(numPolygons);
+
+            readCount = 1;
+            return mesh;
         }
     }
 }
