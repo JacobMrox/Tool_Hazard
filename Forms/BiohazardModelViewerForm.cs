@@ -16,8 +16,10 @@ public sealed class BiohazardModelViewerForm : Form
 {
     private readonly ModelViewport _viewport = new() { Dock = DockStyle.Fill };
     private readonly ComboBox _mesh = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 150 };
-    private readonly CheckedListBox _parts = new() { Dock = DockStyle.Fill, CheckOnClick = true };
-    private readonly Label _details = new() { AutoSize = false, Dock = DockStyle.Bottom, Height = 100, Padding = new Padding(6) };
+    // PartListBox keeps checking tied to the check box itself, so clicking a row
+    // only selects (and highlights) that part.
+    private readonly PartListBox _parts = new() { Dock = DockStyle.Fill };
+    private readonly Label _details = new() { AutoSize = false, Dock = DockStyle.Bottom, Height = 124, Padding = new Padding(6) };
     private readonly ComboBox _animation = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 170 };
     private readonly Button _playPause = new() { Text = "Play", AutoSize = true };
     private readonly TrackBar _timeline = new() { Minimum = 0, Maximum = 0, TickStyle = TickStyle.None, Width = 330, AutoSize = false, Height = 28 };
@@ -38,6 +40,9 @@ public sealed class BiohazardModelViewerForm : Form
     private WhiteDayPetModel? _petModel;
     private string? _petKindLabel;
     private readonly Dictionary<string, Bitmap> _petTextures = new(StringComparer.OrdinalIgnoreCase);
+    private readonly List<int> _petPartMeshes = new();
+    private readonly List<int> _petPartBones = new();
+    private readonly Dictionary<string, string> _petTexturePaths = new(StringComparer.OrdinalIgnoreCase);
     private TimFile? _texture;
     private string? _texturePath;
     private string? _path;
@@ -50,7 +55,7 @@ public sealed class BiohazardModelViewerForm : Form
 
     public BiohazardModelViewerForm(string? initialPath = null)
     {
-        Text = "Biohazard Model Viewer - RE1 / RE2 / RE3 / Survivor PC / RE4 / White Day";
+        Text = "Tool Hazard Model Viewer - RE1 / RE2 / RE3 / Survivor PC / RE4 / White Day";
         StartPosition = FormStartPosition.CenterScreen;
         MinimumSize = new Size(760, 500);
         Size = new Size(1050, 720);
@@ -76,19 +81,28 @@ public sealed class BiohazardModelViewerForm : Form
         bones.ShortcutKeys = Keys.Control | Keys.B;
         view.DropDownItems.Add(bones);
         var meshMenu = new ToolStripMenuItem("Mesh");
-        meshMenu.DropDownItems.AddRange(new ToolStripItem[] {
-            new ToolStripMenuItem("Export whole mesh (OBJ)...", null, (_, _) => ExportMesh(false, false)),
-            new ToolStripMenuItem("Export selected part (OBJ)...", null, (_, _) => ExportMesh(true, false)),
+        var exportMenu = new ToolStripMenuItem("Export");
+        exportMenu.DropDownItems.AddRange(new ToolStripItem[] {
+            new ToolStripMenuItem("Whole mesh (OBJ)...", null, (_, _) => ExportMesh(false, false)),
+            new ToolStripMenuItem("Selected part (OBJ)...", null, (_, _) => ExportMesh(true, false)),
             new ToolStripSeparator(),
-            new ToolStripMenuItem("Export whole mesh (native)...", null, (_, _) => ExportMesh(false, true)),
-            new ToolStripMenuItem("Export selected part (native)...", null, (_, _) => ExportMesh(true, true)),
-            new ToolStripSeparator(),
-            new ToolStripMenuItem("Replace whole mesh from OBJ...", null, (_, _) => ReplaceMesh(false, false)),
-            new ToolStripMenuItem("Replace selected part from OBJ...", null, (_, _) => ReplaceMesh(true, false)),
-            new ToolStripSeparator(),
-            new ToolStripMenuItem("Replace whole mesh from native...", null, (_, _) => ReplaceMesh(false, true)),
-            new ToolStripMenuItem("Replace selected part from native...", null, (_, _) => ReplaceMesh(true, true))
+            new ToolStripMenuItem("Whole mesh (native)...", null, (_, _) => ExportMesh(false, true)),
+            new ToolStripMenuItem("Selected part (native)...", null, (_, _) => ExportMesh(true, true))
         });
+        var importMenu = new ToolStripMenuItem("Import");
+        importMenu.DropDownItems.AddRange(new ToolStripItem[] {
+            new ToolStripMenuItem("Whole mesh from OBJ...", null, (_, _) => ReplaceMesh(false, false)),
+            new ToolStripMenuItem("Selected part from OBJ...", null, (_, _) => ReplaceMesh(true, false)),
+            new ToolStripSeparator(),
+            new ToolStripMenuItem("Whole mesh from native...", null, (_, _) => ReplaceMesh(false, true)),
+            new ToolStripMenuItem("Selected part from native...", null, (_, _) => ReplaceMesh(true, true))
+        });
+        var scaleMenu = new ToolStripMenuItem("Scale");
+        scaleMenu.DropDownItems.AddRange(new ToolStripItem[] {
+            new ToolStripMenuItem("Selected part...", null, (_, _) => ScaleMesh(true)),
+            new ToolStripMenuItem("Whole mesh...", null, (_, _) => ScaleMesh(false))
+        });
+        meshMenu.DropDownItems.AddRange(new ToolStripItem[] { exportMenu, importMenu, new ToolStripSeparator(), scaleMenu });
         var textureMenu = new ToolStripMenuItem("Texture");
         textureMenu.DropDownItems.AddRange(new ToolStripItem[] {
             new ToolStripMenuItem("View texture...", null, (_, _) => ViewTexture()),
@@ -131,6 +145,7 @@ public sealed class BiohazardModelViewerForm : Form
         {
             _viewport.SetPartVisible(e.Index, e.NewValue == CheckState.Checked);
         }));
+        _parts.SelectedIndexChanged += (_, _) => _viewport.SelectPart(_parts.SelectedIndex);
         _animation.SelectedIndexChanged += (_, _) => SelectAnimation();
         _playPause.Click += (_, _) => SetPlaying(!_animationTimer.Enabled);
         previous.Click += (_, _) => StepAnimation(-1);
@@ -206,19 +221,25 @@ public sealed class BiohazardModelViewerForm : Form
             _mesh.BeginUpdate();
             _mesh.Items.Clear();
             int number = 0;
+            int firstContentMesh = -1;
             for (int i = 0; i < model.NumChunks; i++)
             {
-                if (model.GetChunkKind(i) == ModelFile.ChunkKind.Mesh)
-                    _mesh.Items.Add($"Mesh {number++}");
+                if (model.GetChunkKind(i) != ModelFile.ChunkKind.Mesh) continue;
+                bool empty = IsEmptyMeshChunk(model, number);
+                _mesh.Items.Add(empty ? $"Mesh {number} (empty)" : $"Mesh {number}");
+                if (!empty && firstContentMesh < 0) firstContentMesh = number;
+                number++;
             }
             _mesh.EndUpdate();
             if (_mesh.Items.Count == 0) throw new InvalidDataException("The model contains no mesh chunks.");
-            _mesh.SelectedIndex = 0;
-            Text = $"Biohazard Model Viewer - {Path.GetFileName(path)}";
+            // RE3 EMDs routinely carry an empty first mesh chunk (chunk 13) and keep
+            // the body in the second one, so selecting index 0 opened a blank view.
+            _mesh.SelectedIndex = firstContentMesh >= 0 ? firstContentMesh : 0;
+            Text = $"Tool Hazard Model Viewer - {Path.GetFileName(path)}";
         }
         catch (Exception ex)
         {
-            MessageBox.Show(this, $"Open failed:\n{ex.Message}", "Biohazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(this, $"Open failed:\n{ex.Message}", "Tool Hazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
@@ -247,7 +268,7 @@ public sealed class BiohazardModelViewerForm : Form
         _mesh.SelectedIndex = 0;
         LoadSurvivorMesh();
         if (survivor.HasAnimations) ApplyCurrentPose();
-        Text = $"Biohazard Model Viewer - {Path.GetFileName(path)}";
+        Text = $"Tool Hazard Model Viewer - {Path.GetFileName(path)}";
     }
 
     private void OpenSurvivorHmd(string path)
@@ -268,7 +289,7 @@ public sealed class BiohazardModelViewerForm : Form
         _mesh.Items.Add("HMD scene / actor data");
         _mesh.SelectedIndex = 0;
         LoadSurvivorHmd();
-        Text = $"Biohazard Model Viewer - {Path.GetFileName(path)}";
+        Text = $"Tool Hazard Model Viewer - {Path.GetFileName(path)}";
     }
 
     // ---- RE4 (JADERLINK) integration ----
@@ -338,7 +359,7 @@ public sealed class BiohazardModelViewerForm : Form
             _details.Text = $"Game: Resident Evil 4\r\nType: SMX metadata\r\nEntries: {entries.Count:N0}\r\nFirst entry: Model={entries.FirstOrDefault()?.UseSmxId} Mode={entries.FirstOrDefault()?.Mode}";
             _renderParts = new List<RenderPart>();
             _viewport.SetModel(new List<RenderPart>(), null);
-            Text = $"Biohazard Model Viewer - {Path.GetFileName(path)}";
+            Text = $"Tool Hazard Model Viewer - {Path.GetFileName(path)}";
             return;
         }
         else if (ext == ".obj")
@@ -374,7 +395,7 @@ public sealed class BiohazardModelViewerForm : Form
         _mesh.EndUpdate();
         if (parts.Count > 0) _mesh.SelectedIndex = 0;
         else LoadRe4SelectedMesh();
-        Text = $"Biohazard Model Viewer - {Path.GetFileName(path)}";
+        Text = $"Tool Hazard Model Viewer - {Path.GetFileName(path)}";
     }
 
     private List<Re4MeshPart> CurrentRe4Parts()
@@ -453,7 +474,7 @@ public sealed class BiohazardModelViewerForm : Form
         }
         catch (Exception ex)
         {
-            MessageBox.Show(this, $"RE4 open failed:\n{ex.Message}", "Biohazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(this, $"RE4 open failed:\n{ex.Message}", "Tool Hazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
@@ -478,7 +499,7 @@ public sealed class BiohazardModelViewerForm : Form
         }
         catch (Exception ex)
         {
-            MessageBox.Show(this, $"PACK load failed:\n{ex.Message}", "Biohazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(this, $"PACK load failed:\n{ex.Message}", "Tool Hazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
@@ -493,7 +514,7 @@ public sealed class BiohazardModelViewerForm : Form
         }
         catch (Exception ex)
         {
-            MessageBox.Show(this, $"SMX failed:\n{ex.Message}", "Biohazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(this, $"SMX failed:\n{ex.Message}", "Tool Hazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
@@ -529,7 +550,7 @@ public sealed class BiohazardModelViewerForm : Form
         }
         catch (Exception ex)
         {
-            MessageBox.Show(this, $"RE4 mesh load failed:\n{ex.Message}", "Biohazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(this, $"RE4 mesh load failed:\n{ex.Message}", "Tool Hazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
@@ -712,7 +733,7 @@ public sealed class BiohazardModelViewerForm : Form
         }
         catch (Exception ex)
         {
-            MessageBox.Show(this, $"RE4 mesh export failed:\n{ex.Message}", "Biohazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(this, $"RE4 mesh export failed:\n{ex.Message}", "Tool Hazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
@@ -752,11 +773,11 @@ public sealed class BiohazardModelViewerForm : Form
             _mesh.EndUpdate();
             if (imported.Count > 0) _mesh.SelectedIndex = 0;
             else LoadRe4SelectedMesh();
-            Text = $"Biohazard Model Viewer - {Path.GetFileName(dialog.FileName)}";
+            Text = $"Tool Hazard Model Viewer - {Path.GetFileName(dialog.FileName)}";
         }
         catch (Exception ex)
         {
-            MessageBox.Show(this, $"RE4 mesh import failed:\n{ex.Message}", "Biohazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(this, $"RE4 mesh import failed:\n{ex.Message}", "Tool Hazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
@@ -779,7 +800,7 @@ public sealed class BiohazardModelViewerForm : Form
         }
         catch (Exception ex)
         {
-            MessageBox.Show(this, $"RE4 texture export failed:\n{ex.Message}", "Biohazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(this, $"RE4 texture export failed:\n{ex.Message}", "Tool Hazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
@@ -820,7 +841,7 @@ public sealed class BiohazardModelViewerForm : Form
         }
         catch (Exception ex)
         {
-            MessageBox.Show(this, $"RE4 texture replacement failed:\n{ex.Message}", "Biohazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(this, $"RE4 texture replacement failed:\n{ex.Message}", "Tool Hazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
@@ -861,7 +882,7 @@ public sealed class BiohazardModelViewerForm : Form
         }
         catch (Exception ex)
         {
-            MessageBox.Show(this, $"RE4 save failed:\n{ex.Message}", "Biohazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(this, $"RE4 save failed:\n{ex.Message}", "Tool Hazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
@@ -903,11 +924,11 @@ public sealed class BiohazardModelViewerForm : Form
             {
                 LoadPetSelectedMesh();
             }
-            Text = $"Biohazard Model Viewer - {Path.GetFileName(path)}";
+            Text = $"Tool Hazard Model Viewer - {Path.GetFileName(path)}";
         }
         catch (Exception ex)
         {
-            MessageBox.Show(this, $"PET open failed:\n{ex.Message}", "Biohazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(this, $"PET open failed:\n{ex.Message}", "Tool Hazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
@@ -916,6 +937,9 @@ public sealed class BiohazardModelViewerForm : Form
         _petModel = null;
         _petKindLabel = null;
         _petTextures.Clear();
+        _petTexturePaths.Clear();
+        _petPartMeshes.Clear();
+        _petPartBones.Clear();
     }
 
     // White Day's engine resolves texture names globally across the data
@@ -973,7 +997,9 @@ public sealed class BiohazardModelViewerForm : Form
             try
             {
                 using var bmp = new Bitmap(full);
-                _petTextures[Path.GetFileName(name).ToLowerInvariant()] = new Bitmap(bmp);
+                string key = PetTextureKey(name);
+                _petTextures[key] = new Bitmap(bmp);
+                _petTexturePaths[key] = full;
             }
             catch { /* skip unreadable textures */ }
         }
@@ -1021,7 +1047,13 @@ public sealed class BiohazardModelViewerForm : Form
                 localNormals[i] = new Vector3(n.X, -n.Y, n.Z);
             }
 
-            var faces = new List<RenderFace>();
+            // One MESH block per PET holds a single skinned mesh, so the model's
+            // "parts" are its dominant-bone groups: every bone that actually paints
+            // polygons becomes one entry in the part list (visibility, highlight and
+            // per-part scaling all work per bone group).
+            var dominant = new int[mesh.Vertices.Count];
+            for (int i = 0; i < mesh.Vertices.Count; i++) dominant[i] = DominantBone(mesh.Vertices[i]);
+            var facesByBone = new SortedDictionary<int, List<RenderFace>>();
             var faceTexCache = new Dictionary<int, IViewerTexture?>();
             IViewerTexture? TexForPoly(int polyIndex)
             {
@@ -1037,6 +1069,13 @@ public sealed class BiohazardModelViewerForm : Form
             foreach (var poly in mesh.Polygons)
             {
                 if (poly.Indices.Length < 3) continue;
+                int firstCorner = (int)poly.Indices[0].Index;
+                int bone = (uint)firstCorner < (uint)dominant.Length ? dominant[firstCorner] : -1;
+                if (!facesByBone.TryGetValue(bone, out var faces))
+                {
+                    faces = new List<RenderFace>();
+                    facesByBone[bone] = faces;
+                }
                 var faceIndices = new int[3];
                 var faceUvs = new Vector2[3];
                 for (int c = 0; c < 3; c++)
@@ -1066,28 +1105,70 @@ public sealed class BiohazardModelViewerForm : Form
                 }
             }
 
-            var rp = new RenderPart(localVerts, faces, localNormals);
-            rp.ApplyTransform(Matrix4x4.Identity);
-            renderParts.Add(rp);
+            foreach (var (bone, boneFaces) in facesByBone)
+            {
+                // Each group gets its own vertex copy so a scale preview moves only
+                // the part being scaled.
+                var rp = new RenderPart((Vector3[])localVerts.Clone(), boneFaces, (Vector3[])localNormals.Clone())
+                {
+                    Group = bone
+                };
+                rp.ApplyTransform(Matrix4x4.Identity);
+                renderParts.Add(rp);
+            }
         }
         return renderParts;
     }
 
+    private static int DominantBone(WhiteDayPetVertex vertex)
+    {
+        int bone = -1;
+        byte best = 0;
+        foreach (var (weight, boneId) in vertex.BoneWeights)
+        {
+            if (weight <= best) continue;
+            best = weight;
+            bone = boneId;
+        }
+        return bone;
+    }
+
+    // A PET keeps one MESH block per object, so every mesh of the model is listed
+    // as a part and shown together instead of only the mesh picked in the dropdown;
+    // the dropdown then just focuses (highlights) the mesh it names.
     private void LoadPetSelectedMesh()
     {
         if (_petModel == null) return;
         var meshes = _petModel.Meshes;
+        _petPartMeshes.Clear();
+        _petPartBones.Clear();
         if (meshes.Count == 0) return;
         int sel = Math.Clamp(_mesh.SelectedIndex, 0, meshes.Count - 1);
-        var parts = BuildPetRenderParts(new List<WhiteDayPetMesh> { meshes[sel] });
+        var parts = new List<RenderPart>();
+        for (int i = 0; i < meshes.Count; i++)
+        {
+            foreach (var part in BuildPetRenderParts(new List<WhiteDayPetMesh> { meshes[i] }))
+            {
+                parts.Add(part);
+                _petPartMeshes.Add(i);
+                _petPartBones.Add(part.Group);
+            }
+        }
         _renderParts = parts;
         _parts.Items.Clear();
-        for (int i = 0; i < parts.Count; i++) _parts.Items.Add($"Part {i:D2}", true);
+        for (int i = 0; i < parts.Count; i++)
+            _parts.Items.Add($"{GetPetBoneName(_petPartBones[i])} ({parts[i].Faces.Count:N0} tris)", true);
         var tex = ResolvePetTexture(meshes[sel]);
         _viewport.SetModel(parts, tex);
+        int focus = _petPartMeshes.IndexOf(sel);
+        if (focus >= 0) _parts.SelectedIndex = focus;
         int tris = parts.Sum(p => p.Faces.Count);
         int verts = parts.Sum(p => p.LocalVertices.Length);
-        string texDesc = tex is PetBitmapTexture pbtDesc ? pbtDesc.Description ?? "None" : "None";
+        var meshTextures = GetPetMeshTextures(meshes[sel]);
+        string texDesc = meshTextures.Count == 0
+            ? "None"
+            : string.Join(", ", meshTextures.Take(4).Select(DescribeTexture))
+                + (meshTextures.Count > 4 ? $", +{meshTextures.Count - 4} more" : "");
         if (_petModel != null)
         {
             // Skeleton overlay: bind-pose joints (PET parts are Y-negated).
@@ -1096,7 +1177,15 @@ public sealed class BiohazardModelViewerForm : Form
             var parents = _petModel.Bones.Select(b => b.Parent == 255 ? -1 : (int)b.Parent).ToList();
             _viewport.SetSkeleton(joints, parents);
         }
-        _details.Text = $"Game: White Day (2001)\r\nType: PET model\r\n{_petKindLabel}\r\nMeshes: {meshes.Count:N0}  Vertices: {verts:N0}  Triangles: {tris:N0}  Bones: {_petModel.Bones.Count:N0}\r\nTexture: {texDesc}";
+        _details.Text = $"Game: White Day (2001)\r\nType: PET model\r\n{_petKindLabel}\r\nMeshes: {meshes.Count:N0}  Vertices: {verts:N0}  Triangles: {tris:N0}  Bones: {_petModel.Bones.Count:N0}\r\nTextures: {meshTextures.Count:N0} ({texDesc})";
+    }
+
+    private string GetPetBoneName(int bone)
+    {
+        if (bone < 0) return "Unweighted";
+        if (_petModel == null || bone >= _petModel.Bones.Count) return $"Bone {bone}";
+        string name = _petModel.Bones[bone].Name;
+        return string.IsNullOrWhiteSpace(name) ? $"Bone {bone}" : $"Bone {bone} {name}";
     }
 
     private IViewerTexture? ResolvePetTexture(WhiteDayPetMesh mesh)
@@ -1109,10 +1198,499 @@ public sealed class BiohazardModelViewerForm : Form
     {
         if (_petModel == null || _petTextures.Count == 0) return null;
         if (texIndex < 0 || texIndex >= _petModel.Textures.Count) return null;
-        string? key = _petModel.Textures[texIndex];
-        if (key != null && _petTextures.TryGetValue(key.ToLowerInvariant(), out var bmp))
+        string key = _petModel.Textures[texIndex];
+        if (_petTextures.TryGetValue(PetTextureKey(key), out var bmp))
             return new PetBitmapTexture(bmp) { Description = key };
         return null;
+    }
+
+    // Textures are stored by bare filename; keep the lookup key the same everywhere
+    // so TEXT entries that carry a folder prefix still resolve.
+    private static string PetTextureKey(string name) => Path.GetFileName(name).ToLowerInvariant();
+
+    private sealed class TextureListEntry
+    {
+        public int Index;
+        public string Name = "";
+        public int Used;
+        public int Total;
+        public Bitmap? Bitmap;
+        public string DisplayName => string.IsNullOrWhiteSpace(Name) ? "(unnamed)" : Path.GetFileName(Name);
+    }
+
+    private static string DescribeTexture(TextureListEntry entry)
+    {
+        Bitmap? bitmap = entry.Bitmap;
+        return $"[{entry.Index}] {entry.DisplayName}" + (bitmap == null ? " (missing)" : $" {bitmap.Width}x{bitmap.Height}");
+    }
+
+    // Every texture the selected mesh's texture map references, with usage counts
+    // and a preview. PET models routinely use several images per mesh, so one
+    // texture per model was never enough to see (or replace) what is on screen.
+    private List<TextureListEntry> GetPetMeshTextures(WhiteDayPetMesh mesh)
+    {
+        var entries = new List<TextureListEntry>();
+        if (_petModel == null) return entries;
+        var usage = new SortedDictionary<int, int>();
+        foreach (byte index in mesh.TexMap)
+        {
+            usage.TryGetValue(index, out int count);
+            usage[index] = count + 1;
+        }
+        // List every texture in the model, not just the ones this mesh paints with,
+        // so the list also exposes textures of parts the mesh does not reference.
+        int textureCount = _petModel.Textures.Count;
+        if (usage.Count > 0) textureCount = Math.Max(textureCount, usage.Keys.Max() + 1);
+        for (int index = 0; index < textureCount; index++)
+        {
+            string name = index < _petModel.Textures.Count ? _petModel.Textures[index] : $"texture {index}";
+            usage.TryGetValue(index, out int polygons);
+            _petTextures.TryGetValue(PetTextureKey(name), out Bitmap? bitmap);
+            entries.Add(new TextureListEntry
+            {
+                Index = index,
+                Name = name,
+                Used = polygons,
+                Total = mesh.TexMap.Length,
+                Bitmap = bitmap
+            });
+        }
+        return entries;
+    }
+
+    private void ViewPetTexture()
+    {
+        if (_petModel == null) return;
+        try
+        {
+            if (_petModel.Meshes.Count == 0)
+            {
+                MessageBox.Show(this, "This PET contains no meshes.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            int sel = Math.Clamp(_mesh.SelectedIndex, 0, _petModel.Meshes.Count - 1);
+            var entries = GetPetMeshTextures(_petModel.Meshes[sel]);
+            if (entries.Count == 0)
+            {
+                MessageBox.Show(this, _petModel.Textures.Count == 0
+                    ? "This PET references no textures (its TEXT block is empty)."
+                    : "No texture is bound to the selected mesh.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            // The browser carries the per-texture export/replace actions, so the
+            // texture list is where multi-texture PET models are managed.
+            using var browser = new TextureListBrowserForm(entries, false,
+                $"PET texture{(entries.Count == 1 ? "" : $"s ({entries.Count})")} - {Path.GetFileName(_path ?? "model")}",
+                "polygons", null,
+                entry => ExportPetTextureEntry(entry, entries.Count == 1),
+                ReplacePetTextureEntry);
+            browser.ShowDialog(this);
+            if (entries.All(e => e.Bitmap == null))
+                MessageBox.Show(this, $"None of the {entries.Count} image file(s) this mesh uses were found. White Day resolves texture names across its data folder; copy the images beside the PET or open a model from the installed game folder.",
+                    "PET texture", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, $"Texture view failed:\n{ex.Message}", Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private void ExportPetTexture()
+    {
+        if (_petModel == null) return;
+        try
+        {
+            if (_petModel.Meshes.Count == 0)
+            {
+                MessageBox.Show(this, "This PET contains no meshes.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            int sel = Math.Clamp(_mesh.SelectedIndex, 0, _petModel.Meshes.Count - 1);
+            var entries = GetPetMeshTextures(_petModel.Meshes[sel]);
+            if (entries.Count == 0)
+            {
+                MessageBox.Show(this, "No texture is bound to the selected mesh.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            TextureListEntry? entry = entries.Count == 1 ? entries[0] : ChoosePetTexture(entries, "Select the PET texture to export");
+            if (entry != null) ExportPetTextureEntry(entry, entries.Count == 1);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, $"PET texture export failed:\n{ex.Message}", Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private void ExportPetTextureEntry(TextureListEntry entry, bool singleTexture)
+    {
+        if (entry.Bitmap == null)
+        {
+            MessageBox.Show(this, $"The image file '{entry.DisplayName}' was not found next to the PET.", "PET texture", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+        string fileName = singleTexture
+            ? Path.GetFileNameWithoutExtension(_path ?? "pet") + "_texture.png"
+            : Path.GetFileNameWithoutExtension(entry.DisplayName) + ".png";
+        using var dialog = new SaveFileDialog { Title = $"Export PET texture [{entry.Index}] {entry.DisplayName}", Filter = "PNG image (*.png)|*.png|Bitmap image (*.bmp)|*.bmp", FileName = fileName };
+        if (dialog.ShowDialog(this) != DialogResult.OK) return;
+        using var copy = new Bitmap(entry.Bitmap);
+        copy.Save(dialog.FileName, Path.GetExtension(dialog.FileName).Equals(".bmp", StringComparison.OrdinalIgnoreCase)
+            ? System.Drawing.Imaging.ImageFormat.Bmp : System.Drawing.Imaging.ImageFormat.Png);
+    }
+
+    private void ReplacePetTextureEntry(TextureListEntry entry)
+    {
+        using var dialog = new OpenFileDialog
+        {
+            Title = $"Replace PET texture [{entry.Index}] {entry.DisplayName}",
+            Filter = "Images (*.png;*.bmp;*.jpg;*.jpeg)|*.png;*.bmp;*.jpg;*.jpeg|All files (*.*)|*.*"
+        };
+        if (dialog.ShowDialog(this) != DialogResult.OK) return;
+        try
+        {
+            using var bitmap = new Bitmap(dialog.FileName);
+            ApplyPetTexture(entry, bitmap);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, $"PET texture replacement failed:\n{ex.Message}", Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private void ReplacePetTexture(Bitmap bitmap)
+    {
+        if (_petModel == null) return;
+        try
+        {
+            if (_petModel.Meshes.Count == 0)
+            {
+                MessageBox.Show(this, "This PET contains no meshes.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            int sel = Math.Clamp(_mesh.SelectedIndex, 0, _petModel.Meshes.Count - 1);
+            var entries = GetPetMeshTextures(_petModel.Meshes[sel]);
+            if (entries.Count == 0)
+            {
+                MessageBox.Show(this, "No texture is bound to the selected mesh.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            TextureListEntry? entry = entries.Count == 1 ? entries[0] : ChoosePetTexture(entries, "Select the PET texture to replace");
+            if (entry == null) return;
+            ApplyPetTexture(entry, bitmap);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, $"PET texture replacement failed:\n{ex.Message}", Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private void ApplyPetTexture(TextureListEntry entry, Bitmap bitmap)
+    {
+        if (_petModel == null) return;
+        try
+        {
+            string key = PetTextureKey(entry.Name);
+            _petTextures[key] = new Bitmap(bitmap);
+            entry.Bitmap = _petTextures[key];
+            LoadPetSelectedMesh();
+            if (!_petTexturePaths.TryGetValue(key, out string? targetPath) || !File.Exists(targetPath))
+            {
+                MessageBox.Show(this, $"Replaced texture [{entry.Index}] '{entry.DisplayName}' in memory. Its image file was not found, so nothing was written to disk.",
+                    "PET texture", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            if (MessageBox.Show(this, $"Replaced texture [{entry.Index}] '{entry.DisplayName}' in memory.\r\n\r\nWhite Day reads PET textures as separate image files. Overwrite '{targetPath}' with the new image? A one-time .bak backup of the original is kept.",
+                    "PET texture", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
+                return;
+            string extension = Path.GetExtension(targetPath).ToLowerInvariant();
+            if (!File.Exists(targetPath + ".bak")) File.Copy(targetPath, targetPath + ".bak");
+            using var image = new Bitmap(bitmap);
+            image.Save(targetPath, extension switch
+            {
+                ".bmp" => System.Drawing.Imaging.ImageFormat.Bmp,
+                ".jpg" or ".jpeg" => System.Drawing.Imaging.ImageFormat.Jpeg,
+                _ => System.Drawing.Imaging.ImageFormat.Png
+            });
+            MessageBox.Show(this, $"Wrote {image.Width}x{image.Height} to {targetPath}.", "PET texture", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, $"PET texture replacement failed:\n{ex.Message}", Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private TextureListEntry? ChoosePetTexture(IReadOnlyList<TextureListEntry> entries, string caption)
+    {
+        using var browser = new TextureListBrowserForm(entries, true, caption);
+        if (browser.ShowDialog(this) != DialogResult.OK) return null;
+        int index = browser.SelectedTextureIndex ?? -1;
+        return entries.FirstOrDefault(e => e.Index == index);
+    }
+
+    // One entry per material used by the current RE4 mesh. BIN models name their
+    // materials through the TPL (pack texture key); 2007 PMD models carry the TGA
+    // filename. Generic imported meshes have neither, so the entry shows the
+    // material index only.
+    private List<TextureListEntry> GetRe4MaterialTextures(List<Re4MeshPart> parts)
+    {
+        var entries = new List<TextureListEntry>();
+        var triangles = new Dictionary<int, int>();
+        var order = new List<int>();
+        foreach (var part in parts)
+        {
+            int material = part.MaterialIndex;
+            if (!triangles.ContainsKey(material))
+            {
+                triangles[material] = 0;
+                order.Add(material);
+            }
+            triangles[material] += part.TriangleCount;
+        }
+        int totalTriangles = triangles.Values.Sum();
+        foreach (int material in order)
+        {
+            string? name = null;
+            Bitmap? bitmap = null;
+            if (_re4Pmd != null && material >= 0 && material < _re4Pmd.Materials.Count)
+            {
+                name = Path.GetFileName(_re4Pmd.Materials[material].TextureName);
+                if (!string.IsNullOrWhiteSpace(name))
+                    _re4PackTextures.TryGetValue(name.ToLowerInvariant(), out bitmap);
+            }
+            else if (_re4Tpl != null && material >= 0 && material < _re4Tpl.Entries.Count)
+            {
+                name = _re4Tpl.Entries[material].TextureKey;
+                if (!string.IsNullOrWhiteSpace(name))
+                    _re4PackTextures.TryGetValue(name, out bitmap);
+            }
+            if (name == null && _re4PackTextures.Count > 0)
+            {
+                // Unnamed materials render with the first PACK texture (BuildMaterialBitmaps
+                // fallback), so list that image under its real key instead of "missing".
+                var first = _re4PackTextures.First();
+                name = first.Key;
+                bitmap = first.Value;
+            }
+            entries.Add(new TextureListEntry
+            {
+                Index = material,
+                Name = name ?? $"material {material}",
+                Used = triangles[material],
+                Total = totalTriangles,
+                Bitmap = bitmap
+            });
+        }
+        return entries;
+    }
+
+    private void ViewRe4Texture()
+    {
+        try
+        {
+            var parts = CurrentRe4Parts();
+            var entries = GetRe4MaterialTextures(parts);
+            if (entries.Count == 0 || entries.All(e => e.Bitmap == null))
+            {
+                MessageBox.Show(this, "No PACK textures are bound to this mesh. Load matching PACK textures first.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            // The viewport allocates one texture slot per part and draws them side by
+            // side (see BuildRe4RenderParts), so report that layout alongside the list.
+            var bitmaps = BuildMaterialBitmaps(parts);
+            int totalW, maxH;
+            try
+            {
+                totalW = bitmaps.Sum(b => b.Width);
+                maxH = bitmaps.Count == 0 ? 0 : bitmaps.Max(b => b.Height);
+            }
+            finally
+            {
+                foreach (var b in bitmaps) b.Dispose();
+            }
+            string summary = $"Viewport atlas: {parts.Count} part slot(s) side by side, {totalW}x{maxH} px. "
+                + $"{entries.Count} material(s), {_re4PackTextures.Count} PACK texture(s) in memory.";
+            using var browser = new TextureListBrowserForm(entries, false,
+                $"RE4 textures - {Path.GetFileName(_path ?? "model")}", "triangles", summary);
+            browser.ShowDialog(this);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, $"Texture view failed:\n{ex.Message}", Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private void ShowTexturePreview(string title, Bitmap bitmap, string info)
+    {
+        var preview = new Form
+        {
+            Text = title,
+            StartPosition = FormStartPosition.CenterParent,
+            ClientSize = new Size(Math.Clamp(bitmap.Width * 2, 480, 1100), Math.Clamp(bitmap.Height * 2, 420, 800))
+        };
+        var picture = new PictureBox
+        {
+            Dock = DockStyle.Fill,
+            BackColor = Color.FromArgb(32, 32, 32),
+            SizeMode = PictureBoxSizeMode.Zoom,
+            Image = new Bitmap(bitmap)
+        };
+        var infoLabel = new Label { Dock = DockStyle.Bottom, Height = 56, Padding = new Padding(6), Text = info };
+        preview.FormClosed += (_, _) => picture.Image?.Dispose();
+        preview.Controls.Add(picture);
+        preview.Controls.Add(infoLabel);
+        preview.Show(this);
+    }
+
+    // Classic TIM models share one texture page layout, but a model usually uses
+    // several CLUTs (and sometimes several 128px pages) inside that single image.
+    // Describe the exported atlas so the numbers in the preview make sense.
+    private string DescribeTimTextureLayout()
+    {
+        if (_texture == null) return "";
+        string size = $"{_texture.Width}x{_texture.Height}";
+        if (!_texture.HasCluts) return $"{size}, 16-bit direct colour";
+        var pages = GetTimAtlasPages(_texture);
+        int cluts = pages.Select(p => p.Clut).Distinct().Count();
+        return $"{size}, indexed - atlas is {pages.Count} slice(s) of 128 px side by side, using {cluts} of {_texture.ClutCount} CLUT(s); export and import both use this layout";
+    }
+
+    // Shared texture/material browser: a list of textures with usage counts on the
+    // left, a preview on the right, and a summary line describing the atlas layout
+    // the viewport actually renders from. Used by the White Day PET and RE4 paths.
+    private sealed class TextureListBrowserForm : Form
+    {
+        private readonly ListBox _list = new() { Dock = DockStyle.Left, Width = 300, IntegralHeight = false };
+        private readonly PictureBox _picture = new() { Dock = DockStyle.Fill, BackColor = Color.FromArgb(32, 32, 32), SizeMode = PictureBoxSizeMode.Zoom };
+        private readonly Label _info = new() { Dock = DockStyle.Bottom, Height = 66, Padding = new Padding(6) };
+        private readonly Label _summary = new() { Dock = DockStyle.Top, Height = 46, Padding = new Padding(6), Visible = false };
+        private readonly List<TextureListEntry> _entries;
+        private readonly string _usageNoun;
+        private readonly Action<TextureListEntry>? _exportEntry;
+        private readonly Action<TextureListEntry>? _replaceEntry;
+        private Bitmap? _shown;
+
+        public int? SelectedTextureIndex { get; private set; }
+
+        public TextureListBrowserForm(IReadOnlyList<TextureListEntry> entries, bool selectable, string caption,
+            string usageNoun = "polygons", string? summary = null,
+            Action<TextureListEntry>? exportEntry = null, Action<TextureListEntry>? replaceEntry = null)
+        {
+            _entries = entries.ToList();
+            _usageNoun = usageNoun;
+            _exportEntry = exportEntry;
+            _replaceEntry = replaceEntry;
+            Text = caption;
+            if (!string.IsNullOrWhiteSpace(summary))
+            {
+                _summary.Text = summary;
+                _summary.Visible = true;
+            }
+            StartPosition = FormStartPosition.CenterParent;
+            ClientSize = new Size(900, 560);
+            MinimumSize = new Size(620, 380);
+
+            foreach (var entry in _entries)
+                _list.Items.Add(DescribeTexture(entry));
+
+            var buttons = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 42, FlowDirection = FlowDirection.RightToLeft, Padding = new Padding(6) };
+            var close = new Button { Text = selectable ? "Cancel" : "Close", AutoSize = true, DialogResult = DialogResult.Cancel };
+            buttons.Controls.Add(close);
+            if (selectable)
+            {
+                var ok = new Button { Text = "OK", AutoSize = true, DialogResult = DialogResult.OK };
+                buttons.Controls.Add(ok);
+                AcceptButton = ok;
+                FormClosing += (_, _) =>
+                {
+                    if (DialogResult == DialogResult.OK && _list.SelectedIndex >= 0)
+                        SelectedTextureIndex = _entries[_list.SelectedIndex].Index;
+                };
+            }
+            CancelButton = close;
+
+            // Optional per-entry actions (used by the White Day PET path, where a
+            // model carries several separate image files).
+            if (_replaceEntry != null)
+            {
+                var replace = new Button { Text = "Replace image...", AutoSize = true };
+                replace.Click += (_, _) => InvokeEntry(_replaceEntry);
+                buttons.Controls.Add(replace);
+            }
+            if (_exportEntry != null)
+            {
+                var export = new Button { Text = "Export image...", AutoSize = true };
+                export.Click += (_, _) => InvokeEntry(_exportEntry);
+                buttons.Controls.Add(export);
+            }
+
+            _list.SelectedIndexChanged += (_, _) => ShowSelected();
+            Controls.Add(_picture);
+            Controls.Add(_list);
+            Controls.Add(_info);
+            Controls.Add(buttons);
+            Controls.Add(_summary);
+            _list.SelectedIndex = 0;
+        }
+
+        private void InvokeEntry(Action<TextureListEntry> action)
+        {
+            var entry = SelectedEntry();
+            if (entry == null) return;
+            action(entry);
+            RefreshEntries();
+        }
+
+        private TextureListEntry? SelectedEntry() =>
+            _list.SelectedIndex >= 0 && _list.SelectedIndex < _entries.Count ? _entries[_list.SelectedIndex] : null;
+
+        // Re-read names/previews after a replacement changed a texture in memory.
+        public void RefreshEntries()
+        {
+            int index = _list.SelectedIndex;
+            _list.BeginUpdate();
+            _list.Items.Clear();
+            foreach (var entry in _entries) _list.Items.Add(DescribeTexture(entry));
+            _list.EndUpdate();
+            if (index >= 0 && index < _list.Items.Count) _list.SelectedIndex = index;
+            ShowSelected();
+        }
+
+        private void ShowSelected()
+        {
+            _shown?.Dispose();
+            _shown = null;
+            if (_list.SelectedIndex < 0 || _list.SelectedIndex >= _entries.Count)
+            {
+                _picture.Image = null;
+                _info.Text = "";
+                return;
+            }
+            var entry = _entries[_list.SelectedIndex];
+            if (entry.Bitmap != null)
+            {
+                _shown = new Bitmap(entry.Bitmap);
+                _picture.Image = _shown;
+            }
+            else _picture.Image = null;
+            string missingHint = _usageNoun == "triangles"
+                ? "No PACK texture is bound to this material. Load the matching PACK textures first."
+                : "Image file not found beside the PET or in the game's data folder.";
+            _info.Text = $"Texture [{entry.Index}] {entry.Name}\r\n"
+                + (entry.Bitmap == null ? missingHint : $"{entry.Bitmap.Width}x{entry.Bitmap.Height} pixels")
+                + (entry.Used > 0
+                    ? $" - {entry.Used:N0} of {entry.Total:N0} {_usageNoun} use it"
+                    : $" - not used by this {(_usageNoun == "triangles" ? "model" : "mesh")}");
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _picture.Image = null;
+                _shown?.Dispose();
+            }
+            base.Dispose(disposing);
+        }
     }
 
     private sealed class PetBitmapTexture : IViewerTexture
@@ -1309,7 +1887,7 @@ public sealed class BiohazardModelViewerForm : Form
         _viewport.SetSkeleton(
             bindPose.Select(t => new Vector3(t.M41, t.M42, t.M43)).ToList(),
             Enumerable.Range(0, bindPose.Length).Select(_survivor.GetParentIndex).ToList());
-        _details.Text = $"Game: Resident Evil Survivor PC\r\nType: NAB + NAC\r\nParts: {_renderParts.Count:N0}  Triangles: {_survivor.TriangleCount:N0}\r\nTexture: Embedded {_survivor.Texture.Width}x{_survivor.Texture.Height} A1R5G5B5\r\nAnimation bank: {(_survivor.HasAnimationBank ? Path.GetFileName(_survivor.AnimationPath) : "Not found")}  Selectors: {_survivor.SelectorCount}";
+        _details.Text = $"Game: Resident Evil Survivor PC\r\nType: NAB + NAC\r\nParts: {_renderParts.Count:N0}  Triangles: {_survivor.TriangleCount:N0}\r\nTexture: Embedded {_survivor.Texture.Width}x{_survivor.Texture.Height} A1R5G5B5 ({_survivor.Texture.SurfaceCount} surface(s))\r\nAnimation bank: {(_survivor.HasAnimationBank ? Path.GetFileName(_survivor.AnimationPath) : "Not found")}  Selectors: {_survivor.SelectorCount}";
     }
 
     private void LoadAnimations(ModelFile model)
@@ -1445,7 +2023,7 @@ public sealed class BiohazardModelViewerForm : Form
         }
         catch (Exception ex)
         {
-            MessageBox.Show(this, $"Texture load failed:\n{ex.Message}", "Biohazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(this, $"Texture load failed:\n{ex.Message}", "Tool Hazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
@@ -1505,66 +2083,13 @@ public sealed class BiohazardModelViewerForm : Form
     {
         if (_petModel != null)
         {
-            try
-            {
-                if (_petTextures.Count == 0)
-                {
-                    MessageBox.Show(this, "No PET textures loaded. Make sure texture files are beside the PET.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    return;
-                }
-                int sel = Math.Clamp(_mesh.SelectedIndex, 0, Math.Max(0, _petModel.Meshes.Count - 1));
-                var tex = ResolvePetTexture(_petModel.Meshes[sel]);
-                if (tex is PetBitmapTexture pbt && pbt.Width > 1 && pbt.Height > 1)
-                {
-                    var petPreview = new Form { Text = $"PET texture - {pbt.Width}x{pbt.Height}", StartPosition = FormStartPosition.CenterParent,
-                        ClientSize = new Size(Math.Clamp(pbt.Width * 2, 480, 1100), Math.Clamp(pbt.Height * 2, 360, 800)) };
-                    var petPicture = new PictureBox { Dock = DockStyle.Fill, BackColor = Color.FromArgb(32, 32, 32), SizeMode = PictureBoxSizeMode.Zoom, Image = new Bitmap(pbt.Width, pbt.Height) };
-                    petPreview.FormClosed += (_, _) => petPicture.Image?.Dispose();
-                    petPreview.Controls.Add(petPicture);
-                    petPreview.Show(this);
-                }
-                else
-                {
-                    MessageBox.Show(this, "No PET texture is bound to this mesh.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                }
-                return;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(this, $"Texture view failed:\n{ex.Message}", Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
+            ViewPetTexture();
+            return;
         }
         if (_re4Bin != null || _re4Pmd != null || _re4GenericParts != null || _re4Scenario != null)
         {
-            try
-            {
-                var parts = CurrentRe4Parts();
-                var bitmaps = BuildMaterialBitmaps(parts);
-                if (bitmaps.Count == 0 || bitmaps.All(b => b.Width == 1 && b.Height == 1))
-                {
-                    MessageBox.Show(this, "No PACK textures are bound to this mesh. Load matching PACK textures first.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    return;
-                }
-                int totalW = bitmaps.Sum(b => b.Width), maxH = bitmaps.Max(b => b.Height);
-                using var atlas = new Bitmap(Math.Max(1, totalW), Math.Max(1, maxH));
-                using (var g = System.Drawing.Graphics.FromImage(atlas))
-                {
-                    int x = 0;
-                    foreach (var b in bitmaps) { g.DrawImage(b, x, 0); x += b.Width; }
-                }
-                var re4preview = new Form { Text = $"RE4 texture atlas - {atlas.Width}x{atlas.Height}", StartPosition = FormStartPosition.CenterParent, ClientSize = new Size(Math.Clamp(atlas.Width * 2, 480, 1100), Math.Clamp(atlas.Height * 2, 360, 800)) };
-                var re4picture = new PictureBox { Dock = DockStyle.Fill, BackColor = Color.FromArgb(32, 32, 32), SizeMode = PictureBoxSizeMode.Zoom, Image = new Bitmap(atlas) };
-                re4preview.FormClosed += (_, _) => re4picture.Image?.Dispose();
-                re4preview.Controls.Add(re4picture);
-                re4preview.Show(this);
-                return;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(this, $"Texture view failed:\n{ex.Message}", Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
+            ViewRe4Texture();
+            return;
         }
         using Bitmap? bitmap = CreateTextureBitmap();
         if (bitmap == null)
@@ -1572,50 +2097,18 @@ public sealed class BiohazardModelViewerForm : Form
             MessageBox.Show(this, "The current model has no texture loaded.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
             return;
         }
-        var preview = new Form { Text = $"Texture atlas - {bitmap.Width}x{bitmap.Height}", StartPosition = FormStartPosition.CenterParent,
-            ClientSize = new Size(Math.Clamp(bitmap.Width * 2, 480, 1100), Math.Clamp(bitmap.Height * 2, 360, 800)) };
-        var picture = new PictureBox { Dock = DockStyle.Fill, BackColor = Color.FromArgb(32, 32, 32), SizeMode = PictureBoxSizeMode.Zoom,
-            Image = new Bitmap(bitmap) };
-        preview.FormClosed += (_, _) => picture.Image?.Dispose();
-        preview.Controls.Add(picture);
-        preview.Show(this);
+        ShowTexturePreview($"Texture atlas - {bitmap.Width}x{bitmap.Height}", bitmap,
+            _survivor != null
+                ? $"Embedded NAB texture, {_survivor.Texture.SurfaceCount} surface(s) stored side by side"
+                : DescribeTimTextureLayout());
     }
 
     private void ExportTexture()
     {
         if (_petModel != null)
         {
-            try
-            {
-                if (_petTextures.Count == 0)
-                {
-                    MessageBox.Show(this, "No PET textures loaded.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    return;
-                }
-                int sel = Math.Clamp(_mesh.SelectedIndex, 0, Math.Max(0, _petModel.Meshes.Count - 1));
-                var tex = ResolvePetTexture(_petModel.Meshes[sel]);
-                if (tex is PetBitmapTexture pbt)
-                {
-                    using var saveDlg = new SaveFileDialog { Title = "Export PET texture", Filter = "PNG image (*.png)|*.png|Bitmap image (*.bmp)|*.bmp",
-                        FileName = $"pet_texture_{sel}.png" };
-                    if (saveDlg.ShowDialog(this) != DialogResult.OK) return;
-                    using var bmp = new Bitmap(pbt.Width, pbt.Height);
-                    using (var g = System.Drawing.Graphics.FromImage(bmp))
-                        g.DrawImage(new Bitmap(_petTextures.Values.First()), 0, 0);
-                    bmp.Save(saveDlg.FileName, Path.GetExtension(saveDlg.FileName).Equals(".bmp", StringComparison.OrdinalIgnoreCase)
-                        ? System.Drawing.Imaging.ImageFormat.Bmp : System.Drawing.Imaging.ImageFormat.Png);
-                }
-                else
-                {
-                    MessageBox.Show(this, "No PET texture is bound to this mesh.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                }
-                return;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(this, $"PET texture export failed:\n{ex.Message}", Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
+            ExportPetTexture();
+            return;
         }
         if (_re4Bin != null || _re4Pmd != null || _re4GenericParts != null || _re4Scenario != null)
         {
@@ -1644,25 +2137,12 @@ public sealed class BiohazardModelViewerForm : Form
             using var bitmap = new Bitmap(dialog.FileName);
             if (_petModel != null)
             {
-                int sel = Math.Clamp(_mesh.SelectedIndex, 0, Math.Max(0, _petModel.Meshes.Count - 1));
-                var tex = ResolvePetTexture(_petModel.Meshes[sel]);
-                if (tex is PetBitmapTexture pbt)
-                {
-                    string key = pbt.Description ?? (_petModel.Meshes[sel].TexMap.Length > 0 ? _petModel.Textures[Math.Clamp(_petModel.Meshes[sel].TexMap[0], 0, _petModel.Textures.Count - 1)] : "");
-                    _petTextures[key.ToLowerInvariant()] = new Bitmap(bitmap);
-                    LoadPetSelectedMesh();
-                    MessageBox.Show(this, $"Replaced PET texture '{key}'.", "PET texture", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                }
-                else
-                {
-                    MessageBox.Show(this, "No PET texture is bound to this mesh.", Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                }
+                ReplacePetTexture(bitmap);
                 return;
             }
             if (_survivor != null)
             {
-                _survivor.Texture.Replace(bitmap, _survivor.Data);
-                _survivor.CommitTextureEdits();
+                _survivor.ReplaceTexture(bitmap);
                 LoadSurvivorMesh();
             }
             else
@@ -2522,6 +3002,281 @@ public sealed class BiohazardModelViewerForm : Form
         catch (Exception ex) { MessageBox.Show(this, $"Mesh replacement failed:\n{ex.Message}", "Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error); }
     }
 
+    private void ScaleMesh(bool selectedPart)
+    {
+        try
+        {
+            bool supported = _survivor != null || _model != null || _petModel != null ||
+                _re4Bin != null || _re4Pmd != null || _re4GenericParts != null;
+            if (!supported)
+            {
+                MessageBox.Show(this, _survivorHmd != null
+                        ? "HMD scenes are read-only, so they cannot be scaled."
+                        : "Open a model that can be scaled first.",
+                    "Tool Hazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            int selected = selectedPart ? SelectedPartIndex() : -1;
+            if (selectedPart && selected < 0) return;
+            if (selected >= _renderParts.Count) return;
+
+            // Preview on the rendered geometry while the dialog is open; the model
+            // itself (and every save/export path) only changes once OK is pressed.
+            var original = _renderParts.Select(p => (Vector3[])p.LocalVertices.Clone()).ToArray();
+            // PET parts hold already-skinned vertices, so preview them around their
+            // own centre rather than letting the whole model drift from the origin.
+            bool aboutCentroid = _petModel != null;
+            float? result = PromptScaleFactor(selectedPart ? $"part {selected:D2}" : "the whole mesh",
+                value => PreviewScale(original, value, selected, aboutCentroid),
+                () => RestoreScalePreview(original));
+            RestoreScalePreview(original);
+            if (result is not float scale) return;
+            ApplyScale(scale, selected);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, $"Mesh scaling failed:\n{ex.Message}", "Tool Hazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private void PreviewScale(Vector3[][] original, float scale, int selected, bool aboutCentroid)
+    {
+        for (int i = 0; i < _renderParts.Count && i < original.Length; i++)
+        {
+            RenderPart part = _renderParts[i];
+            Vector3[] source = original[i];
+            bool target = selected < 0 || i == selected;
+            Vector3 anchor = aboutCentroid ? Centroid(source) : Vector3.Zero;
+            for (int v = 0; v < part.LocalVertices.Length && v < source.Length; v++)
+                part.LocalVertices[v] = target ? anchor + (source[v] - anchor) * scale : source[v];
+            part.ApplyTransform(part.Transform);
+        }
+        _viewport.Invalidate();
+    }
+
+    private static Vector3 Centroid(Vector3[] vertices)
+    {
+        if (vertices.Length == 0) return Vector3.Zero;
+        Vector3 total = Vector3.Zero;
+        foreach (Vector3 vertex in vertices) total += vertex;
+        return total / vertices.Length;
+    }
+
+    private void RestoreScalePreview(Vector3[][] original)
+    {
+        for (int i = 0; i < _renderParts.Count && i < original.Length; i++)
+        {
+            RenderPart part = _renderParts[i];
+            Vector3[] source = original[i];
+            for (int v = 0; v < part.LocalVertices.Length && v < source.Length; v++)
+                part.LocalVertices[v] = source[v];
+            part.ApplyTransform(part.Transform);
+        }
+        _viewport.Invalidate();
+    }
+
+    private void ApplyScale(float scale, int selected)
+    {
+        if (_survivor != null)
+        {
+            _survivor.ScaleParts(scale, selected);
+            LoadSurvivorMesh();
+            return;
+        }
+        if (_petModel != null)
+        {
+            ScalePetMeshes(scale, selected);
+            LoadPetSelectedMesh();
+            return;
+        }
+        if (_re4Bin != null)
+        {
+            ScaleRe4Bin(scale, selected);
+            LoadRe4SelectedMesh();
+            return;
+        }
+        if (_re4Pmd != null)
+        {
+            ScaleRe4Pmd(scale, selected);
+            LoadRe4SelectedMesh();
+            return;
+        }
+        if (_re4GenericParts != null)
+        {
+            for (int i = 0; i < _re4GenericParts.Count; i++)
+                if (selected < 0 || i == selected) ScaleRe4PartVertices(_re4GenericParts[i], scale);
+            LoadRe4SelectedMesh();
+            return;
+        }
+        if (_model == null || _mesh.SelectedIndex < 0) return;
+        if (IsEmptyMeshChunk(_model, _mesh.SelectedIndex)) return;
+        IModelMesh source = _model.GetMesh(_mesh.SelectedIndex);
+        IModelMeshBuilder builder = source.ToBuilder();
+        if (selected >= builder.Count) return;
+        for (int i = 0; i < builder.Count; i++)
+        {
+            if (selected >= 0 && i != selected) continue;
+            if (ScaleBuilderPart(builder[i], scale)) continue;
+            MessageBox.Show(this, "This mesh layout cannot be scaled in place.", "Tool Hazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+        _model.SetMesh(_mesh.SelectedIndex, builder.ToMesh());
+        LoadSelectedMesh();
+    }
+
+    // PET vertices live in bone-local frames, so a uniform local scale grows each
+    // mesh object around its joints while the skeleton and weights stay intact.
+    private void ScalePetMeshes(float scale, int selectedPart)
+    {
+        if (_petModel == null) return;
+        bool boneGroup = selectedPart >= 0 && selectedPart < _petPartBones.Count;
+        int bone = boneGroup ? _petPartBones[selectedPart] : -1;
+        IEnumerable<WhiteDayPetMesh> meshes = boneGroup
+            ? new[] { _petModel.Meshes[_petPartMeshes[selectedPart]] }
+            : _petModel.Meshes;
+        foreach (var mesh in meshes)
+        {
+            foreach (var vertex in mesh.Vertices)
+            {
+                if (boneGroup && DominantBone(vertex) != bone) continue;
+                vertex.Position = new Vector4(vertex.Position.X * scale, vertex.Position.Y * scale,
+                    vertex.Position.Z * scale, vertex.Position.W);
+            }
+        }
+    }
+
+    private void ScaleRe4Bin(float scale, int selected)
+    {
+        if (_re4Bin == null) return;
+        var parts = new List<Re4MeshPart>();
+        for (int i = 0; i < _re4Bin.Parts.Count; i++)
+        {
+            var source = _re4Bin.Parts[i];
+            var scaled = new Re4MeshPart
+            {
+                MaterialIndex = source.MaterialIndex,
+                Name = source.Name,
+                Vertices = (float[])source.Vertices.Clone(),
+                UniqueNormals = source.UniqueNormals,
+                UniqueUvs = source.UniqueUvs,
+                UniqueColors = source.UniqueColors,
+                Indices = source.Indices
+            };
+            if (selected < 0 || i == selected) ScaleRe4PartVertices(scaled, scale);
+            parts.Add(scaled);
+        }
+        // Rebuilds the BIN vertex arrays and patches them into the file bytes.
+        _re4Bin.ReplaceGeometry(parts.ToArray());
+    }
+
+    private void ScaleRe4Pmd(float scale, int selected)
+    {
+        if (_re4Pmd == null) return;
+        int index = 0;
+        foreach (var node in _re4Pmd.Nodes)
+        foreach (var mesh in node.Meshes)
+        {
+            if (selected < 0 || index == selected)
+            {
+                for (int v = 0; v < mesh.VertexCount; v++)
+                {
+                    mesh.VertexData[v * 16] *= scale;
+                    mesh.VertexData[v * 16 + 1] *= scale;
+                    mesh.VertexData[v * 16 + 2] *= scale;
+                }
+                if (index < _re4Pmd.Parts.Count) ScaleRe4PartVertices(_re4Pmd.Parts[index], scale);
+            }
+            index++;
+        }
+    }
+
+    private static void ScaleRe4PartVertices(Re4MeshPart part, float scale)
+    {
+        for (int i = 0; i + 2 < part.Vertices.Length; i += 3)
+        {
+            part.Vertices[i] *= scale;
+            part.Vertices[i + 1] *= scale;
+            part.Vertices[i + 2] *= scale;
+        }
+        // Positions usually aliases Vertices; only scale a separate copy.
+        if (!ReferenceEquals(part.Positions, part.Vertices))
+        {
+            for (int i = 0; i + 2 < part.Positions.Length; i += 3)
+            {
+                part.Positions[i] *= scale;
+                part.Positions[i + 1] *= scale;
+                part.Positions[i + 2] *= scale;
+            }
+        }
+    }
+
+    // Classic vertices are shorts in part-local space, so an object-style scale
+    // multiplies each part around its own origin and leaves the armature alone.
+    private static bool ScaleBuilderPart(IModelMeshBuilderPart part, float scale)
+    {
+        switch (part)
+        {
+            case Md1.Builder.Part md1:
+                for (int i = 0; i < md1.Positions.Count; i++)
+                {
+                    Md1.Vector v = md1.Positions[i];
+                    md1.Positions[i] = new Md1.Vector(ScaleShort(v.x, scale), ScaleShort(v.y, scale), ScaleShort(v.z, scale));
+                }
+                return true;
+            case Md2.Builder.Part md2:
+                for (int i = 0; i < md2.Positions.Count; i++)
+                {
+                    Md2.Vector v = md2.Positions[i];
+                    md2.Positions[i] = new Md2.Vector(ScaleShort(v.x, scale), ScaleShort(v.y, scale), ScaleShort(v.z, scale));
+                }
+                return true;
+            case Tmd.Builder.Part tmd:
+                for (int i = 0; i < tmd.Positions.Count; i++)
+                {
+                    Tmd.Vector v = tmd.Positions[i];
+                    tmd.Positions[i] = new Tmd.Vector(ScaleShort(v.x, scale), ScaleShort(v.y, scale), ScaleShort(v.z, scale));
+                }
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private static short ScaleShort(short value, float scale) =>
+        (short)Math.Clamp(MathF.Round(value * scale), short.MinValue, short.MaxValue);
+
+    private float? PromptScaleFactor(string target, Action<float>? preview = null, Action? cancelPreview = null)
+    {
+        using var dialog = new Form
+        {
+            Text = "Scale mesh",
+            FormBorderStyle = FormBorderStyle.FixedDialog,
+            StartPosition = FormStartPosition.CenterParent,
+            MinimizeBox = false,
+            MaximizeBox = false,
+            ShowInTaskbar = false,
+            ClientSize = new Size(330, 116)
+        };
+        var value = new NumericUpDown
+        {
+            Location = new Point(12, 40), Width = 120, Minimum = 0.001m, Maximum = 1000m,
+            DecimalPlaces = 3, Increment = 0.05m, Value = 1m
+        };
+        var apply = new Button { Text = "Scale", DialogResult = DialogResult.OK, Location = new Point(152, 78), AutoSize = true };
+        var cancel = new Button { Text = "Cancel", DialogResult = DialogResult.Cancel, Location = new Point(238, 78), AutoSize = true };
+        dialog.Controls.Add(new Label { Text = $"Scale factor for {target} (0.5 = half size, 2 = double size):", Location = new Point(12, 12), AutoSize = true });
+        dialog.Controls.AddRange(new Control[] { value, apply, cancel });
+        dialog.AcceptButton = apply;
+        dialog.CancelButton = cancel;
+        if (preview != null) value.ValueChanged += (_, _) => preview((float)value.Value);
+        if (dialog.ShowDialog(this) != DialogResult.OK)
+        {
+            cancelPreview?.Invoke();
+            return null;
+        }
+        return (float)value.Value;
+    }
+
     private void ReplaceSurvivorMesh(bool selectedPart, bool native)
     {
         if (_survivor == null) return;
@@ -2591,8 +3346,10 @@ public sealed class BiohazardModelViewerForm : Form
         if (_petModel == null || _petModel.Meshes.Count == 0) return;
         int sel = selectedPart ? SelectedPartIndex() : -1;
         if (selectedPart && sel < 0) return;
-        var meshes = selectedPart ? new List<WhiteDayPetMesh> { _petModel.Meshes[sel] } : _petModel.Meshes;
-        string defaultName = selectedPart ? $"pet_part_{sel:D2}.obj" : $"{Path.GetFileNameWithoutExtension(_path ?? "pet")}.obj";
+        int meshIndex = selectedPart && sel < _petPartMeshes.Count ? _petPartMeshes[sel] : -1;
+        if (selectedPart && meshIndex < 0) return;
+        var meshes = selectedPart ? new List<WhiteDayPetMesh> { _petModel.Meshes[meshIndex] } : _petModel.Meshes;
+        string defaultName = selectedPart ? $"pet_part_{meshIndex:D2}.obj" : $"{Path.GetFileNameWithoutExtension(_path ?? "pet")}.obj";
         using var dialog = new SaveFileDialog { FileName = defaultName, Filter = "Wavefront OBJ (*.obj)|*.obj" };
         if (dialog.ShowDialog(this) != DialogResult.OK) return;
         try
@@ -2873,6 +3630,15 @@ public sealed class BiohazardModelViewerForm : Form
         }
     }
 
+    // A mesh chunk may legally contain zero parts. RE3 EMDs use a 4-byte empty MD2
+    // for the first mesh of most enemies and store the real body in the next chunk;
+    // detecting that keeps the dropdown honest and the initial selection useful.
+    private static bool IsEmptyMeshChunk(ModelFile model, int meshNumber)
+    {
+        try { return model.GetMesh(meshNumber).NumParts == 0; }
+        catch { return true; }
+    }
+
     private void LoadSelectedMesh()
     {
         if (_survivorHmd != null) { LoadSurvivorHmd(); return; }
@@ -2880,6 +3646,15 @@ public sealed class BiohazardModelViewerForm : Form
         if (_petModel != null) { LoadPetSelectedMesh(); return; }
         if (_re4Bin != null || _re4Pmd != null || _re4GenericParts != null || _re4Scenario != null) { LoadRe4SelectedMesh(); return; }
         if (_model == null || _mesh.SelectedIndex < 0) return;
+        if (IsEmptyMeshChunk(_model, _mesh.SelectedIndex))
+        {
+            _renderParts = new List<RenderPart>();
+            _parts.Items.Clear();
+            _viewport.SetModel(_renderParts, _texture == null ? null : new TimTexture(_texture));
+            _viewport.SetSkeleton(null, null);
+            _details.Text = $"Game: {VersionName(_model.Version)}\r\nType: {Path.GetExtension(_path!).TrimStart('.').ToUpperInvariant()}\r\nMesh {_mesh.SelectedIndex} is empty (0 parts).\r\nRE3 EMDs often keep an empty first mesh chunk; select the next mesh in the list.";
+            return;
+        }
         try
         {
             IModelMesh source = _model.GetMesh(_mesh.SelectedIndex);
@@ -2925,6 +3700,16 @@ public sealed class BiohazardModelViewerForm : Form
                 parts.Add(part);
             }
 
+            if (parts.Count == 0)
+            {
+                _renderParts = parts;
+                _parts.Items.Clear();
+                _viewport.SetModel(parts, _texture == null ? null : new TimTexture(_texture));
+                _viewport.SetSkeleton(null, null);
+                _details.Text = $"Game: {VersionName(_model.Version)}\r\nType: {Path.GetExtension(_path!).TrimStart('.').ToUpperInvariant()}\r\nMesh {_mesh.SelectedIndex} is empty (0 parts).\r\nRE3 EMDs often keep an empty first mesh chunk; select the next mesh in the list.";
+                return;
+            }
+
             int boneCount = Math.Min(parts.Count, skeleton?.NumParts ?? parts.Count);
             _parts.Items.Clear();
             for (int i = 0; i < parts.Count; i++)
@@ -2940,11 +3725,12 @@ public sealed class BiohazardModelViewerForm : Form
             else
                 _viewport.SetSkeleton(null, null);
             string texture = _texture == null ? "None" : $"{(_texturePath == "Embedded TIM" ? _texturePath : Path.GetFileName(_texturePath))} ({_texture.Width}x{_texture.Height})";
-            _details.Text = $"Game: {VersionName(_model.Version)}\r\nType: {Path.GetExtension(_path!).TrimStart('.').ToUpperInvariant()}\r\nParts: {parts.Count:N0}  Bones: {boneCount:N0}  Triangles: {triangles:N0}\r\nTexture: {texture}\r\nCLUT: per polygon";
+            string textureLayout = _texture == null ? "" : "\r\n" + DescribeTimTextureLayout();
+            _details.Text = $"Game: {VersionName(_model.Version)}\r\nType: {Path.GetExtension(_path!).TrimStart('.').ToUpperInvariant()}\r\nParts: {parts.Count:N0}  Bones: {boneCount:N0}  Triangles: {triangles:N0}\r\nTexture: {texture}{textureLayout}\r\nCLUT: per polygon";
         }
         catch (Exception ex)
         {
-            MessageBox.Show(this, $"Mesh load failed:\n{ex.Message}", "Biohazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(this, $"Mesh load failed:\n{ex.Message}", "Tool Hazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
@@ -3130,7 +3916,20 @@ public sealed class BiohazardModelViewerForm : Form
         public void Replace(Bitmap bitmap, byte[] data)
         {
             if (bitmap.Width != Width || bitmap.Height != Height)
-                throw new InvalidDataException($"The replacement must be exactly {Width}x{Height} pixels (the exported atlas size).");
+            {
+                // Any image size is accepted: scale it onto the embedded atlas
+                // layout. Surfaces are stored side by side, so one uniform scale
+                // keeps every surface aligned with its stored UV range.
+                using var scaled = new Bitmap(Width, Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+                using (var graphics = System.Drawing.Graphics.FromImage(scaled))
+                {
+                    graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                    graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+                    graphics.DrawImage(bitmap, new Rectangle(0, 0, Width, Height));
+                }
+                Replace(scaled, data);
+                return;
+            }
             int sourceX = 0;
             foreach ((int offset, int width, int height) in _surfaces)
             {
@@ -3493,6 +4292,66 @@ public sealed class BiohazardModelViewerForm : Form
         {
             int vertexEnd = checked(8 + _vertices.Length * VertexStride);
             _suffix = _data.AsSpan(vertexEnd).ToArray();
+        }
+
+        // The embedded surface stores its own size in the NAB header, so a single
+        // surface takes the replacement image at its own dimensions instead of
+        // being resampled back onto the old atlas. UVs are stored normalized, so
+        // the cached pixel-space UVs follow the new size and the file stays as-is.
+        // Multi-surface atlases keep their layout (the extra surfaces and their
+        // pointers live in the file), so those images are fitted to the atlas.
+        public void ReplaceTexture(Bitmap bitmap)
+        {
+            if (Texture.SurfaceCount != 1 || (bitmap.Width == Texture.Width && bitmap.Height == Texture.Height))
+            {
+                Texture.Replace(bitmap, _data);
+                CommitTextureEdits();
+                return;
+            }
+            // The NAB reader accepts at most 2048 pixels per side.
+            if (bitmap.Width > 2048 || bitmap.Height > 2048)
+                throw new InvalidDataException("NAB embedded textures are limited to 2048 pixels per side.");
+            int oldWidth = Texture.Width, oldHeight = Texture.Height;
+            ReplaceSingleSurface(EncodeSurface(bitmap), bitmap.Width, bitmap.Height);
+            float scaleX = (bitmap.Width - 1) / (float)Math.Max(1, oldWidth - 1);
+            float scaleY = (bitmap.Height - 1) / (float)Math.Max(1, oldHeight - 1);
+            for (int i = 0; i < _uv.Length; i++)
+                _uv[i] = new Vector2(_uv[i].X * scaleX, _uv[i].Y * scaleY);
+        }
+
+        private static byte[] EncodeSurface(Bitmap bitmap)
+        {
+            byte[] image = new byte[checked(bitmap.Width * bitmap.Height * 2)];
+            for (int y = 0; y < bitmap.Height; y++)
+            for (int x = 0; x < bitmap.Width; x++)
+            {
+                Color color = bitmap.GetPixel(x, y);
+                // Bit 15 is the alpha/opaque flag the game uses (see GetPixel).
+                ushort value = (ushort)((color.A != 0 ? 0x8000 : 0) | ((color.R * 31 / 255) << 10) | ((color.G * 31 / 255) << 5) | (color.B * 31 / 255));
+                int offset = (y * bitmap.Width + x) * 2;
+                image[offset] = (byte)value;
+                image[offset + 1] = (byte)(value >> 8);
+            }
+            return image;
+        }
+
+        // Scales mesh objects around their own joint origin, matching an object-mode
+        // scale in Blender; normals and UVs are unaffected by a uniform scale.
+        public void ScaleParts(float factor, int selectedGroup)
+        {
+            if (!float.IsFinite(factor) || factor <= 0)
+                throw new InvalidDataException("The scale factor must be a positive number.");
+            if (selectedGroup >= _groups.Length)
+                throw new InvalidDataException("The selected mesh part no longer exists.");
+            for (int group = 0; group < _groups.Length; group++)
+            {
+                if (selectedGroup >= 0 && group != selectedGroup) continue;
+                int first = _groups[group].TriangleStart * 3;
+                int count = _groups[group].TriangleCount * 3;
+                for (int i = first; i < first + count; i++)
+                    _vertices[i] *= factor;
+            }
+            _data = SerializeMesh();
         }
 
         public void ExportObj(string path, int selectedGroup)
@@ -4728,6 +5587,55 @@ public sealed class BiohazardModelViewerForm : Form
     }
     private sealed record AnimationChoice(IEdd Edd, Emr Skeleton, int Bank, int AnimationIndex);
 
+    // A CheckedListBox toggles a row whenever that row is clicked while already
+    // selected (CheckOnClick only widens this to the first click too), which made
+    // selecting a part for highlighting also hide it. Here a click toggles only
+    // when it lands on the check box; anywhere else in the row just selects.
+    private sealed class PartListBox : CheckedListBox
+    {
+        private const int WmLeftButtonDown = 0x0201;
+        private const int WmLeftButtonDoubleClick = 0x0203;
+
+        protected override void WndProc(ref Message m)
+        {
+            if (m.Msg != WmLeftButtonDown && m.Msg != WmLeftButtonDoubleClick)
+            {
+                base.WndProc(ref m);
+                return;
+            }
+
+            int raw = unchecked((int)(long)m.LParam);
+            var click = new Point((short)(raw & 0xFFFF), (short)((raw >> 16) & 0xFFFF));
+            int index = IndexFromPoint(click);
+            bool onGlyph = index >= 0 && IsOnGlyph(index, click);
+            bool wasChecked = index >= 0 && GetItemChecked(index);
+            base.WndProc(ref m);
+            if (index < 0) return;
+
+            bool isChecked = GetItemChecked(index);
+            if (!onGlyph)
+            {
+                // The row click flipped the box on its own: put it back.
+                if (isChecked != wasChecked) SetItemChecked(index, wasChecked);
+            }
+            else if (isChecked == wasChecked)
+            {
+                // A first click on an unselected row only selects it, so the
+                // check box itself has to be applied here.
+                SetItemChecked(index, !wasChecked);
+            }
+        }
+
+        private bool IsOnGlyph(int index, Point click)
+        {
+            // The glyph is drawn at the left of the row and is 13 device pixels at
+            // 96 DPI; the text starts a few pixels to its right.
+            Rectangle bounds = GetItemRectangle(index);
+            int glyphWidth = (DeviceDpi * 13 / 96) + 3;
+            return click.X >= bounds.Left && click.X < bounds.Left + glyphWidth;
+        }
+    }
+
     private sealed class RenderPart
     {
         public Vector3[] LocalVertices { get; }
@@ -4736,6 +5644,11 @@ public sealed class BiohazardModelViewerForm : Form
         public Vector3[] Normals { get; private set; }
         public List<RenderFace> Faces { get; }
         public bool Visible { get; set; } = true;
+        // Transform most recently applied, so a preview can re-project the local
+        // vertices without asking the owner for it again.
+        public Matrix4x4 Transform { get; private set; } = Matrix4x4.Identity;
+        // Source group this part came from (PET: dominant bone index; -1 = whole).
+        public int Group { get; init; } = -1;
 
         public RenderPart(Vector3[] localVertices, List<RenderFace> faces, Vector3[]? localNormals = null)
         {
@@ -4748,6 +5661,7 @@ public sealed class BiohazardModelViewerForm : Form
 
         public void ApplyTransform(Matrix4x4 transform)
         {
+            Transform = transform;
             for (int i = 0; i < LocalVertices.Length; i++)
             {
                 Vector3 p = Vector3.Transform(LocalVertices[i], transform);
@@ -4787,6 +5701,10 @@ public sealed class BiohazardModelViewerForm : Form
         private bool _smoothShading = true;
         private bool _texturesVisible = true;
         private IViewerTexture? _texture;
+        private int _selectedPart = -1;
+        private long _selectionStartTicks;
+        private readonly System.Windows.Forms.Timer _selectionPulse = new() { Interval = 40 };
+        private static readonly Color SelectionTint = Color.FromArgb(255, 255, 148, 48);
 
         public bool Wireframe { get => _wireframe; set { _wireframe = value; Invalidate(); } }
         public bool SmoothShading { get => _smoothShading; set { _smoothShading = value; Invalidate(); } }
@@ -4812,12 +5730,42 @@ public sealed class BiohazardModelViewerForm : Form
             DoubleBuffered = true;
             BackColor = Color.FromArgb(28, 30, 34);
             SetStyle(ControlStyles.ResizeRedraw, true);
+            _selectionPulse.Tick += (_, _) =>
+            {
+                if (_selectedPart >= 0) Invalidate();
+                else _selectionPulse.Stop();
+            };
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing) _selectionPulse.Dispose();
+            base.Dispose(disposing);
+        }
+
+        // Blender-style active object: -1 means nothing is highlighted.
+        public void SelectPart(int index)
+        {
+            if (index == _selectedPart) return;
+            _selectedPart = index;
+            _selectionStartTicks = Environment.TickCount64;
+            if (index >= 0)
+            {
+                if (!_selectionPulse.Enabled) _selectionPulse.Start();
+            }
+            else
+            {
+                _selectionPulse.Stop();
+            }
+            Invalidate();
         }
 
         public void SetModel(List<RenderPart> parts, IViewerTexture? texture)
         {
             _parts = parts;
             _texture = texture;
+            _selectedPart = -1;
+            _selectionPulse.Stop();
             _joints.Clear();
             _jointParents.Clear();
             Vector3[] all = parts.SelectMany(x => x.Vertices).ToArray();
@@ -4876,10 +5824,16 @@ public sealed class BiohazardModelViewerForm : Form
             int pixelCount = Math.Max(1, Width * Height);
             int[] pixels = Enumerable.Repeat(BackColor.ToArgb(), pixelCount).ToArray();
             float[] depth = Enumerable.Repeat(float.PositiveInfinity, pixelCount).ToArray();
+            int selectedPart = (uint)_selectedPart < (uint)_parts.Count ? _selectedPart : -1;
+            // Pixels the selected part actually covers, filled during rasterisation
+            // so the highlight follows the visible surfaces and stays occluded by
+            // parts drawn in front of it.
+            int[]? selectionMask = selectedPart >= 0 ? new int[pixelCount] : null;
             for (int partIndex = 0; partIndex < _parts.Count; partIndex++)
             {
                 RenderPart part = _parts[partIndex];
                 if (!part.Visible) continue;
+                int[]? partMask = partIndex == selectedPart ? selectionMask : null;
                 Vector3[] transformed = part.Vertices.Select(v => Vector3.Transform(v - _center, rotation)).ToArray();
                 Vector3[] normals = part.Normals.Select(n => n.LengthSquared() == 0 ? Vector3.UnitZ : Vector3.Normalize(Vector3.TransformNormal(n, rotation))).ToArray();
                 foreach (RenderFace face in part.Faces)
@@ -4893,9 +5847,11 @@ public sealed class BiohazardModelViewerForm : Form
                         : light).ToArray();
                     Vector3[] screen = face.Indices.Select(i => new Vector3(Width / 2f + transformed[i].X * scale,
                         Height / 2f + transformed[i].Y * scale, transformed[i].Z)).ToArray();
-                    RasterTriangle(pixels, depth, screen, face, lights, ColorFromPart(partIndex));
+                    RasterTriangle(pixels, depth, screen, face, lights, ColorFromPart(partIndex), partMask);
                 }
             }
+            if (selectionMask != null)
+                DrawSelection(pixels, selectionMask, SelectionPulseLevel());
 
             using (var bitmap = new Bitmap(Math.Max(1, Width), Math.Max(1, Height), System.Drawing.Imaging.PixelFormat.Format32bppArgb))
             {
@@ -4934,11 +5890,69 @@ public sealed class BiohazardModelViewerForm : Form
             }
         }
 
-        private void RasterTriangle(int[] pixels, float[] depth, Vector3[] p, RenderFace face, float[] lights, Color fallback)
+        private float SelectionPulseLevel()
+        {
+            double seconds = (Environment.TickCount64 - _selectionStartTicks) / 1000.0;
+            return 0.5f - 0.5f * MathF.Cos((float)(seconds * 3.6));
+        }
+
+        // Soft tinted fill plus an outline around the selected part; both breathe
+        // in and out so the selection reads like Blender's pulsing highlight.
+        private void DrawSelection(int[] pixels, int[] mask, float pulse)
+        {
+            int w = Width, h = Height;
+            int minX = w, minY = h, maxX = -1, maxY = -1;
+            for (int y = 0; y < h; y++)
+            {
+                int row = y * w;
+                for (int x = 0; x < w; x++)
+                {
+                    if (mask[row + x] == 0) continue;
+                    if (x < minX) minX = x;
+                    if (x > maxX) maxX = x;
+                    if (y < minY) minY = y;
+                    if (y > maxY) maxY = y;
+                }
+            }
+            if (maxX < 0) return;
+
+            float fillAlpha = 0.05f + 0.13f * pulse;
+            float edgeAlpha = 0.55f + 0.45f * pulse;
+            int x0 = Math.Max(0, minX - 1), x1 = Math.Min(w - 1, maxX + 1);
+            int y0 = Math.Max(0, minY - 1), y1 = Math.Min(h - 1, maxY + 1);
+            for (int y = y0; y <= y1; y++)
+            {
+                int row = y * w;
+                for (int x = x0; x <= x1; x++)
+                {
+                    int index = row + x;
+                    bool inside = mask[index] != 0;
+                    bool edge = (x > 0 && (mask[index - 1] != 0) != inside)
+                        || (x < w - 1 && (mask[index + 1] != 0) != inside)
+                        || (y > 0 && (mask[index - w] != 0) != inside)
+                        || (y < h - 1 && (mask[index + w] != 0) != inside);
+                    if (edge) BlendPixel(pixels, index, SelectionTint, edgeAlpha);
+                    else if (inside) BlendPixel(pixels, index, SelectionTint, fillAlpha);
+                }
+            }
+        }
+
+        private static void BlendPixel(int[] pixels, int index, Color color, float alpha)
+        {
+            if (alpha <= 0) return;
+            int dst = pixels[index];
+            int dr = (dst >> 16) & 0xFF, dg = (dst >> 8) & 0xFF, db = dst & 0xFF;
+            int r = (int)(dr + (color.R - dr) * alpha);
+            int g = (int)(dg + (color.G - dg) * alpha);
+            int b = (int)(db + (color.B - db) * alpha);
+            pixels[index] = unchecked((int)0xFF000000) | (r << 16) | (g << 8) | b;
+        }
+
+        private void RasterTriangle(int[] pixels, float[] depth, Vector3[] p, RenderFace face, float[] lights, Color fallback, int[]? selectionMask = null)
         {
             if (Wireframe)
             {
-                DrawWire(pixels, p, Color.Gainsboro.ToArgb());
+                DrawWire(pixels, p, selectionMask != null ? SelectionTint.ToArgb() : Color.Gainsboro.ToArgb());
                 return;
             }
             float area = Edge(p[0], p[1], p[2].X, p[2].Y);
@@ -4973,7 +5987,12 @@ public sealed class BiohazardModelViewerForm : Form
                     (int)(fallback.R * light * vr), (int)(fallback.G * light * vg), (int)(fallback.B * light * vb));
 
                 Color color = flat;
-                if (face.Clut < 0) { depth[index] = z; pixels[index] = flat.ToArgb(); continue; }
+                if (face.Clut < 0)
+                {
+                    depth[index] = z; pixels[index] = flat.ToArgb();
+                    if (selectionMask != null) selectionMask[index] = 1;
+                    continue;
+                }
                 IViewerTexture? tex = face.Texture ?? _texture;
                 if (tex != null && TexturesVisible)
                 {
@@ -4997,6 +6016,7 @@ public sealed class BiohazardModelViewerForm : Form
                 }
                 depth[index] = z;
                 pixels[index] = color.ToArgb();
+                if (selectionMask != null) selectionMask[index] = 1;
             }
         }
 
