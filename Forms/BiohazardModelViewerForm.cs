@@ -117,7 +117,8 @@ public sealed class BiohazardModelViewerForm : Form
         });
         meshMenu.DropDownItems.AddRange(new ToolStripItem[] { exportMenu, importMenu, new ToolStripSeparator(), scaleMenu,
             new ToolStripMenuItem("Fit selected part to size...", null, (_, _) => FitSelectedPart()),
-            new ToolStripMenuItem("Adjust selected part UVs...", null, (_, _) => AdjustSurvivorUvs()) });
+            new ToolStripMenuItem("Adjust selected part UVs...", null, (_, _) => AdjustSurvivorUvs()),
+            new ToolStripMenuItem("Weld vertices by distance + recalculate normals (outside)...", null, (_, _) => WeldSurvivorNormals()) });
         var textureMenu = new ToolStripMenuItem("Texture");
         textureMenu.DropDownItems.AddRange(new ToolStripItem[] {
             new ToolStripMenuItem("View texture...", null, (_, _) => ViewTexture()),
@@ -3413,6 +3414,10 @@ public sealed class BiohazardModelViewerForm : Form
     // Porting aid: scale/offset the selected part's UVs with a live preview, so a
     // texture that does not line up (wrong atlas size, page offset) can be fixed here
     // instead of round-tripping through Blender.
+    //
+    // The right-hand pane draws the selected part's UVs directly on top of the
+    // texture atlas (1 texel = 1 pixel, each face offset by its texture page) and
+    // redraws them on every slider change, so it is visible where the UVs move to.
     private void AdjustSurvivorUvs()
     {
         if (_survivor == null)
@@ -3435,6 +3440,11 @@ public sealed class BiohazardModelViewerForm : Form
                     minV = Math.Min(minV, uv.Y); maxV = Math.Max(maxV, uv.Y);
                 }
 
+            // The atlas itself never changes in this dialog, so render it once.
+            Bitmap? textureBase = null;
+            try { textureBase = RenderSurvivorTextureAtlas(_survivor.Texture); }
+            catch { textureBase = null; }
+
             using var dialog = new Form
             {
                 Text = "Adjust UVs",
@@ -3442,8 +3452,29 @@ public sealed class BiohazardModelViewerForm : Form
                 StartPosition = FormStartPosition.CenterParent,
                 MinimizeBox = false,
                 MaximizeBox = false,
-                ClientSize = new Size(430, 262)
+                ClientSize = new Size(1060, 660)
             };
+
+            // Left strip keeps the original sliders; the right pane shows the
+            // texture with the live UV overlay and scrolls if the atlas is larger
+            // than the pane.
+            var controls = new Panel { Dock = DockStyle.Left, Width = 430, Padding = new Padding(8) };
+            var previewPane = new Panel { Dock = DockStyle.Fill, BorderStyle = BorderStyle.FixedSingle, AutoScroll = true, BackColor = Color.FromArgb(32, 32, 32) };
+            var uvPicture = new PictureBox { SizeMode = PictureBoxSizeMode.AutoSize, BackColor = Color.FromArgb(32, 32, 32), Location = new Point(0, 0) };
+            var uvHint = new Label
+            {
+                Dock = DockStyle.Bottom,
+                Height = 44,
+                Padding = new Padding(6),
+                BackColor = Color.FromArgb(32, 32, 32),
+                ForeColor = Color.Silver,
+                Text = textureBase == null
+                    ? "Texture atlas could not be decoded; UVs still update in the 3D viewport."
+                    : $"Texture atlas {textureBase.Width}x{textureBase.Height} - UV outlines are drawn 1:1 over the texture (each face's texture page offset included). Move the sliders to see the UVs shift live."
+            };
+            previewPane.Controls.Add(uvPicture);
+            previewPane.Controls.Add(uvHint);
+
             var scaleU = new NumericUpDown { Location = new Point(150, 12), Width = 90, DecimalPlaces = 3, Increment = 0.05m, Minimum = 0.01m, Maximum = 100m, Value = 1m };
             var scaleV = new NumericUpDown { Location = new Point(150, 44), Width = 90, DecimalPlaces = 3, Increment = 0.05m, Minimum = 0.01m, Maximum = 100m, Value = 1m };
             var offsetU = new NumericUpDown { Location = new Point(150, 76), Width = 90, DecimalPlaces = 1, Increment = 1m, Minimum = -2048m, Maximum = 2048m };
@@ -3465,11 +3496,56 @@ public sealed class BiohazardModelViewerForm : Form
             var apply = new Button { Text = "Apply", DialogResult = DialogResult.OK, Location = new Point(252, 226), AutoSize = true };
             var cancel = new Button { Text = "Cancel", DialogResult = DialogResult.Cancel, Location = new Point(338, 226), AutoSize = true };
 
+            Bitmap? overlay = null;
+
+            void RenderOverlay()
+            {
+                if (textureBase == null) { uvPicture.Image = null; return; }
+                Bitmap? previous = overlay;
+                overlay = new Bitmap(textureBase);
+                try
+                {
+                    using var g = Graphics.FromImage(overlay);
+                    g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.None;
+                    int w = textureBase.Width, h = textureBase.Height;
+                    using var border = new Pen(Color.Gray);
+                    g.DrawRectangle(border, 0, 0, w - 1, h - 1);
+                    using var pageGrid = new Pen(Color.FromArgb(100, 140, 140, 140)) { DashStyle = System.Drawing.Drawing2D.DashStyle.Dot };
+                    for (int x = 128; x < w; x += 128) g.DrawLine(pageGrid, x, 0, x, h - 1);
+                    using var fill = new SolidBrush(Color.FromArgb(40, 0, 255, 255));
+                    using var stroke = new Pen(Color.FromArgb(255, 0, 255, 255), 1.4f);
+                    using var dots = new SolidBrush(Color.White);
+                    foreach (var face in part.Faces)
+                    {
+                        if (face.UV == null || face.UV.Length < 3) continue;
+                        var pts = new PointF[face.UV.Length];
+                        for (int c = 0; c < pts.Length; c++)
+                            // Survivor UVs are texel pixels on the atlas; each face is
+                            // offset by its texture page (128 px slots side by side),
+                            // matching exactly how the viewport rasterizes them.
+                            pts[c] = new PointF(face.UV[c].X + face.Page * 128f, face.UV[c].Y);
+                        g.FillPolygon(fill, pts);
+                        g.DrawPolygon(stroke, pts);
+                        foreach (var p in pts) g.FillRectangle(dots, p.X - 1.5f, p.Y - 1.5f, 3f, 3f);
+                    }
+                }
+                catch
+                {
+                    overlay?.Dispose();
+                    overlay = null;
+                    uvPicture.Image = null;
+                    return;
+                }
+                uvPicture.Image = overlay;
+                previous?.Dispose();
+            }
+
             void Restore()
             {
                 for (int i = 0; i < part.Faces.Count && i < original.Length; i++)
                     Array.Copy(original[i], part.Faces[i].UV, Math.Min(original[i].Length, part.Faces[i].UV.Length));
                 _viewport.Invalidate();
+                RenderOverlay();
             }
 
             void Preview()
@@ -3486,6 +3562,7 @@ public sealed class BiohazardModelViewerForm : Form
                 info.Text = $"Atlas {_survivor.Texture.Width}x{_survivor.Texture.Height}\r\n"
                     + $"UV pixels u {minU * su + ou:0.#}..{maxU * su + ou:0.#} v {minV * sv + ov:0.#}..{maxV * sv + ov:0.#}";
                 _viewport.Invalidate();
+                RenderOverlay();
             }
 
             scaleU.ValueChanged += (_, _) => Preview();
@@ -3498,7 +3575,7 @@ public sealed class BiohazardModelViewerForm : Form
                 scaleV.Value = Math.Clamp(sourceHeight.Value / Math.Max(1m, _survivor.Texture.Height), scaleV.Minimum, scaleV.Maximum);
                 Preview();
             };
-            dialog.Controls.AddRange(new Control[]
+            controls.Controls.AddRange(new Control[]
             {
                 new Label { Text = "U scale:", Location = new Point(12, 14), AutoSize = true }, scaleU,
                 new Label { Text = "V scale:", Location = new Point(12, 46), AutoSize = true }, scaleV,
@@ -3508,16 +3585,28 @@ public sealed class BiohazardModelViewerForm : Form
                 new Label { Text = "x", Location = new Point(226, 142), AutoSize = true }, sourceHeight, matchSource,
                 info, apply, cancel
             });
+            dialog.Controls.Add(previewPane);
+            dialog.Controls.Add(controls);
             dialog.AcceptButton = apply;
             dialog.CancelButton = cancel;
-            if (dialog.ShowDialog(this) != DialogResult.OK)
+            // Draw the starting layout so the UV map is visible before any slider move.
+            Preview();
+            try
             {
-                Restore();
-                return;
+                if (dialog.ShowDialog(this) != DialogResult.OK)
+                {
+                    Restore(); // cancel: put the UVs back exactly as they were
+                    return;
+                }
             }
+            finally
+            {
+                overlay?.Dispose();
+                textureBase?.Dispose();
+            }
+
             float finalScaleU = (float)scaleU.Value, finalScaleV = (float)scaleV.Value;
             float finalOffsetU = (float)offsetU.Value, finalOffsetV = (float)offsetV.Value;
-            dialog.Dispose();
 
             _survivor.AdjustGroupUvs(selected, finalScaleU, finalScaleV, finalOffsetU, finalOffsetV);
             LoadSurvivorMesh();
@@ -3526,6 +3615,73 @@ public sealed class BiohazardModelViewerForm : Form
         {
             MessageBox.Show(this, $"UV adjustment failed:\n{ex.Message}", "Tool Hazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
+    }
+
+    private void WeldSurvivorNormals()
+    {
+        if (_survivor == null)
+        {
+            MessageBox.Show(this, "Welding is available for Survivor NAB models.", "Tool Hazard Model Viewer",
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+        using var dialog = new Form
+        {
+            Text = "Weld vertices & recalculate normals",
+            FormBorderStyle = FormBorderStyle.FixedDialog,
+            StartPosition = FormStartPosition.CenterParent,
+            MinimizeBox = false,
+            MaximizeBox = false,
+            ClientSize = new Size(400, 164)
+        };
+        var distance = new NumericUpDown { Location = new Point(150, 14), Width = 90, DecimalPlaces = 4, Increment = 0.001m, Minimum = 0.0001m, Maximum = 10m, Value = 0.01m };
+        var info = new Label
+        {
+            Location = new Point(12, 56),
+            AutoSize = false,
+            Width = 376,
+            Height = 52,
+            Text = "Vertices within this distance are treated as a single point so their normals are smoothed.\r\n" +
+                   "Normals are re-oriented to point outside the model. Vertex count is unchanged (raw triangle stream)."
+        };
+        var apply = new Button { Text = "Apply", DialogResult = DialogResult.OK, Location = new Point(216, 122), AutoSize = true };
+        var cancel = new Button { Text = "Cancel", DialogResult = DialogResult.Cancel, Location = new Point(302, 122), AutoSize = true };
+        dialog.Controls.AddRange(new Control[]
+        {
+            new Label { Text = "Weld distance:", Location = new Point(12, 16), AutoSize = true }, distance,
+            info, apply, cancel
+        });
+        dialog.AcceptButton = apply;
+        dialog.CancelButton = cancel;
+        if (dialog.ShowDialog(this) != DialogResult.OK) return;
+        try
+        {
+            _survivor.WeldAndRecalculateNormalsOutside((float)distance.Value);
+            LoadSurvivorMesh();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, $"Weld failed:\n{ex.Message}", "Tool Hazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    // Renders the Survivor NAB texture atlas (surfaces side by side, exactly as the
+    // viewport samples it) into a bitmap so UVs can be drawn over it 1:1.
+    private static Bitmap RenderSurvivorTextureAtlas(SurvivorTexture tex)
+    {
+        int w = tex.Width, h = tex.Height;
+        var bmp = new Bitmap(w, h, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+        var rect = new Rectangle(0, 0, w, h);
+        var bits = bmp.LockBits(rect, System.Drawing.Imaging.ImageLockMode.WriteOnly, bmp.PixelFormat);
+        try
+        {
+            int stride = bits.Stride;
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
+                    Marshal.WriteInt32(bits.Scan0, y * stride + x * 4, unchecked((int)tex.GetPixel(x, y, 0)));
+        }
+        finally { bmp.UnlockBits(bits); }
+        return bmp;
     }
 
     // The OBJ exporter writes its atlas next to the model, so its size tells us the
@@ -4646,6 +4802,80 @@ public sealed class BiohazardModelViewerForm : Form
             for (int i = first; i < first + count && i < _uv.Length; i++)
                 _uv[i] = new Vector2(_uv[i].X * scaleU + offsetU, _uv[i].Y * scaleV + offsetV);
             _data = SerializeMesh();
+        }
+
+        // Merges vertices that sit within `weldDistance` of each other and rebuilds
+        // the per-vertex normals as the average of the adjacent face normals,
+        // oriented to point outside the model. The raw triangle-stream layout is
+        // preserved (vertex count is unchanged) so the NAB can be re-serialized and
+        // saved as-is. Surfaces that were unwelded with broken normals shade
+        // smoothly afterwards.
+        public void WeldAndRecalculateNormalsOutside(float weldDistance)
+        {
+            int n = _vertices.Length;
+            if (n == 0) return;
+            float sq = weldDistance * weldDistance;
+            var parent = new int[n];
+            for (int i = 0; i < n; i++) parent[i] = i;
+            int Find(int x)
+            {
+                while (parent[x] != x) { parent[x] = parent[parent[x]]; x = parent[x]; }
+                return x;
+            }
+            void Union(int a, int b)
+            {
+                a = Find(a); b = Find(b);
+                if (a != b) parent[b] = a;
+            }
+            for (int i = 0; i < n; i++)
+                for (int j = i + 1; j < n; j++)
+                    if (Vector3.DistanceSquared(_vertices[i], _vertices[j]) <= sq)
+                        Union(i, j);
+
+            // Centre of the model, used to decide which way is "outside".
+            Vector3 center = Vector3.Zero;
+            for (int i = 0; i < n; i++) center += _vertices[i];
+            center /= n;
+
+            // Group vertex indices by welded root.
+            var clusters = new Dictionary<int, List<int>>(n);
+            for (int i = 0; i < n; i++)
+            {
+                int r = Find(i);
+                if (!clusters.TryGetValue(r, out var list)) { list = new List<int>(); clusters[r] = list; }
+                list.Add(i);
+            }
+
+            var newNormals = new Vector3[n];
+            foreach (var cluster in clusters.Values)
+            {
+                // Position of this welded vertex (average of members).
+                Vector3 pos = Vector3.Zero;
+                foreach (int i in cluster) pos += _vertices[i];
+                pos /= cluster.Count;
+
+                // Sum of the outward-oriented face normals of every triangle touching this vertex.
+                Vector3 normalSum = Vector3.Zero;
+                foreach (int vi in cluster)
+                {
+                    int tri = vi / 3;
+                    int a = tri * 3, b = a + 1, c = a + 2;
+                    Vector3 face = Vector3.Cross(_vertices[b] - _vertices[a], _vertices[c] - _vertices[a]);
+                    if (face.LengthSquared() <= 1e-12f) continue;
+                    face = Vector3.Normalize(face);
+                    Vector3 centroid = (_vertices[a] + _vertices[b] + _vertices[c]) / 3f;
+                    // Orient this face normal away from the model centre.
+                    if (Vector3.Dot(face, centroid - center) < 0f) face = -face;
+                    normalSum += face;
+                }
+                if (normalSum.LengthSquared() <= 1e-12f) normalSum = Vector3.UnitY;
+                else normalSum = Vector3.Normalize(normalSum);
+                // Final "outside" check for the averaged normal itself.
+                if (Vector3.Dot(normalSum, pos - center) < 0f) normalSum = -normalSum;
+
+                foreach (int i in cluster) newNormals[i] = normalSum;
+            }
+            _normals = newNormals;
         }
 
         public void ExportObj(string path, int selectedGroup)
@@ -6191,11 +6421,16 @@ public sealed class BiohazardModelViewerForm : Form
         {
             var visible = _parts.Where(p => p.Visible).ToArray();
             if (visible.Length == 0) return;
-            float minY = float.MaxValue;
+            // +Y renders lower on screen (feet), -Y renders higher (head), so the
+            // grid must sit at maxY (the model's base) not minY (the head).
+            float maxY = float.MinValue;
             foreach (var part in visible)
                 foreach (var vertex in part.Vertices)
-                    minY = Math.Min(minY, vertex.Y);
-            if (minY == float.MaxValue) return;
+                    maxY = Math.Max(maxY, vertex.Y);
+            if (maxY == float.MinValue) return;
+            // Drop the grid a hair below the lowest vertex so the feet clearly
+            // sit above it instead of the grid cutting through the model.
+            maxY += Math.Max(1f, _radius * 0.02f);
 
             float extent = Math.Max(1f, _radius * 1.5f);
             float step = extent * 2f / 20f;
@@ -6213,11 +6448,11 @@ public sealed class BiohazardModelViewerForm : Form
             {
                 float offset = i * step;
                 g.DrawLine(i == 0 ? axisZ : line,
-                    Project(new Vector3(_center.X + offset, minY, _center.Z - extent)),
-                    Project(new Vector3(_center.X + offset, minY, _center.Z + extent)));
+                    Project(new Vector3(_center.X + offset, maxY, _center.Z - extent)),
+                    Project(new Vector3(_center.X + offset, maxY, _center.Z + extent)));
                 g.DrawLine(i == 0 ? axisX : line,
-                    Project(new Vector3(_center.X - extent, minY, _center.Z + offset)),
-                    Project(new Vector3(_center.X + extent, minY, _center.Z + offset)));
+                    Project(new Vector3(_center.X - extent, maxY, _center.Z + offset)),
+                    Project(new Vector3(_center.X + extent, maxY, _center.Z + offset)));
             }
         }
 
