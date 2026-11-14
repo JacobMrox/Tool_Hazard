@@ -20,6 +20,7 @@ public sealed class BiohazardModelViewerForm : Form
     // only selects (and highlights) that part.
     private readonly PartListBox _parts = new() { Dock = DockStyle.Fill };
     private readonly Label _details = new() { AutoSize = false, Dock = DockStyle.Bottom, Height = 124, Padding = new Padding(6) };
+    private readonly Label _partInfo = new() { AutoSize = false, Dock = DockStyle.Bottom, Height = 50, Padding = new Padding(6) };
     private readonly ComboBox _animation = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 170 };
     private readonly Button _playPause = new() { Text = "Play", AutoSize = true };
     private readonly TrackBar _timeline = new() { Minimum = 0, Maximum = 0, TickStyle = TickStyle.None, Width = 330, AutoSize = false, Height = 28 };
@@ -76,6 +77,18 @@ public sealed class BiohazardModelViewerForm : Form
         view.DropDownItems.AddRange(new ToolStripItem[] { smooth, textures, new ToolStripSeparator() });
         view.DropDownItems.Add(new ToolStripMenuItem("Reset camera", null, (_, _) => _viewport.ResetCamera()) { ShortcutKeys = Keys.Control | Keys.R });
         view.DropDownItems.Add(new ToolStripMenuItem("Toggle wireframe", null, (_, _) => _viewport.Wireframe = !_viewport.Wireframe) { ShortcutKeys = Keys.Control | Keys.W });
+        // No ShortcutKeys here: WinForms rejects a bare numpad key as an invalid menu
+        // shortcut and throws InvalidEnumArgumentException at construction.
+        view.DropDownItems.Add(new ToolStripMenuItem("Front view", null, (_, _) => _viewport.SetViewPreset(0f, 0f)));
+        view.DropDownItems.Add(new ToolStripMenuItem("Right view", null, (_, _) => _viewport.SetViewPreset(-MathF.PI / 2f, 0f)));
+        view.DropDownItems.Add(new ToolStripMenuItem("Back view", null, (_, _) => _viewport.SetViewPreset(MathF.PI, 0f)));
+        view.DropDownItems.Add(new ToolStripMenuItem("Left view", null, (_, _) => _viewport.SetViewPreset(MathF.PI / 2f, 0f)));
+        view.DropDownItems.Add(new ToolStripMenuItem("Top view", null, (_, _) => _viewport.SetViewPreset(0f, 1.5f)));
+        view.DropDownItems.Add(new ToolStripMenuItem("Bottom view", null, (_, _) => _viewport.SetViewPreset(0f, -1.5f)));
+        view.DropDownItems.Add(new ToolStripMenuItem("Isometric view", null, (_, _) => _viewport.SetViewPreset(-0.55f, 0.25f)));
+        var grid = new ToolStripMenuItem("Show grid") { CheckOnClick = true, Checked = true };
+        grid.CheckedChanged += (_, _) => _viewport.ShowGrid = grid.Checked;
+        view.DropDownItems.Add(grid);
         var bones = new ToolStripMenuItem("Show bones") { CheckOnClick = true, Checked = false };
         bones.CheckedChanged += (_, _) => _viewport.ShowBones = bones.Checked;
         bones.ShortcutKeys = Keys.Control | Keys.B;
@@ -102,7 +115,9 @@ public sealed class BiohazardModelViewerForm : Form
             new ToolStripMenuItem("Selected part...", null, (_, _) => ScaleMesh(true)),
             new ToolStripMenuItem("Whole mesh...", null, (_, _) => ScaleMesh(false))
         });
-        meshMenu.DropDownItems.AddRange(new ToolStripItem[] { exportMenu, importMenu, new ToolStripSeparator(), scaleMenu });
+        meshMenu.DropDownItems.AddRange(new ToolStripItem[] { exportMenu, importMenu, new ToolStripSeparator(), scaleMenu,
+            new ToolStripMenuItem("Fit selected part to size...", null, (_, _) => FitSelectedPart()),
+            new ToolStripMenuItem("Adjust selected part UVs...", null, (_, _) => AdjustSurvivorUvs()) });
         var textureMenu = new ToolStripMenuItem("Texture");
         textureMenu.DropDownItems.AddRange(new ToolStripItem[] {
             new ToolStripMenuItem("View texture...", null, (_, _) => ViewTexture()),
@@ -133,6 +148,7 @@ public sealed class BiohazardModelViewerForm : Form
         sidebar.Controls.Add(partsLabel);
         sidebar.Controls.Add(_mesh);
         sidebar.Controls.Add(meshLabel);
+        sidebar.Controls.Add(_partInfo);
         sidebar.Controls.Add(_details);
 
         Controls.Add(_viewport);
@@ -145,7 +161,11 @@ public sealed class BiohazardModelViewerForm : Form
         {
             _viewport.SetPartVisible(e.Index, e.NewValue == CheckState.Checked);
         }));
-        _parts.SelectedIndexChanged += (_, _) => _viewport.SelectPart(_parts.SelectedIndex);
+        _parts.SelectedIndexChanged += (_, _) =>
+        {
+            _viewport.SelectPart(_parts.SelectedIndex);
+            UpdatePartInfo();
+        };
         _animation.SelectedIndexChanged += (_, _) => SelectAnimation();
         _playPause.Click += (_, _) => SetPlaying(!_animationTimer.Enabled);
         previous.Click += (_, _) => StepAnimation(-1);
@@ -210,6 +230,8 @@ public sealed class BiohazardModelViewerForm : Form
                 return;
             }
             ClearRe4State();
+            // Classic Biohazard 1-3 models are authored facing +X.
+            _viewport.ForwardYaw = MathF.PI / 2f;
             ModelFile model = ModelFile.FromFile(path);
             _model = model;
             _survivor = null;
@@ -246,6 +268,7 @@ public sealed class BiohazardModelViewerForm : Form
     private void OpenSurvivor(string path)
     {
         SurvivorNab survivor = SurvivorNab.FromFile(path);
+        _viewport.ForwardYaw = MathF.PI;
         _survivor = survivor;
         _survivorHmd = null;
         _model = null;
@@ -274,6 +297,7 @@ public sealed class BiohazardModelViewerForm : Form
     private void OpenSurvivorHmd(string path)
     {
         SurvivorHmd hmd = SurvivorHmd.FromFile(path);
+        _viewport.ForwardYaw = MathF.PI;
         _survivorHmd = hmd;
         _survivor = null;
         _model = null;
@@ -327,6 +351,7 @@ public sealed class BiohazardModelViewerForm : Form
     private void OpenRe4(string path)
     {
         ClearRe4State();
+        _viewport.ForwardYaw = 0f;
         _model = null; _survivor = null; _survivorHmd = null;
         _texture = null; _texturePath = null;
         _path = path;
@@ -896,6 +921,7 @@ public sealed class BiohazardModelViewerForm : Form
         try
         {
             ClearPetState();
+            _viewport.ForwardYaw = 0f;
             _model = null; _survivor = null; _survivorHmd = null;
             _re4Bin = null; _re4Pmd = null; _re4GenericParts = null; _re4Scenario = null;
             _texture = null; _texturePath = null;
@@ -2882,6 +2908,29 @@ public sealed class BiohazardModelViewerForm : Form
         if (dialog.ShowDialog(this) == DialogResult.OK) _model.Save(dialog.FileName);
     }
 
+    // Porting aid: the selected part's bounding box makes it possible to choose a
+    // scale factor from numbers instead of eyeballing the viewport.
+    private void UpdatePartInfo()
+    {
+        int index = _parts.SelectedIndex;
+        if (index < 0 || index >= _renderParts.Count)
+        {
+            _partInfo.Text = "";
+            return;
+        }
+        RenderPart part = _renderParts[index];
+        if (part.LocalVertices.Length == 0)
+        {
+            _partInfo.Text = $"Selected part {index:D2}: no vertices.";
+            return;
+        }
+        Vector3 min = part.LocalVertices.Aggregate(Vector3.Min);
+        Vector3 max = part.LocalVertices.Aggregate(Vector3.Max);
+        Vector3 size = max - min;
+        _partInfo.Text = $"Part {index:D2}: {part.Faces.Count:N0} faces, bounds {min.X:N0},{min.Y:N0},{min.Z:N0}"
+            + $"\r\nSize {size.X:N0} x {size.Y:N0} x {size.Z:N0} units ({size.X / 1000f:0.###} x {size.Y / 1000f:0.###} x {size.Z / 1000f:0.###})";
+    }
+
     private int SelectedPartIndex()
     {
         int index = _parts.SelectedIndex;
@@ -3038,6 +3087,90 @@ public sealed class BiohazardModelViewerForm : Form
             MessageBox.Show(this, $"Mesh scaling failed:\n{ex.Message}", "Tool Hazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
+
+    // Porting aid: instead of guessing a factor, type the size the part must become
+    // (for example the target character's arm length) and scale to match it.
+    private void FitSelectedPart()
+    {
+        try
+        {
+            if (_survivorHmd != null)
+            {
+                MessageBox.Show(this, "HMD scenes are read-only, so they cannot be scaled.", "Tool Hazard Model Viewer",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            int selected = SelectedPartIndex();
+            if (selected < 0 || selected >= _renderParts.Count) return;
+            RenderPart part = _renderParts[selected];
+            Vector3 size = PartSize(part.LocalVertices);
+            if (size.LengthSquared() <= 0) return;
+
+            var original = _renderParts.Select(p => (Vector3[])p.LocalVertices.Clone()).ToArray();
+            bool aboutCentroid = _petModel != null;
+            using var dialog = new Form
+            {
+                Text = "Fit part to size",
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                StartPosition = FormStartPosition.CenterParent,
+                MinimizeBox = false,
+                MaximizeBox = false,
+                ClientSize = new Size(400, 168)
+            };
+            var axis = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Location = new Point(150, 12), Width = 120 };
+            axis.Items.AddRange(new object[] { "Height (Y)", "Width (X)", "Depth (Z)" });
+            axis.SelectedIndex = 0;
+            var target = new NumericUpDown { Location = new Point(150, 44), Width = 120, DecimalPlaces = 3, Increment = 10m, Minimum = 0.001m, Maximum = 1000000m, Value = Math.Round((decimal)size.Y, 3) };
+            var info = new Label { Location = new Point(12, 78), AutoSize = false, Width = 376, Height = 34, Text = FormatSize(size) };
+            var apply = new Button { Text = "Apply", DialogResult = DialogResult.OK, Location = new Point(222, 132), AutoSize = true };
+            var cancel = new Button { Text = "Cancel", DialogResult = DialogResult.Cancel, Location = new Point(308, 132), AutoSize = true };
+            float Current() => axis.SelectedIndex switch { 1 => size.X, 2 => size.Z, _ => size.Y };
+
+            void Preview()
+            {
+                float current = Current();
+                float factor = current > 0 ? (float)target.Value / current : 1f;
+                if (factor > 0 && float.IsFinite(factor))
+                    PreviewScale(original, factor, selected, aboutCentroid);
+            }
+
+            axis.SelectedIndexChanged += (_, _) =>
+            {
+                target.Value = Math.Clamp(Math.Round((decimal)Current(), 3), target.Minimum, target.Maximum);
+                Preview();
+            };
+            target.ValueChanged += (_, _) => Preview();
+            dialog.Controls.AddRange(new Control[]
+            {
+                new Label { Text = "Fit axis:", Location = new Point(12, 14), AutoSize = true }, axis,
+                new Label { Text = "Target size:", Location = new Point(12, 46), AutoSize = true }, target,
+                info, apply, cancel
+            });
+            dialog.AcceptButton = apply;
+            dialog.CancelButton = cancel;
+            DialogResult result = dialog.ShowDialog(this);
+            float currentSize = Current();
+            float fitFactor = currentSize > 0 ? (float)target.Value / currentSize : 1f;
+            RestoreScalePreview(original);
+            if (result != DialogResult.OK || !(fitFactor > 0) || !float.IsFinite(fitFactor) || Math.Abs(fitFactor - 1f) < 0.0001f)
+                return;
+            ApplyScale(fitFactor, selected);
+            UpdatePartInfo();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, $"Fitting the part failed:\n{ex.Message}", "Tool Hazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private static Vector3 PartSize(Vector3[] vertices)
+    {
+        if (vertices.Length == 0) return Vector3.Zero;
+        return vertices.Aggregate(Vector3.Max) - vertices.Aggregate(Vector3.Min);
+    }
+
+    private static string FormatSize(Vector3 size) =>
+        $"Current size {size.X:N0} x {size.Y:N0} x {size.Z:N0} units ({size.X / 1000f:0.###} x {size.Y / 1000f:0.###} x {size.Z / 1000f:0.###})";
 
     private void PreviewScale(Vector3[][] original, float scale, int selected, bool aboutCentroid)
     {
@@ -3277,6 +3410,148 @@ public sealed class BiohazardModelViewerForm : Form
         return (float)value.Value;
     }
 
+    // Porting aid: scale/offset the selected part's UVs with a live preview, so a
+    // texture that does not line up (wrong atlas size, page offset) can be fixed here
+    // instead of round-tripping through Blender.
+    private void AdjustSurvivorUvs()
+    {
+        if (_survivor == null)
+        {
+            MessageBox.Show(this, "UV adjustment is available for Survivor NAB models.", "Tool Hazard Model Viewer",
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+        int selected = SelectedPartIndex();
+        if (selected < 0 || selected >= _renderParts.Count) return;
+        try
+        {
+            RenderPart part = _renderParts[selected];
+            var original = part.Faces.Select(f => (Vector2[])f.UV.Clone()).ToArray();
+            float minU = float.MaxValue, maxU = float.MinValue, minV = float.MaxValue, maxV = float.MinValue;
+            foreach (var face in part.Faces)
+                foreach (var uv in face.UV)
+                {
+                    minU = Math.Min(minU, uv.X); maxU = Math.Max(maxU, uv.X);
+                    minV = Math.Min(minV, uv.Y); maxV = Math.Max(maxV, uv.Y);
+                }
+
+            using var dialog = new Form
+            {
+                Text = "Adjust UVs",
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                StartPosition = FormStartPosition.CenterParent,
+                MinimizeBox = false,
+                MaximizeBox = false,
+                ClientSize = new Size(430, 262)
+            };
+            var scaleU = new NumericUpDown { Location = new Point(150, 12), Width = 90, DecimalPlaces = 3, Increment = 0.05m, Minimum = 0.01m, Maximum = 100m, Value = 1m };
+            var scaleV = new NumericUpDown { Location = new Point(150, 44), Width = 90, DecimalPlaces = 3, Increment = 0.05m, Minimum = 0.01m, Maximum = 100m, Value = 1m };
+            var offsetU = new NumericUpDown { Location = new Point(150, 76), Width = 90, DecimalPlaces = 1, Increment = 1m, Minimum = -2048m, Maximum = 2048m };
+            var offsetV = new NumericUpDown { Location = new Point(150, 108), Width = 90, DecimalPlaces = 1, Increment = 1m, Minimum = -2048m, Maximum = 2048m };
+            // OBJ UVs are normalized to the atlas they were exported against, so a
+            // port from a differently sized texture needs source/target scale.
+            var sourceWidth = new NumericUpDown { Location = new Point(150, 140), Width = 70, Minimum = 1m, Maximum = 4096m, Value = _survivor.Texture.Width };
+            var sourceHeight = new NumericUpDown { Location = new Point(240, 140), Width = 70, Minimum = 1m, Maximum = 4096m, Value = _survivor.Texture.Height };
+            var matchSource = new Button { Text = "Match", Location = new Point(330, 139), AutoSize = true };
+            var info = new Label
+            {
+                Location = new Point(12, 174),
+                AutoSize = false,
+                Width = 406,
+                Height = 40,
+                Text = $"Atlas {_survivor.Texture.Width}x{_survivor.Texture.Height}\r\n"
+                    + $"UV pixels u {minU:0.#}..{maxU:0.#} v {minV:0.#}..{maxV:0.#}"
+            };
+            var apply = new Button { Text = "Apply", DialogResult = DialogResult.OK, Location = new Point(252, 226), AutoSize = true };
+            var cancel = new Button { Text = "Cancel", DialogResult = DialogResult.Cancel, Location = new Point(338, 226), AutoSize = true };
+
+            void Restore()
+            {
+                for (int i = 0; i < part.Faces.Count && i < original.Length; i++)
+                    Array.Copy(original[i], part.Faces[i].UV, Math.Min(original[i].Length, part.Faces[i].UV.Length));
+                _viewport.Invalidate();
+            }
+
+            void Preview()
+            {
+                float su = (float)scaleU.Value, sv = (float)scaleV.Value;
+                float ou = (float)offsetU.Value, ov = (float)offsetV.Value;
+                for (int i = 0; i < part.Faces.Count && i < original.Length; i++)
+                {
+                    Vector2[] source = original[i];
+                    Vector2[] target = part.Faces[i].UV;
+                    for (int c = 0; c < target.Length && c < source.Length; c++)
+                        target[c] = new Vector2(source[c].X * su + ou, source[c].Y * sv + ov);
+                }
+                info.Text = $"Atlas {_survivor.Texture.Width}x{_survivor.Texture.Height}\r\n"
+                    + $"UV pixels u {minU * su + ou:0.#}..{maxU * su + ou:0.#} v {minV * sv + ov:0.#}..{maxV * sv + ov:0.#}";
+                _viewport.Invalidate();
+            }
+
+            scaleU.ValueChanged += (_, _) => Preview();
+            scaleV.ValueChanged += (_, _) => Preview();
+            offsetU.ValueChanged += (_, _) => Preview();
+            offsetV.ValueChanged += (_, _) => Preview();
+            matchSource.Click += (_, _) =>
+            {
+                scaleU.Value = Math.Clamp(sourceWidth.Value / Math.Max(1m, _survivor.Texture.Width), scaleU.Minimum, scaleU.Maximum);
+                scaleV.Value = Math.Clamp(sourceHeight.Value / Math.Max(1m, _survivor.Texture.Height), scaleV.Minimum, scaleV.Maximum);
+                Preview();
+            };
+            dialog.Controls.AddRange(new Control[]
+            {
+                new Label { Text = "U scale:", Location = new Point(12, 14), AutoSize = true }, scaleU,
+                new Label { Text = "V scale:", Location = new Point(12, 46), AutoSize = true }, scaleV,
+                new Label { Text = "U offset (pixels):", Location = new Point(12, 78), AutoSize = true }, offsetU,
+                new Label { Text = "V offset (pixels):", Location = new Point(12, 110), AutoSize = true }, offsetV,
+                new Label { Text = "Source atlas width / height:", Location = new Point(12, 142), AutoSize = true }, sourceWidth,
+                new Label { Text = "x", Location = new Point(226, 142), AutoSize = true }, sourceHeight, matchSource,
+                info, apply, cancel
+            });
+            dialog.AcceptButton = apply;
+            dialog.CancelButton = cancel;
+            if (dialog.ShowDialog(this) != DialogResult.OK)
+            {
+                Restore();
+                return;
+            }
+            float finalScaleU = (float)scaleU.Value, finalScaleV = (float)scaleV.Value;
+            float finalOffsetU = (float)offsetU.Value, finalOffsetV = (float)offsetV.Value;
+            dialog.Dispose();
+
+            _survivor.AdjustGroupUvs(selected, finalScaleU, finalScaleV, finalOffsetU, finalOffsetV);
+            LoadSurvivorMesh();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, $"UV adjustment failed:\n{ex.Message}", "Tool Hazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    // The OBJ exporter writes its atlas next to the model, so its size tells us the
+    // coordinate space the UVs were normalized against.
+    private static void TryGetObjTextureSize(string objPath, out int width, out int height)
+    {
+        width = 0;
+        height = 0;
+        foreach (string extension in new[] { ".png", ".bmp", ".jpg", ".jpeg", ".tga" })
+        {
+            string candidate = Path.ChangeExtension(objPath, extension);
+            if (!File.Exists(candidate)) continue;
+            try
+            {
+                using var image = new Bitmap(candidate);
+                width = image.Width;
+                height = image.Height;
+                return;
+            }
+            catch
+            {
+                // Unreadable sibling image: fall back to the target atlas.
+            }
+        }
+    }
+
     private void ReplaceSurvivorMesh(bool selectedPart, bool native)
     {
         if (_survivor == null) return;
@@ -3299,7 +3574,8 @@ public sealed class BiohazardModelViewerForm : Form
             }
             else if (!native)
             {
-                _survivor.ReplaceFromObj(dialog.FileName, selected);
+                TryGetObjTextureSize(dialog.FileName, out int sourceWidth, out int sourceHeight);
+                _survivor.ReplaceFromObj(dialog.FileName, selected, sourceWidth, sourceHeight);
             }
             else
             {
@@ -4354,6 +4630,24 @@ public sealed class BiohazardModelViewerForm : Form
             _data = SerializeMesh();
         }
 
+        // Object-mode style UV fix: OBJ UVs are normalized to the source atlas, so a
+        // target atlas of a different size needs a scale, and usually an offset.
+        public void AdjustGroupUvs(int groupIndex, float scaleU, float scaleV, float offsetU, float offsetV)
+        {
+            if ((uint)groupIndex >= (uint)_groups.Length)
+                throw new InvalidDataException("The selected mesh part no longer exists.");
+            if (!float.IsFinite(scaleU) || !float.IsFinite(scaleV) || scaleU <= 0 || scaleV <= 0)
+                throw new InvalidDataException("The UV scale must be a positive number.");
+            if (!float.IsFinite(offsetU) || !float.IsFinite(offsetV))
+                throw new InvalidDataException("The UV offset must be a finite number.");
+            SurvivorGroup group = _groups[groupIndex];
+            int first = group.TriangleStart * 3;
+            int count = group.TriangleCount * 3;
+            for (int i = first; i < first + count && i < _uv.Length; i++)
+                _uv[i] = new Vector2(_uv[i].X * scaleU + offsetU, _uv[i].Y * scaleV + offsetV);
+            _data = SerializeMesh();
+        }
+
         public void ExportObj(string path, int selectedGroup)
         {
             using var writer = new StreamWriter(path, false, new UTF8Encoding(false));
@@ -4437,10 +4731,15 @@ public sealed class BiohazardModelViewerForm : Form
             ApplyParts(parts);
         }
 
-        public void ReplaceFromObj(string path, int selectedGroup)
+        public void ReplaceFromObj(string path, int selectedGroup, int sourceTextureWidth = 0, int sourceTextureHeight = 0)
         {
             var obj = new WavefrontObjFile(path);
             SurvivorPart[] target = GetParts().ToArray();
+            // The OBJ's u/v are normalized to the atlas the mesh was exported against,
+            // which is not necessarily this mesh's atlas (a port from another game
+            // usually comes with a differently sized texture).
+            int sourceWidth = sourceTextureWidth > 0 ? sourceTextureWidth : Texture.Width;
+            int sourceHeight = sourceTextureHeight > 0 ? sourceTextureHeight : Texture.Height;
             if (selectedGroup >= 0 && obj.Objects.Count != 1)
                 throw new InvalidDataException("A selected-part replacement must contain exactly one OBJ object.");
             if (selectedGroup < 0 && obj.Objects.Count != target.Length)
@@ -4462,7 +4761,7 @@ public sealed class BiohazardModelViewerForm : Form
                     var t = obj.TextureCoordinates[face.Texture];
                     var position = new Vector3((float)p.x * 1000, (float)p.y * 1000, (float)p.z * 1000);
                     var normal = new Vector3((float)n.x, (float)n.y, (float)n.z);
-                    var texture = new Vector2((float)t.u * Texture.Width - original.TexturePage * 128f, (float)(1 - t.v) * Texture.Height);
+                    var texture = new Vector2((float)t.u * sourceWidth - original.TexturePage * 128f, (float)(1 - t.v) * sourceHeight);
                     if (!float.IsFinite(position.X) || !float.IsFinite(position.Y) || !float.IsFinite(position.Z) ||
                         !float.IsFinite(normal.X) || !float.IsFinite(normal.Y) || !float.IsFinite(normal.Z) ||
                         !float.IsFinite(texture.X) || !float.IsFinite(texture.Y))
@@ -5710,6 +6009,9 @@ public sealed class BiohazardModelViewerForm : Form
         public bool SmoothShading { get => _smoothShading; set { _smoothShading = value; Invalidate(); } }
         public bool TexturesVisible { get => _texturesVisible; set { _texturesVisible = value; Invalidate(); } }
 
+        private bool _showGrid = true;
+        public bool ShowGrid { get => _showGrid; set { _showGrid = value; Invalidate(); } }
+
         private bool _showBones;
         private List<Vector3> _joints = new();
         private List<int> _jointParents = new(); // -1 = root
@@ -5793,7 +6095,17 @@ public sealed class BiohazardModelViewerForm : Form
             _radius = Math.Max(1, Vector3.Distance(min, max) / 2);
         }
 
-        public void ResetCamera() { _yaw = -0.55f; _pitch = 0.25f; _zoom = 1; Invalidate(); }
+        public void ResetCamera() { _yaw = ForwardYaw - 0.55f; _pitch = 0.25f; _zoom = 1; Invalidate(); }
+
+        // Orthographic-ish presets for checking a port from one axis at a time.
+        public void SetView(float yaw, float pitch) { _yaw = yaw; _pitch = Math.Clamp(pitch, -1.5f, 1.5f); Invalidate(); }
+
+        // Each engine authors models facing a different axis: classic EMD/PLD face +X,
+        // Survivor NAB/HMD face +Z and White Day PET faces -Z. Presets are expressed
+        // relative to that axis so "Front" shows the character's face in every game.
+        public float ForwardYaw { get; set; }
+
+        public void SetViewPreset(float yawOffset, float pitch) => SetView(ForwardYaw + yawOffset, pitch);
 
         protected override void OnMouseDown(MouseEventArgs e) { _dragging = e.Button == MouseButtons.Left; _lastMouse = e.Location; Capture = _dragging; }
         protected override void OnMouseUp(MouseEventArgs e) { _dragging = false; Capture = false; }
@@ -5821,8 +6133,14 @@ public sealed class BiohazardModelViewerForm : Form
             }
             Matrix4x4 rotation = Matrix4x4.CreateRotationY(_yaw) * Matrix4x4.CreateRotationX(_pitch);
             float scale = Math.Min(Width, Height) * 0.42f / _radius * _zoom;
+            // The grid is painted first and the model bitmap is composited over it, so
+            // the ground lines sit behind the character instead of across it.
+            if (_showGrid)
+                DrawGrid(e.Graphics, rotation, scale);
             int pixelCount = Math.Max(1, Width * Height);
-            int[] pixels = Enumerable.Repeat(BackColor.ToArgb(), pixelCount).ToArray();
+            // Transparent but pre-blended with the background colour, so antialiased
+            // edge pixels keep their old shade while the grid shows through.
+            int[] pixels = Enumerable.Repeat(BackColor.ToArgb() & 0x00FFFFFF, pixelCount).ToArray();
             float[] depth = Enumerable.Repeat(float.PositiveInfinity, pixelCount).ToArray();
             int selectedPart = (uint)_selectedPart < (uint)_parts.Count ? _selectedPart : -1;
             // Pixels the selected part actually covers, filled during rasterisation
@@ -5865,6 +6183,42 @@ public sealed class BiohazardModelViewerForm : Form
                 DrawSkeleton(e.Graphics, rotation, scale);
             TextRenderer.DrawText(e.Graphics, "Drag: orbit   Wheel: zoom   Ctrl+R: reset   Ctrl+W: wireframe   Ctrl+B: bones", Font,
                 new Point(10, Height - 26), Color.Silver);
+        }
+
+        // Ground grid on the model's lowest plane plus X/Z axes, drawn as an overlay
+        // so orientation and size stay readable while porting between games.
+        private void DrawGrid(Graphics g, Matrix4x4 rotation, float scale)
+        {
+            var visible = _parts.Where(p => p.Visible).ToArray();
+            if (visible.Length == 0) return;
+            float minY = float.MaxValue;
+            foreach (var part in visible)
+                foreach (var vertex in part.Vertices)
+                    minY = Math.Min(minY, vertex.Y);
+            if (minY == float.MaxValue) return;
+
+            float extent = Math.Max(1f, _radius * 1.5f);
+            float step = extent * 2f / 20f;
+
+            PointF Project(Vector3 v)
+            {
+                Vector3 t = Vector3.Transform(v - _center, rotation);
+                return new PointF(Width / 2f + t.X * scale, Height / 2f + t.Y * scale);
+            }
+
+            using var line = new Pen(Color.FromArgb(64, 150, 190, 240), 1f);
+            using var axisX = new Pen(Color.FromArgb(170, 235, 90, 90), 1f);
+            using var axisZ = new Pen(Color.FromArgb(170, 90, 130, 235), 1f);
+            for (int i = -10; i <= 10; i++)
+            {
+                float offset = i * step;
+                g.DrawLine(i == 0 ? axisZ : line,
+                    Project(new Vector3(_center.X + offset, minY, _center.Z - extent)),
+                    Project(new Vector3(_center.X + offset, minY, _center.Z + extent)));
+                g.DrawLine(i == 0 ? axisX : line,
+                    Project(new Vector3(_center.X - extent, minY, _center.Z + offset)),
+                    Project(new Vector3(_center.X + extent, minY, _center.Z + offset)));
+            }
         }
 
         private void DrawSkeleton(Graphics g, Matrix4x4 rotation, float scale)
