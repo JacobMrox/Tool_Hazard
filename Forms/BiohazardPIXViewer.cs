@@ -1,853 +1,1637 @@
-﻿using System.Drawing.Imaging;
+using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
 using Tool_Hazard.Biohazard.PIX;
+using Tool_Hazard.UI;
 
 namespace Tool_Hazard.Forms
 {
     public partial class Biohazard_PIX_Viewer : Form
     {
-        // Globals
-        private string? _bgPath;
-        private string? _bgLoadedExt; // ".pix" ".png" ".bmp" etc
+        private enum ViewerMode
+        {
+            None,
+            TimPack,
+            Sheet,
+            Background
+        }
 
-        // Sheet state
-        private ItemSheet? sheet;
-        private string? _sheetPath;
-        private int _iconIndex = 0;
+        private enum ZoomMode
+        {
+            Fit = 0,
+            X1 = 1,
+            X2 = 2,
+            X3 = 3,
+            X4 = 4,
+            X6 = 6,
+            X8 = 8
+        }
 
-        // TIM pack state (Multi TIM / TIM-in-PIX)
-        private List<byte[]>? _timPack;
-        private int _timIndex = 0;
+        private static readonly ZoomMode[] ZoomOptions =
+        {
+            ZoomMode.Fit, ZoomMode.X1, ZoomMode.X2, ZoomMode.X3, ZoomMode.X4, ZoomMode.X6, ZoomMode.X8
+        };
 
-        // CLUT (palette) viewing state for single TIMs that contain multiple CLUTs
-        private int _clutIndex = 0;
+        // ---------- document state ----------
+        private ViewerMode _mode = ViewerMode.None;
+        private List<TimBlock>? _blocks;
+        private PsxTimImage? _currentTim;
+        private TimImageInfo? _currentInfo;
+        private int _timIndex;
+        private int _clutIndex;
         private int _clutCount = 1;
+        private ItemSheet? _sheet;
+        private int _iconIndex;
+        private string? _documentPath;
+        private bool _documentIsRawPix;
+        private bool _dirty;
 
-        // Alternative to [DefaultPalette512] base64 string: read from embedded resource (extracted from Biohazard/PIX/Res.res)
-        // Call this once and cache it somewhere static if necessary
-        byte[] palette512 = BorlandResReader.ReadPalette512FromEmbeddedRes("Tool_Hazard.Biohazard.PIX.Res.res");
+        // ---------- view state ----------
+        private ZoomMode _zoom = ZoomMode.Fit;
+        private bool _perPageCluts;
+        private bool _showGrid = true;
+        private int _currentScale = 1;
+        private bool _updatingUi;
+        private bool _adjusting;
+
+        private Bitmap? _image;
+        private Bitmap? _display;
+
+        private readonly byte[] _palette512 =
+            BorlandResReader.ReadPalette512FromEmbeddedRes("Tool_Hazard.Biohazard.PIX.Res.res");
 
         public Biohazard_PIX_Viewer()
         {
             InitializeComponent();
-
-            // Keep preview centered when resizing the window
-            this.Resize += (_, __) => CenterPictureBox();
-
-            // Ensure nav buttons are correct on startup
-            UpdateNavButtons();
+            InitViewerUi();
         }
 
-        private void pictureBox1_Click(object sender, EventArgs e)
+        private void InitViewerUi()
         {
-            //SetStatus("Why are you clicking this? This isn't Deadly Silence!");
+            _updatingUi = true;
+            foreach (var zoom in ZoomOptions)
+                cmbZoom.Items.Add(zoom == ZoomMode.Fit ? "Fit" : $"{(int)zoom}x");
+            cmbZoom.SelectedIndex = 0;
+
+            cmbClut.Items.Add("CLUT 1/1");
+            cmbClut.SelectedIndex = 0;
+            _updatingUi = false;
+
+            previewPanel.Paint += PreviewPanel_Paint;
+            previewPanel.Resize += PreviewPanel_Resize;
+
+            ApplyZoomMenuChecks();
+            UpdateUi();
+            UpdateDisplay();
+            SetStatus("Ready - open a TIM or PIX file (Ctrl+O) or drop one on the window.");
         }
 
-        // ----------------------
-        // UI stuff
-        // ----------------------
+        protected override void OnFormClosed(FormClosedEventArgs e)
+        {
+            pictureBox1.Image = null;
+            _display?.Dispose();
+            _display = null;
+            _image?.Dispose();
+            _image = null;
+            base.OnFormClosed(e);
+        }
+
+        // ------------------------------
+        // Status / info
+        // ------------------------------
+
         private void SetStatus(string text)
         {
             if (toolStripStatusLabel1 != null)
                 toolStripStatusLabel1.Text = text;
         }
-        private void CenterPictureBox()
+
+        private string DocName() => _documentPath is null ? "(unsaved)" : Path.GetFileName(_documentPath);
+
+        private string DocBaseName() =>
+            _documentPath is null ? "TIM" : Path.GetFileNameWithoutExtension(_documentPath);
+
+        private void Info(string text, string title) =>
+            MessageBox.Show(this, text, title, MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+        private void Error(string text, string title) =>
+            MessageBox.Show(this, text, title, MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+        private void UpdateInfo()
         {
-            if (pictureBox1.Image == null)
-                return;
+            string left;
+            string right;
 
-            // make PictureBox fit image exactly
-            pictureBox1.SizeMode = PictureBoxSizeMode.Normal;
-            pictureBox1.Width = pictureBox1.Image.Width;
-            pictureBox1.Height = pictureBox1.Image.Height;
-
-            // center it within its parent (panel or form)
-            var parent = pictureBox1.Parent;
-            if (parent == null) return;
-
-            int x = Math.Max(0, (parent.ClientSize.Width - pictureBox1.Width) / 2);
-            int y = Math.Max(0, (parent.ClientSize.Height - pictureBox1.Height) / 2);
-
-            pictureBox1.Left = x;
-            pictureBox1.Top = y;
-        }
-
-        // ----------------------
-        // Helper methods
-        // ----------------------
-
-        private static int GetTimClutCount(byte[] tim)
-        {
-            // TIM: magic(4) flags(4) [clut block] [image block]
-            if (tim.Length < 8) return 1;
-
-            uint flags = BitConverter.ToUInt32(tim, 4);
-            bool hasClut = (flags & 0x8) != 0;
-            if (!hasClut) return 1;
-
-            int pos = 8;
-            if (pos + 12 > tim.Length) return 1;
-
-            // CLUT block:
-            // size(4), x(2), y(2), w(2), h(2)
-            // w = number of colors per CLUT (16 for 4bpp, 256 for 8bpp)
-            // h = number of CLUT rows (this is the # of CLUT sets)
-            ushort h = BitConverter.ToUInt16(tim, pos + 10);
-            return Math.Max(1, (int)h);
-        }
-
-        private void ClearSheetState()
-        {
-            sheet = null;
-            _sheetPath = null;
-            _iconIndex = 0;
-            SetStatus("Sheet State Cleared!");
-            UpdateNavButtons();
-        }
-
-        private void ClearBackgroundState()
-        {
-            _bgPath = null;
-            _bgLoadedExt = null;
-            SetStatus("Cleared Background State!");
-            UpdateNavButtons();
-        }
-
-        private void ClearTimPackState()
-        {
-            _timPack = null;
-            _timIndex = 0;
-            SetStatus("Cleared Tim State Pack!");
-            UpdateNavButtons();
-        }
-
-        private void UpdateNavButtons()
-        {
-            // Enable Next/Prev if we have either a sheet OR a multi-TIM pack loaded
-            bool hasSheet = sheet != null;
-            bool hasTimPack = _timPack != null && _timPack.Count > 0;
-
-            Next.Enabled = hasSheet || hasTimPack;
-            Prev.Enabled = hasSheet || hasTimPack;
-
-            // ALSO update multipack menu items
-            UpdateMultipackMenuItems();
-
-            // ALSO update sheet menu items
-            UpdateSheetMenuItems();
-        }
-
-        private bool IsMultipackActive()
-        {
-            return sheet == null && _timPack != null && _timPack.Count > 0;
-        }
-
-        private void UpdateMultipackMenuItems()
-        {
-            bool hasMultipack = sheet == null && _timPack != null && _timPack.Count > 0;
-
-            exportSelectedMultipackToolStripMenuItem.Enabled = hasMultipack;
-            replaceSelectedMultipackToolStripMenuItem.Enabled = hasMultipack;
-        }
-
-        private void UpdateSheetMenuItems()
-        {
-            bool hasSheet = sheet != null;
-
-            exportToolStripMenuItem.Enabled = hasSheet;
-            replaceToolStripMenuItem.Enabled = hasSheet;
-            saveToolStripMenuItem1.Enabled = hasSheet;
-        }
-
-
-        // ----------------------
-        //Background pix handling
-        // ----------------------
-        private static bool IsImageExt(string? ext)
-        {
-            ext = ext?.ToLowerInvariant();
-            return ext is ".png" or ".bmp";
-        }
-
-        private void SetPictureBoxImage(Bitmap bmp)
-        {
-            var old = pictureBox1.Image;
-            pictureBox1.Image = bmp;
-            old?.Dispose();
-
-            // Keep preview centered
-            CenterPictureBox();
-        }
-
-        // TIM pack splitter: supports a file containing multiple TIM blocks concatenated (eg ITEMG.PIX)
-        // (Also works for plain .tim files if you ever add that to the open filter.)
-        // IMPORTANT: Some games pad between TIMs, so we scan forward for the next TIM header instead of breaking.
-        private static List<byte[]> SplitTimPack(byte[] data)
-        {
-            var list = new List<byte[]>();
-            int pos = 0;
-
-            while (true)
+            switch (_mode)
             {
-                int start = FindNextTimOffset(data, pos);
-                if (start < 0)
+                case ViewerMode.TimPack:
+                    left = $"{DocName()} - TIM {_timIndex + 1}/{_blocks?.Count ?? 0}" + (_dirty ? "  (modified)" : "");
+                    right = _currentInfo?.Describe() ?? string.Empty;
+
+                    if (_currentInfo is { ClutCount: > 1 })
+                    {
+                        right += $"  |  CLUT {_clutIndex + 1}/{_clutCount}";
+                        if (_perPageCluts && _currentInfo.IsAtlas)
+                            right += " (one per page)";
+                    }
+
+                    if (_image != null)
+                        right += $"  |  {_currentScale}x view";
                     break;
 
-                // Parse one TIM from 'start'. If parse fails, advance and keep scanning.
-                if (!TryReadOneTimBlock(data, start, out int endExclusive))
-                {
-                    pos = start + 4;
-                    continue;
-                }
+                case ViewerMode.Sheet:
+                    left = $"{DocName()} - icon {_iconIndex + 1}/{_sheet?.IconCount ?? 0}" + (_dirty ? "  (modified)" : "");
+                    right = $"{ItemSheet.IconW}x{ItemSheet.IconH} icons  |  {_sheet?.IconCount ?? 0} icons  |  " +
+                            $"{(_sheet?.IconCount ?? 0) * ItemSheet.IconBytes:N0} bytes  |  {_currentScale}x view";
+                    break;
 
-                var one = new byte[endExclusive - start];
-                Buffer.BlockCopy(data, start, one, 0, one.Length);
-                list.Add(one);
+                case ViewerMode.Background:
+                    left = $"{DocName()} - background" + (_dirty ? "  (modified)" : "");
+                    right = _documentIsRawPix
+                        ? "raw PS1 background  |  320x240  |  16bpp BGR555  |  153,600 bytes"
+                        : _image != null
+                            ? $"image  |  {_image.Width}x{_image.Height}" + (IsBackgroundPixSize() ? "  |  can be saved as PIX" : "  |  PIX needs 320x240")
+                            : "image";
+                    break;
 
-                pos = endExclusive;
+                default:
+                    left = "No file loaded - use File > Open, or drop a TIM / PIX file here.";
+                    right = string.Empty;
+                    break;
             }
 
-            return list;
+            infoLeftLabel.Text = left;
+            infoRightLabel.Text = right;
+
+            Text = _mode == ViewerMode.None
+                ? "Biohazard PIX & PS TIM Viewer"
+                : $"Biohazard PIX & PS TIM Viewer - {DocName()}";
         }
 
-        // Find next TIM header (0x10 00 00 00) starting at/after 'from'
-        private static int FindNextTimOffset(byte[] data, int from)
+        private bool IsBackgroundPixSize() => _image is { Width: 320, Height: 240 };
+
+        private string BuildTimStatus()
         {
-            for (int i = Math.Max(0, from); i + 4 <= data.Length; i++)
+            var parts = new List<string>
             {
-                if (data[i] == 0x10 && data[i + 1] == 0x00 && data[i + 2] == 0x00 && data[i + 3] == 0x00)
-                    return i;
-            }
-            return -1;
-        }
-
-        // Validate and compute the end offset (exclusive) of a single TIM block at 'start'
-        private static bool TryReadOneTimBlock(byte[] data, int start, out int endExclusive)
-        {
-            endExclusive = start;
-
-            // need at least magic + flags
-            if (start + 8 > data.Length)
-                return false;
-
-            // magic
-            uint magic = BitConverter.ToUInt32(data, start);
-            if (magic != 0x00000010u)
-                return false;
-
-            uint flags = BitConverter.ToUInt32(data, start + 4);
-
-            // Basic sanity: bpp mode is low 3 bits (0..3), plus optional CLUT bit (0x8)
-            uint mode = flags & 0x7;
-            if (mode > 3)
-                return false;
-
-            bool hasClut = (flags & 0x8) != 0;
-
-            int pos = start + 8;
-
-            // CLUT block
-            if (hasClut)
-            {
-                if (pos + 4 > data.Length) return false;
-                uint clutSize = BitConverter.ToUInt32(data, pos);
-                if (clutSize < 12) return false; // header minimum
-                if (pos + (int)clutSize > data.Length) return false;
-                pos += (int)clutSize;
-            }
-
-            // IMAGE block
-            if (pos + 4 > data.Length) return false;
-            uint imgSize = BitConverter.ToUInt32(data, pos);
-            if (imgSize < 12) return false; // header minimum
-            if (pos + (int)imgSize > data.Length) return false;
-            pos += (int)imgSize;
-
-            // TIM blocks are often 4-byte aligned; we can ignore padding for slicing.
-            endExclusive = pos;
-            return true;
-        }
-
-        private void RenderCurrentTimFromPack()
-        {
-            if (_timPack == null || _timPack.Count == 0)
-                return;
-
-            // clamp tim index
-            if (_timIndex < 0) _timIndex = 0;
-            if (_timIndex >= _timPack.Count) _timIndex = _timPack.Count - 1;
-
-            // update clut count for this TIM
-            _clutCount = GetTimClutCount(_timPack[_timIndex]);
-            if (_clutIndex < 0) _clutIndex = 0;
-            if (_clutIndex >= _clutCount) _clutIndex = 0;
-
-            // Decode current TIM using selected CLUT and show it
-            var bmp = Tim.DecodeToBitmap(_timPack[_timIndex], clutIndex: _clutIndex);
-            SetPictureBoxImage(bmp);
-
-            // show "tim/clut" status
-            SetStatus($"Loaded TIM {_timIndex + 1}/{_timPack.Count}  |  CLUT {_clutIndex + 1}/{_clutCount}");
-
-            // optional: disable/enable Next/Prev
-            UpdateNavButtons();
-        }
-
-
-        //File -> Open, Menu strip hooker 
-        private void openToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            // Clear the sheet; just in case, before a new PIX:
-            ClearSheetState();
-
-            // We are opening a background, so clear any previously loaded sheet state and allow tim pack navigation
-            // (Also clear the previous tim pack, because a new file might not be TIM at all.)
-            ClearTimPackState();
-
-            // Open file dialog for background PIX or images
-            using OpenFileDialog ofd = new OpenFileDialog
-            {
-                Filter =
-    "Background PIX / Images / TIM (*.pix;*.tim;*.png;*.bmp)|*.pix;*.tim;*.png;*.bmp|" +
-    "PIX / TIM files (*.pix;*.tim)|*.pix;*.tim|" +
-    "PNG files (*.png)|*.png|" +
-    "Bitmap files (*.bmp)|*.bmp|" +
-    "All files (*.*)|*.*"
-
+                $"TIM {_timIndex + 1}/{_blocks?.Count ?? 0}",
+                $"CLUT {_clutIndex + 1}/{_clutCount}"
             };
 
-            if (ofd.ShowDialog() != DialogResult.OK)
-                return;
+            if (_currentInfo != null)
+            {
+                parts.Add(_currentInfo.BppText);
+                parts.Add($"{_currentInfo.Width}x{_currentInfo.Height}");
 
-            _bgPath = ofd.FileName;
-            _bgLoadedExt = Path.GetExtension(ofd.FileName)?.ToLowerInvariant();
+                if (_perPageCluts && _currentInfo.IsAtlas)
+                    parts.Add("per-page CLUTs");
+            }
+
+            if (_dirty)
+                parts.Add("modified");
+
+            return string.Join("  |  ", parts);
+        }
+
+        private void UpdateUi()
+        {
+            bool hasDocument = _mode != ViewerMode.None;
+            bool tim = _mode == ViewerMode.TimPack;
+            bool sheet = _mode == ViewerMode.Sheet;
+
+            btnPrev.Enabled = btnNext.Enabled = tim || sheet;
+            prevItemToolStripMenuItem.Enabled = nextItemToolStripMenuItem.Enabled = tim || sheet;
+            firstItemToolStripMenuItem.Enabled = lastItemToolStripMenuItem.Enabled = tim || sheet;
+
+            bool multiClut = tim && _clutCount > 1;
+            bool perPage = tim && chkPerPageClut.Checked;
+            lblClut.Enabled = cmbClut.Enabled = multiClut && !perPage;
+            chkPerPageClut.Enabled = tim && (_currentInfo?.IsAtlas ?? false);
+            perPageClutToolStripMenuItem.Enabled = chkPerPageClut.Enabled;
+
+            prevClutToolStripMenuItem.Enabled = nextClutToolStripMenuItem.Enabled = multiClut;
+            cmbZoom.Enabled = hasDocument;
+
+            saveToolStripMenuItem.Enabled = hasDocument;
+            saveAsToolStripMenuItem.Enabled = hasDocument;
+            exportSelectedToolStripMenuItem.Enabled = hasDocument;
+            exportAllToolStripMenuItem.Enabled = tim || sheet;
+            replaceSelectedToolStripMenuItem.Enabled = hasDocument;
+            copyImageToolStripMenuItem.Enabled = _image != null;
+
+            exportIconToolStripMenuItem.Enabled = sheet;
+            replaceIconToolStripMenuItem.Enabled = sheet;
+            saveSheetToolStripMenuItem.Enabled = sheet;
+
+            UpdateInfo();
+        }
+
+        // ------------------------------
+        // Preview rendering
+        // ------------------------------
+
+        private void SetSourceImage(Bitmap? bmp)
+        {
+            var old = _image;
+            _image = bmp;
+            old?.Dispose();
+            UpdateDisplay();
+            previewPanel.Invalidate();
+        }
+
+        private void UpdateDisplay()
+        {
+            if (_adjusting)
+            {
+                UpdateInfo();
+                return;
+            }
+
+            _adjusting = true;
 
             try
             {
-                if (_bgLoadedExt == ".pix" || _bgLoadedExt == ".tim")
+                var old = _display;
+                _display = null;
+
+                if (_image != null)
                 {
-                    // This supports raw 320x240 16bpp PIX and TIM/MULTI-TIM (both real .tim and disguised as .pix)
-                    byte[] bytes = File.ReadAllBytes(ofd.FileName);
-
-                    // TIM or MULTI-TIM (ITEMG.PIX, .tim, etc)
-                    if (bytes.Length >= 4 && BitConverter.ToUInt32(bytes, 0) == 0x00000010u)
-                    {
-                        _timPack = SplitTimPack(bytes);
-                        _timIndex = 0;
-
-                        if (_timPack == null || _timPack.Count == 0)
-                            throw new InvalidDataException("TIM file detected but no TIM blocks could be parsed.");
-
-                        RenderCurrentTimFromPack();
-                        UpdateNavButtons();
-                        return;
-                    }
-
-                    // If user opened a real .tim but it doesn't start with TIM magic, it's invalid
-                    if (_bgLoadedExt == ".tim")
-                        throw new InvalidDataException("File has .tim extension but does not contain a valid TIM header.");
-
-                    // Not a TIM, so decode as background PIX (raw 320x240)
-                    var bmp = PixLoader.LoadAsBitmap(ofd.FileName);
-                    SetPictureBoxImage(bmp);
-                    UpdateNavButtons();
+                    _currentScale = ComputeScale(_image.Size);
+                    _display = Compose(_image, _currentScale);
+                    pictureBox1.Size = _display.Size;
                 }
-                else if (IsImageExt(_bgLoadedExt))
-                {
-                    // Load PNG/BMP; normalize to 32bpp and (optionally) enforce 320x240
-                    using var tmp = new Bitmap(ofd.FileName);
 
-                    if (tmp.Width != 320 || tmp.Height != 240)
-                    {
-                        // Keep it strict (recommended for RE backgrounds)
-                        MessageBox.Show("Background images must be 320x240 for PS1 backgrounds.", "Invalid size",
-                            MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        return;
+                pictureBox1.Image = _display;
+                pictureBox1.Visible = _display != null;
+                old?.Dispose();
 
-                        // If you prefer auto-resize instead of strict, replace the above with:
-                        // var resized = new Bitmap(320, 240, PixelFormat.Format32bppArgb);
-                        // using (var g = Graphics.FromImage(resized)) g.DrawImage(tmp, 0, 0, 320, 240);
-                        // SetPictureBoxImage(resized);
-                    }
+                LayoutPicture();
+            }
+            finally
+            {
+                _adjusting = false;
+            }
 
-                    var bmp = new Bitmap(320, 240, PixelFormat.Format32bppArgb);
-                    using (var g = Graphics.FromImage(bmp))
-                        g.DrawImage(tmp, 0, 0, 320, 240);
+            UpdateInfo();
+        }
 
-                    SetPictureBoxImage(bmp);
-                    UpdateNavButtons();
-                }
+        private int ComputeScale(Size image)
+        {
+            int fixedScale = (int)_zoom;
+            if (fixedScale > 0)
+                return fixedScale;
+
+            if (image.Width <= 0 || image.Height <= 0)
+                return 1;
+
+            int availableWidth = Math.Max(32, previewPanel.ClientSize.Width - 20);
+            int availableHeight = Math.Max(32, previewPanel.ClientSize.Height - 20);
+
+            int scale = Math.Min(availableWidth / image.Width, availableHeight / image.Height);
+            return Math.Clamp(scale, 1, 8);
+        }
+
+        private Bitmap Compose(Bitmap source, int scale)
+        {
+            var bmp = new Bitmap(source.Width * scale, source.Height * scale, PixelFormat.Format32bppPArgb);
+
+            using (var g = Graphics.FromImage(bmp))
+            {
+                g.InterpolationMode = InterpolationMode.NearestNeighbor;
+                g.PixelOffsetMode = PixelOffsetMode.Half;
+                g.SmoothingMode = SmoothingMode.None;
+
+                if (_showGrid)
+                    DrawCheckerboard(g, bmp.Width, bmp.Height);
                 else
+                    g.Clear(FluentTheme.IsDarkMode ? Color.FromArgb(28, 28, 30) : Color.FromArgb(246, 246, 246));
+
+                g.DrawImage(source, new Rectangle(0, 0, bmp.Width, bmp.Height));
+            }
+
+            return bmp;
+        }
+
+        private static void DrawCheckerboard(Graphics g, int width, int height)
+        {
+            const int cell = 8;
+
+            using var light = new SolidBrush(FluentTheme.IsDarkMode
+                ? Color.FromArgb(64, 64, 68)
+                : Color.FromArgb(214, 214, 214));
+            using var dark = new SolidBrush(FluentTheme.IsDarkMode
+                ? Color.FromArgb(48, 48, 52)
+                : Color.FromArgb(176, 176, 176));
+
+            for (int y = 0; y < height; y += cell)
+            {
+                for (int x = 0; x < width; x += cell)
                 {
-                    MessageBox.Show("Unsupported file type.", "Open", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    var brush = (((x / cell) + (y / cell)) & 1) == 0 ? light : dark;
+                    g.FillRectangle(brush, x, y, cell, cell);
                 }
+            }
+        }
+
+        private void LayoutPicture()
+        {
+            if (pictureBox1.Image == null)
+            {
+                pictureBox1.Location = Point.Empty;
+                return;
+            }
+
+            var size = pictureBox1.Image.Size;
+            int x = Math.Max(0, (previewPanel.ClientSize.Width - size.Width) / 2);
+            int y = Math.Max(0, (previewPanel.ClientSize.Height - size.Height) / 2);
+            pictureBox1.Location = new Point(x, y);
+        }
+
+        private void PreviewPanel_Resize(object? sender, EventArgs e)
+        {
+            if (_image == null || _adjusting)
+            {
+                previewPanel.Invalidate();
+                return;
+            }
+
+            if (_zoom == ZoomMode.Fit && ComputeScale(_image.Size) != _currentScale)
+                UpdateDisplay();
+            else
+                LayoutPicture();
+
+            previewPanel.Invalidate();
+        }
+
+        private void PreviewPanel_Paint(object? sender, PaintEventArgs e)
+        {
+            if (_image != null)
+                return;
+
+            TextRenderer.DrawText(
+                e.Graphics,
+                "Open a TIM / PIX / PNG file to begin - or drop one here.",
+                Font,
+                previewPanel.ClientRectangle,
+                FluentTheme.IsDarkMode ? Color.FromArgb(170, 170, 170) : Color.FromArgb(110, 110, 110),
+                TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.WordBreak);
+        }
+
+        // ------------------------------
+        // Zoom / view options
+        // ------------------------------
+
+        private void SetZoom(ZoomMode zoom)
+        {
+            _zoom = zoom;
+
+            _updatingUi = true;
+            int index = Array.IndexOf(ZoomOptions, zoom);
+            if (index >= 0)
+                cmbZoom.SelectedIndex = index;
+            _updatingUi = false;
+
+            ApplyZoomMenuChecks();
+            UpdateDisplay();
+        }
+
+        private void ApplyZoomMenuChecks()
+        {
+            zoomFitToolStripMenuItem.Checked = _zoom == ZoomMode.Fit;
+            zoom1xToolStripMenuItem.Checked = _zoom == ZoomMode.X1;
+            zoom2xToolStripMenuItem.Checked = _zoom == ZoomMode.X2;
+            zoom4xToolStripMenuItem.Checked = _zoom == ZoomMode.X4;
+            zoom8xToolStripMenuItem.Checked = _zoom == ZoomMode.X8;
+        }
+
+        private void zoomToolStripMenuItem_Click(object? sender, EventArgs e)
+        {
+            if (sender is not ToolStripMenuItem { Tag: string tag })
+                return;
+
+            SetZoom(tag == "Fit" ? ZoomMode.Fit : (ZoomMode)int.Parse(tag));
+        }
+
+        private void cmbZoom_SelectedIndexChanged(object? sender, EventArgs e)
+        {
+            if (_updatingUi)
+                return;
+
+            int index = cmbZoom.SelectedIndex;
+            if (index < 0 || index >= ZoomOptions.Length)
+                return;
+
+            _zoom = ZoomOptions[index];
+            ApplyZoomMenuChecks();
+            UpdateDisplay();
+        }
+
+        private void SetPerPageMode(bool value)
+        {
+            if (_updatingUi)
+                return;
+
+            _perPageCluts = value;
+
+            _updatingUi = true;
+            chkPerPageClut.Checked = value;
+            perPageClutToolStripMenuItem.Checked = value;
+            _updatingUi = false;
+
+            if (_mode == ViewerMode.TimPack)
+                RefreshTimDisplay();
+            else
+                UpdateUi();
+        }
+
+        private void chkPerPageClut_CheckedChanged(object? sender, EventArgs e) => SetPerPageMode(chkPerPageClut.Checked);
+
+        private void perPageClutToolStripMenuItem_CheckedChanged(object? sender, EventArgs e) =>
+            SetPerPageMode(perPageClutToolStripMenuItem.Checked);
+
+        private void transparencyGridToolStripMenuItem_CheckedChanged(object? sender, EventArgs e)
+        {
+            _showGrid = transparencyGridToolStripMenuItem.Checked;
+            UpdateDisplay();
+        }
+
+        // ------------------------------
+        // Opening
+        // ------------------------------
+
+        private void openToolStripMenuItem_Click(object? sender, EventArgs e)
+        {
+            using var ofd = new OpenFileDialog
+            {
+                Title = "Open TIM / PIX / image",
+                Filter =
+                    "TIM, PIX and images (*.tim;*.pix;*.png;*.bmp)|*.tim;*.pix;*.png;*.bmp|" +
+                    "PlayStation TIM / PIX (*.tim;*.pix)|*.tim;*.pix|" +
+                    "Images (*.png;*.bmp)|*.png;*.bmp|" +
+                    "All files (*.*)|*.*"
+            };
+
+            if (ofd.ShowDialog(this) == DialogResult.OK)
+                OpenPath(ofd.FileName);
+        }
+
+        private bool ConfirmDiscardChanges()
+        {
+            if (!_dirty)
+                return true;
+
+            var result = MessageBox.Show(this,
+                "This document has unsaved changes.\n\nDiscard them?",
+                "Unsaved changes", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
+
+            if (result == DialogResult.Cancel)
+                return false;
+
+            return result == DialogResult.Yes;
+        }
+
+        private void OpenPath(string path)
+        {
+            if (!ConfirmDiscardChanges())
+                return;
+
+            byte[] bytes;
+            try
+            {
+                bytes = File.ReadAllBytes(path);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to open file:\n{ex.Message}", "Open error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-            SetStatus("Loaded: " + ofd.FileName);
-        }
-
-        //Save As Menustrip Hook
-        private void saveToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            if (pictureBox1.Image is not Bitmap bmp)
-            {
-                MessageBox.Show("No image loaded.", "Save", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                Error($"Could not read the file:\n{ex.Message}", "Open");
                 return;
             }
 
-            if (bmp.Width != 320 || bmp.Height != 240)
-            {
-                MessageBox.Show("Current image is not 320x240. Cannot save as background PIX.", "Save",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                // Still allow PNG/BMP export if you want, but PIX should be blocked.
-                // We'll still allow, because PNG/BMP can store any size.
-            }
-
-            using SaveFileDialog sfd = new SaveFileDialog
-            {
-                Filter =
-                    "PIX background (*.pix)|*.pix|" +
-                    "PNG image (*.png)|*.png|" +
-                    "Bitmap image (*.bmp)|*.bmp|" +
-                    "All files (*.*)|*.*",
-                FileName = _bgPath != null ? Path.GetFileNameWithoutExtension(_bgPath) : "BACKGROUND"
-            };
-
-            if (sfd.ShowDialog() != DialogResult.OK)
-                return;
-
-            var ext = Path.GetExtension(sfd.FileName)?.ToLowerInvariant();
+            string ext = Path.GetExtension(path).ToLowerInvariant();
 
             try
             {
-                switch (ext)
+                // TIM data (a single TIM, or a pack of them - also inside .pix files).
+                if (PsxTimImage.LooksLikeTim(bytes))
                 {
-                    case ".png":
-                        bmp.Save(sfd.FileName, ImageFormat.Png);
+                    var blocks = TimPack.Parse(bytes);
+                    if (blocks.Count == 0)
+                        throw new InvalidDataException("A TIM header was found, but no complete TIM block could be read.");
+
+                    LoadTimPack(blocks, path);
+                    return;
+                }
+
+                if (ext is ".png" or ".bmp")
+                {
+                    LoadBackgroundFromImage(path);
+                    return;
+                }
+
+                switch (PixLoader.Detect(bytes))
+                {
+                    case PixKind.RawBgr555_320x240:
+                        LoadRawBackground(bytes, path);
                         break;
 
-                    case ".bmp":
-                        bmp.Save(sfd.FileName, ImageFormat.Bmp);
-                        break;
-
-                    case ".pix":
-                        if (bmp.Width != 320 || bmp.Height != 240)
-                            throw new InvalidOperationException("To save as PIX, image must be 320x240.");
-
-                        // Raw 320x240 16-bit BGR555 (matches your background PIX)
-                        var raw = Psx1555.EncodeRaw320x240(bmp);
-                        File.WriteAllBytes(sfd.FileName, raw);
+                    case PixKind.ItemSheet40x30_8bpp:
+                        LoadSheet(path);
                         break;
 
                     default:
-                        // If user typed no extension, default to PNG (or change to BMP if you prefer)
-                        var fallback = sfd.FileName;
-                        if (string.IsNullOrWhiteSpace(ext))
-                        {
-                            fallback += ".png";
-                            bmp.Save(fallback, ImageFormat.Png);
-                        }
-                        else
-                        {
-                            throw new InvalidOperationException("Unsupported save format. Use .pix, .png, or .bmp.");
-                        }
+                        Error("Unsupported file.\n\nExpected a PlayStation TIM (also inside .pix), a raw 320x240 background PIX, " +
+                              "an item sheet PIX, or a PNG/BMP image.", "Open");
                         break;
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to save:\n{ex.Message}", "Save error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Error($"Failed to open the file:\n{ex.Message}", "Open");
             }
         }
 
-        // ----------------------
-        // Item sheet pix handling
-        // ----------------------
-
-        private void RenderCurrentIcon()
+        private void LoadTimPack(List<TimBlock> blocks, string path)
         {
-            if (sheet == null) return;
+            _mode = ViewerMode.TimPack;
+            _blocks = blocks;
+            _sheet = null;
+            _documentPath = path;
+            _documentIsRawPix = false;
+            _dirty = false;
+            _timIndex = 0;
+            _clutIndex = 0;
 
-            // clamp index
-            if (_iconIndex < 0) _iconIndex = 0;
-            if (_iconIndex >= sheet.IconCount) _iconIndex = sheet.IconCount - 1;
-
-            // avoid leaking old bitmaps
-            var old = pictureBox1.Image;
-            pictureBox1.Image = sheet.RenderIcon(_iconIndex);
-            old?.Dispose();
-
-            // keep preview centered
-            CenterPictureBox();
-
-            // show "index/total" like multipack
-            //toolStripStatusLabel1.Text = $"{_iconIndex + 1}/{sheet.IconCount}";
-            SetStatus($"Loaded {_iconIndex + 1}/{sheet.IconCount} from PIX Sheet");
-
+            ShowTim(0, resetClut: true);
         }
 
-        private void openToolStripMenuItem1_Click(object sender, EventArgs e)
+        private void LoadRawBackground(byte[] bytes, string path)
         {
-            // Clear background state, because we are opening a sheet now:
-            ClearBackgroundState();
+            var bmp = Psx1555.DecodeRaw320x240(bytes);
 
-            // Clear the previous TIM pack (sheet navigation and TIM-pack navigation are different modes)
-            ClearTimPackState();
+            _mode = ViewerMode.Background;
+            _blocks = null;
+            _sheet = null;
+            _documentPath = path;
+            _documentIsRawPix = true;
+            _dirty = false;
 
-            // Open file dialog for item sheet PIX
-            using OpenFileDialog ofd = new OpenFileDialog
-            {
-                Filter = "PIX files (*.pix)|*.pix|All files (*.*)|*.*"
-            };
-
-            if (ofd.ShowDialog() == DialogResult.OK)
-            {
-                //sheet = ItemSheet.Load(ofd.FileName);//Old loading method that only supports raw PIX sheets without relying on Borland Res.res Reader
-                sheet = Tool_Hazard.Biohazard.PIX.ItemSheet.Load(ofd.FileName, palette512);
-                _sheetPath = ofd.FileName;
-                _iconIndex = 0;
-                RenderCurrentIcon();
-                UpdateNavButtons();
-            }
+            SetSourceImage(bmp);
+            SetStatus($"Loaded raw background: {Path.GetFileName(path)}");
+            UpdateUi();
         }
 
-        //Export selected icon index in sheet as its own TIM file (with TIM header, not raw)
-        private void exportToolStripMenuItem_Click(object sender, EventArgs e)
+        private void LoadBackgroundFromImage(string path)
         {
-            if (sheet == null)
-            {
-                MessageBox.Show("Load a PIX sheet first.", "No sheet loaded",
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+            using var source = new Bitmap(path);
+
+            var bmp = new Bitmap(source.Width, source.Height, PixelFormat.Format32bppArgb);
+            using (var g = Graphics.FromImage(bmp))
+                g.DrawImage(source, 0, 0, source.Width, source.Height);
+
+            _mode = ViewerMode.Background;
+            _blocks = null;
+            _sheet = null;
+            _documentPath = path;
+            _documentIsRawPix = false;
+            _dirty = false;
+
+            SetSourceImage(bmp);
+
+            SetStatus(bmp is { Width: 320, Height: 240 }
+                ? $"Loaded image background: {Path.GetFileName(path)}"
+                : $"Loaded image ({bmp.Width}x{bmp.Height}) - only 320x240 can be saved as PIX.");
+
+            UpdateUi();
+        }
+
+        private void LoadSheet(string path)
+        {
+            var loaded = ItemSheet.Load(path, _palette512);
+
+            _mode = ViewerMode.Sheet;
+            _blocks = null;
+            _sheet = loaded;
+            _documentPath = path;
+            _documentIsRawPix = false;
+            _dirty = false;
+            _iconIndex = 0;
+
+            ShowIcon();
+        }
+
+        private void closeToolStripMenuItem_Click(object? sender, EventArgs e) => Close();
+
+        private void Biohazard_PIX_Viewer_FormClosing(object? sender, FormClosingEventArgs e)
+        {
+            if (!ConfirmDiscardChanges())
+                e.Cancel = true;
+        }
+
+        private void Biohazard_PIX_Viewer_DragEnter(object? sender, DragEventArgs e)
+        {
+            if (e.Data?.GetDataPresent(DataFormats.FileDrop) == true)
+                e.Effect = DragDropEffects.Copy;
+        }
+
+        private void Biohazard_PIX_Viewer_DragDrop(object? sender, DragEventArgs e)
+        {
+            if (e.Data?.GetData(DataFormats.FileDrop) is string[] files && files.Length > 0)
+                OpenPath(files[0]);
+        }
+
+        // ------------------------------
+        // TIM display
+        // ------------------------------
+
+        private void ShowTim(int index, bool resetClut)
+        {
+            if (_blocks == null || _blocks.Count == 0)
                 return;
+
+            _timIndex = Wrap(index, _blocks.Count);
+
+            var parsed = PsxTimImage.Parse(_blocks[_timIndex].Data);
+            _currentTim = parsed;
+            _currentInfo = parsed.Info;
+            _clutCount = Math.Max(1, parsed.Info.ClutCount);
+
+            if (resetClut)
+                _clutIndex = 0;
+
+            _clutIndex = Math.Clamp(_clutIndex, 0, _clutCount - 1);
+
+            _updatingUi = true;
+            chkPerPageClut.Enabled = parsed.Info.IsAtlas;
+
+            if (resetClut)
+                chkPerPageClut.Checked = parsed.Info.IsAtlas;
+            else if (!parsed.Info.IsAtlas)
+                chkPerPageClut.Checked = false;
+
+            _updatingUi = false;
+
+            _perPageCluts = chkPerPageClut.Checked;
+
+            BuildClutCombo();
+            RefreshTimDisplay();
+        }
+
+        private void BuildClutCombo()
+        {
+            _updatingUi = true;
+
+            cmbClut.Items.Clear();
+            if (_clutCount <= 1)
+            {
+                cmbClut.Items.Add("CLUT 1/1");
             }
-
-            using SaveFileDialog sfd = new SaveFileDialog
-            {
-                Filter =
-                    "PlayStation TIM (*.tim)|*.tim|" +
-                    "PNG image (*.png)|*.png|" +
-                    "Bitmap image (*.bmp)|*.bmp|" +
-                    "All files (*.*)|*.*",
-                FileName = $"icon_{_iconIndex:D3}"
-            };
-
-            if (sfd.ShowDialog() != DialogResult.OK)
-                return;
-
-            string ext = Path.GetExtension(sfd.FileName).ToLowerInvariant();
-
-            if (ext == ".tim")
-            {
-                sheet.ExportIconAsTim(_iconIndex, sfd.FileName);
-                return;
-            }
-
-            // PNG/BMP export is just rendered bitmap
-            using var bmp = sheet.RenderIcon(_iconIndex);
-
-            if (ext == ".png")
-                bmp.Save(sfd.FileName, ImageFormat.Png);
-            else if (ext == ".bmp")
-                bmp.Save(sfd.FileName, ImageFormat.Bmp);
             else
             {
-                // If user typed no extension, default to PNG
-                bmp.Save(sfd.FileName + ".png", ImageFormat.Png);
+                for (int i = 0; i < _clutCount; i++)
+                    cmbClut.Items.Add($"CLUT {i + 1}/{_clutCount}");
             }
+
+            cmbClut.SelectedIndex = Math.Clamp(_clutIndex, 0, cmbClut.Items.Count - 1);
+            _updatingUi = false;
         }
 
-        // Replace current selected icon index in sheet with our own TIM file
-        private void replaceToolStripMenuItem_Click(object sender, EventArgs e)
+        private void SyncClutCombo()
         {
-            if (sheet == null)
+            _updatingUi = true;
+
+            if (cmbClut.Items.Count != (_clutCount <= 1 ? 1 : _clutCount))
             {
-                MessageBox.Show("Load a PIX sheet first.", "No sheet loaded",
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return;
+                _updatingUi = false;
+                BuildClutCombo();
+                _updatingUi = true;
             }
 
-            using OpenFileDialog ofd = new OpenFileDialog
-            {
-                Filter =
-                    "Supported (TIM/PNG/BMP)|*.tim;*.png;*.bmp|" +
-                    "PlayStation TIM (*.tim)|*.tim|" +
-                    "PNG image (*.png)|*.png|" +
-                    "Bitmap image (*.bmp)|*.bmp|" +
-                    "All files (*.*)|*.*"
-            };
+            if (cmbClut.Items.Count > 0)
+                cmbClut.SelectedIndex = Math.Clamp(_clutIndex, 0, cmbClut.Items.Count - 1);
 
-            if (ofd.ShowDialog() != DialogResult.OK)
+            _updatingUi = false;
+        }
+
+        private Bitmap RenderTimBitmap()
+        {
+            if (_currentTim == null)
+                throw new InvalidOperationException("No TIM is loaded.");
+
+            var mode = _perPageCluts && _currentInfo?.IsAtlas == true
+                ? TimRenderMode.PerPageClut
+                : TimRenderMode.SelectedClut;
+
+            return _currentTim.Render(mode, _clutIndex);
+        }
+
+        private void RefreshTimDisplay()
+        {
+            if (_currentTim == null)
                 return;
-
-            string ext = Path.GetExtension(ofd.FileName).ToLowerInvariant();
 
             try
             {
-                if (ext == ".tim")
-                {
-                    sheet.ReplaceIconFromTim(_iconIndex, ofd.FileName);
-                }
-                else if (ext == ".png" || ext == ".bmp")
-                {
-                    using var img = new Bitmap(ofd.FileName);
-
-                    // Strict size by default. If you want auto-resize, pass resizeIfNeeded: true
-                    if (img.Width != ItemSheet.IconW ||
-                        img.Height != ItemSheet.IconH)
-                    {
-                        var res = MessageBox.Show(
-                            $"Image is {img.Width}x{img.Height}. Icon size is 40x30.\n\nResize automatically?",
-                            "Resize?",
-                            MessageBoxButtons.YesNo,
-                            MessageBoxIcon.Question);
-
-                        bool resize = (res == DialogResult.Yes);
-                        sheet.ReplaceIconFromBitmap(_iconIndex, img, resizeIfNeeded: resize);
-                    }
-                    else
-                    {
-                        sheet.ReplaceIconFromBitmap(_iconIndex, img, resizeIfNeeded: false);
-                    }
-                }
-                else
-                {
-                    MessageBox.Show("Unsupported file type.", "Replace",
-                        MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    return;
-                }
-
-                RenderCurrentIcon();
+                SetSourceImage(RenderTimBitmap());
+                SetStatus(BuildTimStatus());
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Replace failed:\n{ex.Message}", "Error",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                SetSourceImage(null);
+                SetStatus("Render failed: " + ex.Message);
             }
+
+            UpdateUi();
         }
 
-        // Save the entire sheet back to disk (overwriting original) or prompt for new path if we don't have one
-        private void saveToolStripMenuItem1_Click(object sender, EventArgs e)
+        private void cmbClut_SelectedIndexChanged(object? sender, EventArgs e)
         {
-            if (sheet == null)
-            {
-                MessageBox.Show("Load a PIX sheet first.", "No sheet loaded", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            if (_updatingUi || _mode != ViewerMode.TimPack)
                 return;
-            }
 
-            // Save back to the same path by default, or prompt if we don't have one
-            if (!string.IsNullOrWhiteSpace(_sheetPath) && File.Exists(_sheetPath))
-            {
-                sheet.Save(_sheetPath);
-                MessageBox.Show("Saved.", "PIX Sheet", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            int index = cmbClut.SelectedIndex;
+            if (index < 0 || index >= _clutCount)
                 return;
-            }
 
-            using SaveFileDialog sfd = new SaveFileDialog
+            _clutIndex = index;
+
+            if (_perPageCluts)
+                SetPerPageMode(false);
+            else
+                RefreshTimDisplay();
+        }
+
+        // ------------------------------
+        // PIX sheet display
+        // ------------------------------
+
+        private void ShowIcon()
+        {
+            if (_sheet == null || _sheet.IconCount == 0)
+                return;
+
+            _iconIndex = Wrap(_iconIndex, _sheet.IconCount);
+            SetSourceImage(_sheet.RenderIcon(_iconIndex));
+            SetStatus($"Icon {_iconIndex + 1}/{_sheet.IconCount} from PIX sheet");
+            UpdateUi();
+        }
+
+        private void openSheetToolStripMenuItem_Click(object? sender, EventArgs e)
+        {
+            if (!ConfirmDiscardChanges())
+                return;
+
+            using var ofd = new OpenFileDialog
             {
-                Filter = "PIX files (*.pix)|*.pix|All files (*.*)|*.*",
-                FileName = "ITEM_ALL.PIX"
+                Title = "Open PIX sheet",
+                Filter = "PIX files (*.pix)|*.pix|All files (*.*)|*.*"
             };
 
-            if (sfd.ShowDialog() == DialogResult.OK)
+            if (ofd.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            try
             {
-                sheet.Save(sfd.FileName);
-                _sheetPath = sfd.FileName;
-                MessageBox.Show("Saved.", "PIX Sheet", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                LoadSheet(ofd.FileName);
+            }
+            catch (Exception ex)
+            {
+                Error($"Failed to open the sheet:\n{ex.Message}", "Open sheet");
             }
         }
 
-        private void Next_Click(object sender, EventArgs e)
-        {
-            // If a sheet is loaded, Next/Prev moves between icons
-            if (sheet != null)
-            {
-                // increment index
-                _iconIndex++;
-                // update a label with current index
-                //label1.Text = _iconIndex.ToString();
-                //label1.Text = $"{_iconIndex + 1}/{sheet.IconCount}";
-                if (_iconIndex >= sheet.IconCount)
-                    _iconIndex = 0; // wrap
+        // ------------------------------
+        // Navigation
+        // ------------------------------
 
-                RenderCurrentIcon();
+        private static int Wrap(int value, int count) => count <= 0 ? 0 : ((value % count) + count) % count;
+
+        private void PrevItem()
+        {
+            if (_mode == ViewerMode.TimPack && _blocks is { Count: > 0 })
+            {
+                ShowTim(_timIndex - 1, resetClut: true);
                 return;
             }
 
-            // If no sheet is loaded, but we have a TIM pack (Multi TIM / TIM-in-PIX), Next/Prev moves between TIM blocks
-            // If Shift held: change CLUT instead of TIM
-            bool shift = (ModifierKeys & Keys.Shift) == Keys.Shift;
-
-            if (_timPack != null && _timPack.Count > 0)
+            if (_mode == ViewerMode.Sheet && _sheet is { IconCount: > 0 })
             {
-                if (shift)
+                _iconIndex = Wrap(_iconIndex - 1, _sheet.IconCount);
+                ShowIcon();
+            }
+        }
+
+        private void NextItem()
+        {
+            if (_mode == ViewerMode.TimPack && _blocks is { Count: > 0 })
+            {
+                ShowTim(_timIndex + 1, resetClut: true);
+                return;
+            }
+
+            if (_mode == ViewerMode.Sheet && _sheet is { IconCount: > 0 })
+            {
+                _iconIndex = Wrap(_iconIndex + 1, _sheet.IconCount);
+                ShowIcon();
+            }
+        }
+
+        private void FirstItem()
+        {
+            if (_mode == ViewerMode.TimPack && _blocks is { Count: > 0 })
+            {
+                ShowTim(0, resetClut: true);
+                return;
+            }
+
+            if (_mode == ViewerMode.Sheet && _sheet is { IconCount: > 0 })
+            {
+                _iconIndex = 0;
+                ShowIcon();
+            }
+        }
+
+        private void LastItem()
+        {
+            if (_mode == ViewerMode.TimPack && _blocks is { Count: > 0 })
+            {
+                ShowTim(_blocks.Count - 1, resetClut: true);
+                return;
+            }
+
+            if (_mode == ViewerMode.Sheet && _sheet is { IconCount: > 0 })
+            {
+                _iconIndex = _sheet.IconCount - 1;
+                ShowIcon();
+            }
+        }
+
+        private void ChangeClut(int delta)
+        {
+            if (_mode != ViewerMode.TimPack || _clutCount <= 1)
+                return;
+
+            _clutIndex = Wrap(_clutIndex + delta, _clutCount);
+
+            if (_perPageCluts)
+            {
+                SetPerPageMode(false);
+                return;
+            }
+
+            SyncClutCombo();
+            RefreshTimDisplay();
+        }
+
+        private void btnPrev_Click(object? sender, EventArgs e) => PrevItem();
+        private void btnNext_Click(object? sender, EventArgs e) => NextItem();
+        private void prevItemToolStripMenuItem_Click(object? sender, EventArgs e) => PrevItem();
+        private void nextItemToolStripMenuItem_Click(object? sender, EventArgs e) => NextItem();
+        private void firstItemToolStripMenuItem_Click(object? sender, EventArgs e) => FirstItem();
+        private void lastItemToolStripMenuItem_Click(object? sender, EventArgs e) => LastItem();
+        private void prevClutToolStripMenuItem_Click(object? sender, EventArgs e) => ChangeClut(-1);
+        private void nextClutToolStripMenuItem_Click(object? sender, EventArgs e) => ChangeClut(1);
+
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            // Arrow keys inside the CLUT / zoom combo should behave normally.
+            if (ActiveControl is ComboBox)
+                return base.ProcessCmdKey(ref msg, keyData);
+
+            switch (keyData)
+            {
+                case Keys.Left:
+                    PrevItem();
+                    return true;
+                case Keys.Right:
+                    NextItem();
+                    return true;
+                case Keys.Up:
+                    ChangeClut(-1);
+                    return true;
+                case Keys.Down:
+                    ChangeClut(1);
+                    return true;
+                case Keys.Home:
+                    FirstItem();
+                    return true;
+                case Keys.End:
+                    LastItem();
+                    return true;
+            }
+
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
+
+        // ------------------------------
+        // Save
+        // ------------------------------
+
+        private void saveToolStripMenuItem_Click(object? sender, EventArgs e) => SaveDocument();
+
+        private void SaveDocument()
+        {
+            switch (_mode)
+            {
+                case ViewerMode.TimPack:
+                    if (string.IsNullOrEmpty(_documentPath))
+                    {
+                        SaveDocumentAs();
+                        return;
+                    }
+
+                    try
+                    {
+                        File.WriteAllBytes(_documentPath, TimPack.Rebuild(_blocks!));
+                        _dirty = false;
+                        SetStatus($"Saved {Path.GetFileName(_documentPath)} (original padding kept)");
+                        UpdateUi();
+                    }
+                    catch (Exception ex)
+                    {
+                        Error($"Could not save:\n{ex.Message}", "Save");
+                    }
+                    break;
+
+                case ViewerMode.Sheet:
+                    if (string.IsNullOrEmpty(_documentPath))
+                    {
+                        SaveDocumentAs();
+                        return;
+                    }
+
+                    try
+                    {
+                        _sheet!.Save(_documentPath);
+                        _dirty = false;
+                        SetStatus($"Saved {Path.GetFileName(_documentPath)}");
+                        UpdateUi();
+                    }
+                    catch (Exception ex)
+                    {
+                        Error($"Could not save:\n{ex.Message}", "Save");
+                    }
+                    break;
+
+                case ViewerMode.Background when _documentIsRawPix && _documentPath != null && IsBackgroundPixSize():
+                    try
+                    {
+                        File.WriteAllBytes(_documentPath, Psx1555.EncodeRaw320x240(_image!));
+                        _dirty = false;
+                        SetStatus($"Saved {Path.GetFileName(_documentPath)}");
+                        UpdateUi();
+                    }
+                    catch (Exception ex)
+                    {
+                        Error($"Could not save:\n{ex.Message}", "Save");
+                    }
+                    break;
+
+                default:
+                    SaveDocumentAs();
+                    break;
+            }
+        }
+
+        private void saveAsToolStripMenuItem_Click(object? sender, EventArgs e) => SaveDocumentAs();
+
+        private void SaveDocumentAs()
+        {
+            switch (_mode)
+            {
+                case ViewerMode.TimPack:
                 {
-                    _clutCount = GetTimClutCount(_timPack[_timIndex]);
-                    _clutIndex++;
-                    if (_clutIndex >= _clutCount) _clutIndex = 0;
-                    RenderCurrentTimFromPack();
-                    return;
+                    using var sfd = new SaveFileDialog
+                    {
+                        Title = "Save TIM pack",
+                        Filter = "TIM stored as PIX (*.pix)|*.pix|PlayStation TIM (*.tim)|*.tim|All files (*.*)|*.*",
+                        FileName = DocBaseName()
+                    };
+
+                    if (sfd.ShowDialog(this) != DialogResult.OK)
+                        return;
+
+                    try
+                    {
+                        File.WriteAllBytes(sfd.FileName, TimPack.Rebuild(_blocks!));
+                        _documentPath = sfd.FileName;
+                        _dirty = false;
+                        SetStatus($"Saved {Path.GetFileName(sfd.FileName)}");
+                        UpdateUi();
+                    }
+                    catch (Exception ex)
+                    {
+                        Error($"Could not save:\n{ex.Message}", "Save as");
+                    }
+                    break;
                 }
 
-                _timIndex++;
-                if (_timIndex >= _timPack.Count) _timIndex = 0;
-                _clutIndex = 0; // reset palette when switching TIM
-                RenderCurrentTimFromPack();
-                return;
-            }
-        }
-
-        private void Prev_Click(object sender, EventArgs e)
-        {
-            // If a sheet is loaded, Next/Prev moves between icons
-            if (sheet != null)
-            {
-                _iconIndex--;
-                // update a label with current index
-                //label1.Text = _iconIndex.ToString();
-                //label1.Text = $"{_iconIndex + 1}/{sheet.IconCount}";
-                if (_iconIndex < 0)
-                    _iconIndex = sheet.IconCount - 1; // wrap
-
-                RenderCurrentIcon();
-                return;
-            }
-
-            // If no sheet is loaded, but we have a TIM pack (Multi TIM / TIM-in-PIX), Next/Prev moves between TIM blocks
-            if (_timPack != null && _timPack.Count > 0)
-            {
-                // If Shift held: change CLUT instead of TIM
-                bool shift = (ModifierKeys & Keys.Shift) == Keys.Shift;
-
-                if (shift)
+                case ViewerMode.Sheet:
                 {
-                    _clutCount = GetTimClutCount(_timPack[_timIndex]);
+                    using var sfd = new SaveFileDialog
+                    {
+                        Title = "Save PIX sheet",
+                        Filter = "PIX files (*.pix)|*.pix|All files (*.*)|*.*",
+                        FileName = DocBaseName()
+                    };
 
-                    _clutIndex--;
-                    if (_clutIndex < 0)
-                        _clutIndex = _clutCount - 1; // wrap
+                    if (sfd.ShowDialog(this) != DialogResult.OK)
+                        return;
 
-                    RenderCurrentTimFromPack();
-                    return;
+                    try
+                    {
+                        _sheet!.Save(sfd.FileName);
+                        _documentPath = sfd.FileName;
+                        _dirty = false;
+                        SetStatus($"Saved {Path.GetFileName(sfd.FileName)}");
+                        UpdateUi();
+                    }
+                    catch (Exception ex)
+                    {
+                        Error($"Could not save:\n{ex.Message}", "Save as");
+                    }
+                    break;
                 }
 
-                _timIndex--;
-                if (_timIndex < 0)
-                    _timIndex = _timPack.Count - 1; // wrap
+                case ViewerMode.Background:
+                {
+                    using var sfd = new SaveFileDialog
+                    {
+                        Title = "Save background",
+                        Filter = "PIX background (*.pix)|*.pix|PNG image (*.png)|*.png|Bitmap image (*.bmp)|*.bmp|All files (*.*)|*.*",
+                        FileName = DocBaseName()
+                    };
 
-                _clutIndex = 0; // reset palette when switching TIM
-                RenderCurrentTimFromPack();
-                UpdateNavButtons();
+                    if (sfd.ShowDialog(this) != DialogResult.OK)
+                        return;
+
+                    try
+                    {
+                        switch (sfd.FilterIndex)
+                        {
+                            case 1:
+                                if (!IsBackgroundPixSize())
+                                    throw new InvalidOperationException("A background PIX must be 320x240.");
+                                File.WriteAllBytes(sfd.FileName, Psx1555.EncodeRaw320x240(_image!));
+                                break;
+
+                            case 2:
+                                _image!.Save(sfd.FileName, ImageFormat.Png);
+                                break;
+
+                            default:
+                                _image!.Save(sfd.FileName, ImageFormat.Bmp);
+                                break;
+                        }
+
+                        _documentPath = sfd.FileName;
+                        SetStatus($"Saved {Path.GetFileName(sfd.FileName)}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Error($"Could not save:\n{ex.Message}", "Save as");
+                    }
+                    break;
+                }
+
+                default:
+                    Info("Nothing to save - open a file first.", "Save as");
+                    break;
             }
         }
 
-        private void exportSelectedMultipackToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            //Export Selected (Multi TIM) Pack as separate PIX/TIM/PNG/BMP file
-            if (!IsMultipackActive())
-            {
-                MessageBox.Show("Load a Multi-TIM PIX first (eg ITEMG.PIX).", "No multipack loaded",
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return;
-            }
+        // ------------------------------
+        // Export
+        // ------------------------------
 
-            using SaveFileDialog sfd = new SaveFileDialog
+        private void exportSelectedToolStripMenuItem_Click(object? sender, EventArgs e) => ExportCurrent();
+
+        private void ExportCurrent()
+        {
+            switch (_mode)
             {
+                case ViewerMode.TimPack:
+                    ExportTim();
+                    break;
+
+                case ViewerMode.Sheet:
+                    ExportIcon();
+                    break;
+
+                case ViewerMode.Background:
+                    ExportBackgroundImage();
+                    break;
+
+                default:
+                    Info("Open a TIM, PIX sheet or background first.", "Export");
+                    break;
+            }
+        }
+
+        private void ExportTim()
+        {
+            if (_blocks == null || _currentTim == null)
+                return;
+
+            using var sfd = new SaveFileDialog
+            {
+                Title = "Export current TIM",
                 Filter =
                     "PlayStation TIM (*.tim)|*.tim|" +
-                    "PIX file (*.pix)|*.pix|" +   // some tools expect .pix even if it's TIM inside
+                    "TIM stored as PIX (*.pix)|*.pix|" +
+                    "PNG image (*.png)|*.png|" +
+                    "PNG - every CLUT stacked (*.png)|*.png|" +
+                    "Bitmap image (*.bmp)|*.bmp|" +
+                    "All files (*.*)|*.*",
+                FilterIndex = 1,
+                FileName = $"{DocBaseName()}_{_timIndex:D3}"
+            };
+
+            if (sfd.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            try
+            {
+                switch (sfd.FilterIndex)
+                {
+                    case 1:
+                    case 2:
+                        File.WriteAllBytes(sfd.FileName, _blocks[_timIndex].Data);
+                        SetStatus($"Exported {Path.GetFileName(sfd.FileName)}");
+                        break;
+
+                    case 3:
+                        using (var bmp = RenderTimBitmap())
+                            SaveBitmap(bmp, sfd.FileName, ImageFormat.Png);
+                        SetStatus($"Exported {Path.GetFileName(sfd.FileName)}");
+                        break;
+
+                    case 4:
+                        using (var bmp = _currentTim.Render(TimRenderMode.AllCluts, _clutIndex))
+                            SaveBitmap(bmp, sfd.FileName, ImageFormat.Png);
+                        SetStatus($"Exported {Path.GetFileName(sfd.FileName)} (all CLUTs)");
+                        break;
+
+                    default:
+                        using (var bmp = RenderTimBitmap())
+                            SaveBitmap(bmp, sfd.FileName, ImageFormat.Bmp);
+                        SetStatus($"Exported {Path.GetFileName(sfd.FileName)}");
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Error($"Export failed:\n{ex.Message}", "Export");
+            }
+        }
+
+        private static void SaveBitmap(Bitmap bmp, string path, ImageFormat format)
+        {
+            if (string.IsNullOrEmpty(Path.GetExtension(path)))
+                path += format.Equals(ImageFormat.Bmp) ? ".bmp" : ".png";
+
+            bmp.Save(path, format);
+        }
+
+        private void ExportIcon()
+        {
+            if (_sheet == null)
+            {
+                Info("Open a PIX sheet first.", "Export");
+                return;
+            }
+
+            using var sfd = new SaveFileDialog
+            {
+                Title = "Export icon",
+                Filter =
+                    "PlayStation TIM (*.tim)|*.tim|" +
                     "PNG image (*.png)|*.png|" +
                     "Bitmap image (*.bmp)|*.bmp|" +
                     "All files (*.*)|*.*",
-                FileName = $"tim_{_timIndex:D3}"
+                FileName = $"{DocBaseName()}_icon{_iconIndex:D3}"
             };
 
-            if (sfd.ShowDialog() != DialogResult.OK)
+            if (sfd.ShowDialog(this) != DialogResult.OK)
                 return;
 
-            string ext = Path.GetExtension(sfd.FileName).ToLowerInvariant();
-
-            // Export raw TIM block (works for .tim and also "TIM disguised as .pix")
-            if (ext == ".tim" || ext == ".pix")
+            try
             {
-                File.WriteAllBytes(sfd.FileName, _timPack![_timIndex]);
-                return;
+                switch (sfd.FilterIndex)
+                {
+                    case 1:
+                        _sheet.ExportIconAsTim(_iconIndex, sfd.FileName);
+                        break;
+
+                    case 2:
+                        using (var bmp = _sheet.RenderIcon(_iconIndex))
+                            SaveBitmap(bmp, sfd.FileName, ImageFormat.Png);
+                        break;
+
+                    default:
+                        using (var bmp = _sheet.RenderIcon(_iconIndex))
+                            SaveBitmap(bmp, sfd.FileName, ImageFormat.Bmp);
+                        break;
+                }
+
+                SetStatus($"Exported icon {_iconIndex + 1}");
             }
-
-            // Export as PNG/BMP by decoding to bitmap
-            //using var bmp = Tim.DecodeToBitmap(_timPack![_timIndex]);
-            using var bmp = Tim.DecodeToBitmap(_timPack[_timIndex], _clutIndex);
-
-            if (ext == ".png")
-                bmp.Save(sfd.FileName, ImageFormat.Png);
-            else if (ext == ".bmp")
-                bmp.Save(sfd.FileName, ImageFormat.Bmp);
-            else
-                bmp.Save(sfd.FileName + ".png", ImageFormat.Png);
+            catch (Exception ex)
+            {
+                Error($"Export failed:\n{ex.Message}", "Export");
+            }
         }
 
-        private void replaceSelectedMultipackToolStripMenuItem_Click(object sender, EventArgs e)
+        private void ExportBackgroundImage()
         {
-            //Replace Selected (Multi TIM) Pack as separate PIX/TIM/PNG/BMP file
-            if (!IsMultipackActive())
+            if (_image == null)
+                return;
+
+            using var sfd = new SaveFileDialog
             {
-                MessageBox.Show("Load a Multi-TIM PIX first (eg ITEMG.PIX).", "No multipack loaded",
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                Title = "Export background",
+                Filter = "PNG image (*.png)|*.png|Bitmap image (*.bmp)|*.bmp|PIX background (*.pix)|*.pix|All files (*.*)|*.*",
+                FileName = DocBaseName()
+            };
+
+            if (sfd.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            try
+            {
+                switch (sfd.FilterIndex)
+                {
+                    case 1:
+                        _image.Save(sfd.FileName, ImageFormat.Png);
+                        break;
+
+                    case 2:
+                        _image.Save(sfd.FileName, ImageFormat.Bmp);
+                        break;
+
+                    default:
+                        if (!IsBackgroundPixSize())
+                            throw new InvalidOperationException("A background PIX must be 320x240.");
+                        File.WriteAllBytes(sfd.FileName, Psx1555.EncodeRaw320x240(_image));
+                        break;
+                }
+
+                SetStatus($"Exported {Path.GetFileName(sfd.FileName)}");
+            }
+            catch (Exception ex)
+            {
+                Error($"Export failed:\n{ex.Message}", "Export");
+            }
+        }
+
+        private void exportAllToolStripMenuItem_Click(object? sender, EventArgs e) => ExportAll();
+
+        private void ExportAll()
+        {
+            if (_mode == ViewerMode.TimPack && _blocks is { Count: > 0 })
+            {
+                ExportAllTims();
                 return;
             }
 
-            using OpenFileDialog ofd = new OpenFileDialog
+            if (_mode == ViewerMode.Sheet && _sheet != null)
             {
+                ExportAllIcons();
+                return;
+            }
+
+            Info("Nothing to batch export - open a TIM pack or a PIX sheet.", "Export all");
+        }
+
+        private void ExportAllTims()
+        {
+            using var sfd = new SaveFileDialog
+            {
+                Title = "Export every TIM (a numbered file per TIM)",
+                Filter = "PNG images (one file per TIM)|*.png|PlayStation TIM files (one file per TIM)|*.tim",
+                FileName = $"{DocBaseName()}_all"
+            };
+
+            if (sfd.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            string directory = Path.GetDirectoryName(sfd.FileName) ?? Directory.GetCurrentDirectory();
+            string prefix = Path.GetFileNameWithoutExtension(sfd.FileName);
+            bool raw = sfd.FilterIndex == 2;
+            int written = 0;
+
+            try
+            {
+                for (int i = 0; i < _blocks!.Count; i++)
+                {
+                    string target = Path.Combine(directory, $"{prefix}_{i:D3}.{(raw ? "tim" : "png")}");
+
+                    if (raw)
+                    {
+                        File.WriteAllBytes(target, _blocks[i].Data);
+                    }
+                    else
+                    {
+                        var tim = PsxTimImage.Parse(_blocks[i].Data);
+                        int clut = Math.Min(_clutIndex, Math.Max(1, tim.Info.ClutCount) - 1);
+                        bool perPage = _perPageCluts && tim.Info.IsAtlas;
+
+                        using var bmp = tim.Render(
+                            perPage ? TimRenderMode.PerPageClut : TimRenderMode.SelectedClut,
+                            clut);
+
+                        bmp.Save(target, ImageFormat.Png);
+                    }
+
+                    written++;
+                }
+
+                SetStatus($"Exported {written} TIM(s) to {directory}");
+                Info($"Exported {written} TIM(s) to:\n{directory}", "Export all");
+            }
+            catch (Exception ex)
+            {
+                Error($"Export failed after {written} TIM(s):\n{ex.Message}", "Export all");
+            }
+        }
+
+        private void ExportAllIcons()
+        {
+            using var sfd = new SaveFileDialog
+            {
+                Title = "Export every icon (a numbered file per icon)",
+                Filter = "PNG images (one file per icon)|*.png|PlayStation TIM files (one file per icon)|*.tim",
+                FileName = $"{DocBaseName()}_icons"
+            };
+
+            if (sfd.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            string directory = Path.GetDirectoryName(sfd.FileName) ?? Directory.GetCurrentDirectory();
+            string prefix = Path.GetFileNameWithoutExtension(sfd.FileName);
+            bool raw = sfd.FilterIndex == 2;
+            int written = 0;
+
+            try
+            {
+                for (int i = 0; i < _sheet!.IconCount; i++)
+                {
+                    string target = Path.Combine(directory, $"{prefix}_{i:D3}.{(raw ? "tim" : "png")}");
+
+                    if (raw)
+                    {
+                        _sheet.ExportIconAsTim(i, target);
+                    }
+                    else
+                    {
+                        using var bmp = _sheet.RenderIcon(i);
+                        bmp.Save(target, ImageFormat.Png);
+                    }
+
+                    written++;
+                }
+
+                SetStatus($"Exported {written} icon(s) to {directory}");
+                Info($"Exported {written} icon(s) to:\n{directory}", "Export all");
+            }
+            catch (Exception ex)
+            {
+                Error($"Export failed after {written} icon(s):\n{ex.Message}", "Export all");
+            }
+        }
+
+        // ------------------------------
+        // Replace / import
+        // ------------------------------
+
+        private void replaceSelectedToolStripMenuItem_Click(object? sender, EventArgs e) => ReplaceCurrent();
+
+        private void ReplaceCurrent()
+        {
+            switch (_mode)
+            {
+                case ViewerMode.TimPack:
+                    ReplaceTim();
+                    break;
+
+                case ViewerMode.Sheet:
+                    ReplaceIcon();
+                    break;
+
+                case ViewerMode.Background:
+                    ReplaceBackground();
+                    break;
+
+                default:
+                    Info("Open a file before replacing artwork.", "Replace");
+                    break;
+            }
+        }
+
+        private void ReplaceTim()
+        {
+            if (_blocks == null || _currentTim == null)
+                return;
+
+            using var ofd = new OpenFileDialog
+            {
+                Title = $"Replace TIM {_timIndex + 1}",
                 Filter =
+                    "Supported (TIM / PIX / PNG / BMP)|*.tim;*.pix;*.png;*.bmp|" +
                     "PlayStation TIM (*.tim;*.pix)|*.tim;*.pix|" +
+                    "Images (*.png;*.bmp)|*.png;*.bmp|" +
                     "All files (*.*)|*.*"
             };
 
-            if (ofd.ShowDialog() != DialogResult.OK)
+            if (ofd.ShowDialog(this) != DialogResult.OK)
                 return;
 
-            byte[] repl = File.ReadAllBytes(ofd.FileName);
-
-            // Basic validation: must start with TIM magic
-            if (repl.Length < 8 || BitConverter.ToUInt32(repl, 0) != 0x00000010u)
+            try
             {
-                MessageBox.Show("Selected file is not a valid TIM.", "Replace",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
+                string ext = Path.GetExtension(ofd.FileName).ToLowerInvariant();
+                byte[] replacement;
+
+                if (ext is ".tim" or ".pix")
+                {
+                    var bytes = File.ReadAllBytes(ofd.FileName);
+                    if (!PsxTimImage.LooksLikeTim(bytes))
+                        throw new InvalidDataException("That file is not a PlayStation TIM.");
+
+                    var inner = TimPack.Parse(bytes);
+                    if (inner.Count == 0)
+                        throw new InvalidDataException("No complete TIM could be read from that file.");
+
+                    if (inner.Count > 1 && MessageBox.Show(this,
+                            $"That file contains {inner.Count} TIMs.\n\nUse the first one for this slot?",
+                            "Replace", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
+                        return;
+
+                    replacement = inner[0].Data;
+                }
+                else if (ext is ".png" or ".bmp")
+                {
+                    using var art = new Bitmap(ofd.FileName);
+                    replacement = PsxTimImage.BuildReplacement(_blocks[_timIndex].Data, art, _clutIndex);
+                }
+                else
+                {
+                    throw new InvalidDataException("Use a TIM/PIX, or a PNG/BMP image.");
+                }
+
+                PsxTimImage.Parse(replacement); // sanity check
+
+                _blocks[_timIndex].Data = replacement;
+                _dirty = true;
+
+                ShowTim(_timIndex, resetClut: false);
+                SetStatus($"TIM {_timIndex + 1}/{_blocks.Count} replaced - Ctrl+S writes the pack back.");
             }
-
-            // Replace the selected entry in memory
-            _timPack![_timIndex] = repl;
-
-            // Ask where to save the updated multipack
-            using SaveFileDialog sfd = new SaveFileDialog
+            catch (Exception ex)
             {
-                Filter = "PIX file (*.pix)|*.pix|All files (*.*)|*.*",
-                FileName = _bgPath != null ? Path.GetFileName(_bgPath) : "ITEMG.PIX"
+                Error($"Replace failed:\n{ex.Message}", "Replace");
+            }
+        }
+
+        private void ReplaceIcon()
+        {
+            if (_sheet == null)
+                return;
+
+            using var ofd = new OpenFileDialog
+            {
+                Title = $"Replace icon {_iconIndex + 1}",
+                Filter =
+                    "Supported (TIM / PIX / PNG / BMP)|*.tim;*.pix;*.png;*.bmp|" +
+                    "PlayStation TIM (*.tim;*.pix)|*.tim;*.pix|" +
+                    "Images (*.png;*.bmp)|*.png;*.bmp|" +
+                    "All files (*.*)|*.*"
             };
 
-            if (sfd.ShowDialog() != DialogResult.OK)
+            if (ofd.ShowDialog(this) != DialogResult.OK)
                 return;
 
-            // Rebuild the multipack by concatenating blocks (pad to 4 bytes)
-            using var ms = new MemoryStream();
-            foreach (var block in _timPack)
+            try
             {
-                ms.Write(block, 0, block.Length);
+                string ext = Path.GetExtension(ofd.FileName).ToLowerInvariant();
 
-                // Align to 4 bytes if needed
-                while ((ms.Position & 3) != 0)
-                    ms.WriteByte(0);
+                if (ext is ".tim" or ".pix")
+                {
+                    var bytes = File.ReadAllBytes(ofd.FileName);
+                    if (!PsxTimImage.LooksLikeTim(bytes))
+                        throw new InvalidDataException("That file is not a PlayStation TIM.");
+
+                    if (Tim.IsItemTim40x30_8bpp(bytes))
+                    {
+                        // Exact ItemEditor layout: copy the indices straight across.
+                        _sheet.ReplaceIconFromTim(_iconIndex, ofd.FileName);
+                    }
+                    else
+                    {
+                        // Any other TIM: decode and requantise onto the item palette.
+                        var tim = PsxTimImage.Parse(bytes);
+                        using var bmp = tim.Render(TimRenderMode.SelectedClut, 0);
+                        _sheet.ReplaceIconFromBitmap(_iconIndex, bmp, resizeIfNeeded: true);
+                    }
+                }
+                else if (ext is ".png" or ".bmp")
+                {
+                    using var img = new Bitmap(ofd.FileName);
+
+                    bool resize = false;
+                    if (img.Width != ItemSheet.IconW || img.Height != ItemSheet.IconH)
+                    {
+                        resize = MessageBox.Show(this,
+                            $"Image is {img.Width}x{img.Height}. Icons are {ItemSheet.IconW}x{ItemSheet.IconH}.\n\nResize automatically?",
+                            "Resize", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes;
+                    }
+
+                    _sheet.ReplaceIconFromBitmap(_iconIndex, img, resize);
+                }
+                else
+                {
+                    throw new InvalidDataException("Use a TIM/PIX, or a PNG/BMP image.");
+                }
+
+                _dirty = true;
+                ShowIcon();
+                SetStatus($"Icon {_iconIndex + 1} replaced - Ctrl+S saves the sheet.");
+            }
+            catch (Exception ex)
+            {
+                Error($"Replace failed:\n{ex.Message}", "Replace");
+            }
+        }
+
+        private void ReplaceBackground()
+        {
+            using var ofd = new OpenFileDialog
+            {
+                Title = "Replace background",
+                Filter = "Images (*.png;*.bmp)|*.png;*.bmp|PIX background (*.pix)|*.pix|All files (*.*)|*.*"
+            };
+
+            if (ofd.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            try
+            {
+                string ext = Path.GetExtension(ofd.FileName).ToLowerInvariant();
+                Bitmap bmp;
+
+                if (ext is ".png" or ".bmp")
+                {
+                    using var source = new Bitmap(ofd.FileName);
+                    bmp = new Bitmap(source.Width, source.Height, PixelFormat.Format32bppArgb);
+                    using var g = Graphics.FromImage(bmp);
+                    g.DrawImage(source, 0, 0, source.Width, source.Height);
+                }
+                else
+                {
+                    bmp = Psx1555.DecodeRaw320x240(File.ReadAllBytes(ofd.FileName));
+                }
+
+                SetSourceImage(bmp);
+                _dirty = true;
+                SetStatus("Background replaced - Ctrl+S saves it.");
+                UpdateUi();
+            }
+            catch (Exception ex)
+            {
+                Error($"Replace failed:\n{ex.Message}", "Replace");
+            }
+        }
+
+        // ------------------------------
+        // PIX sheet commands
+        // ------------------------------
+
+        private void exportIconToolStripMenuItem_Click(object? sender, EventArgs e) => ExportIcon();
+
+        private void replaceIconToolStripMenuItem_Click(object? sender, EventArgs e) => ReplaceIcon();
+
+        private void saveSheetToolStripMenuItem_Click(object? sender, EventArgs e)
+        {
+            if (_sheet == null)
+            {
+                Info("Open a PIX sheet first.", "Save sheet");
+                return;
             }
 
-            File.WriteAllBytes(sfd.FileName, ms.ToArray());
+            SaveDocument();
+        }
 
-            // Reload current preview from updated pack
-            RenderCurrentTimFromPack();
+        private void copyImageToolStripMenuItem_Click(object? sender, EventArgs e)
+        {
+            if (_image == null)
+                return;
 
-            MessageBox.Show("Replaced and saved multipack.", "Replace",
-                MessageBoxButtons.OK, MessageBoxIcon.Information);
+            try
+            {
+                using var copy = new Bitmap(_image);
+                Clipboard.SetImage(copy);
+                SetStatus("Image copied to the clipboard.");
+            }
+            catch (Exception ex)
+            {
+                Error($"Could not copy the image:\n{ex.Message}", "Copy image");
+            }
         }
     }
 }
