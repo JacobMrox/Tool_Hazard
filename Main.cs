@@ -43,6 +43,9 @@ namespace Tool_Hazard
     private readonly System.Windows.Forms.Timer _gameDescriptionTimer = new() { Interval = 40 };
     private int _gameDescriptionOffset;
     private string _gameDescriptionText = "Hover over a game menu for details.";
+    private bool _descriptionScroll;
+    private bool _hoveringGameMenu;
+    private string _lastStatusText = "Ready";
         public Main()
         {
             try
@@ -62,6 +65,7 @@ namespace Tool_Hazard
 
             // Remove tooltips from main game menus and show a scrolling description instead.
             menuStrip1.ShowItemToolTips = false;
+            statusStrip1.Visible = false;
             foreach (var m in new[] { toolStripMenuItem1, bIO151997ToolStripMenuItem, bIO2RE21998ToolStripMenuItem, bIORE31999ToolStripMenuItem, rESURVVBIOGUNSURVToolStripMenuItem, rECVBIOCV2000ToolStripMenuItem, whiteDayToolStripMenuItem, rEmake2002ToolStripMenuItem, rE42005ToolStripMenuItem })
             {
                 m.AutoToolTip = false;
@@ -74,6 +78,7 @@ namespace Tool_Hazard
 
             var gameDescriptions = new (ToolStripMenuItem menu, string text)[]
             {
+                (fileToolStripMenuItem, "File operations such as exit."),
                 (toolStripMenuItem1, "Handle and manage file formats utilized by Biohazard / Resident Evil (1996) and its subsequent releases Directors Cut and Dual Shock (1998)."),
                 (bIO151997ToolStripMenuItem, "Handle and manage file formats utilized by Biohazard 1.5 (1997 prototype)."),
                 (bIO2RE21998ToolStripMenuItem, "Handle and manage file formats utilized by Biohazard 2 / Resident Evil 2 (1998) and its subsequent releases such as Dual Shock (1998) and Sourcenext (2006)."),
@@ -83,13 +88,15 @@ namespace Tool_Hazard
                 (whiteDayToolStripMenuItem, "Handle and manage file formats utilized by White Day: A Labyrinth Named School (2001)."),
                 (rEmake2002ToolStripMenuItem, "Handle and manage file formats utilized by Resident Evil (REmake) (2002)."),
                 (rE42005ToolStripMenuItem, "Handle and manage file formats utilized by Resident Evil 4 / Biohazard 4 (2005)."),
+                (toolStripMenuItem2, "Extra tools and utilities."),
+                (helpToolStripMenuItem, "Settings and application options."),
             };
             foreach (var (menu, text) in gameDescriptions)
             {
-                menu.MouseEnter += (_, _) => SetGameDescription(text);
-                menu.MouseLeave += (_, _) => SetGameDescription("Hover over a game menu for details.");
+                menu.MouseEnter += (_, _) => { _hoveringGameMenu = true; SetDescription(text, true); };
+                menu.MouseLeave += (_, _) => { _hoveringGameMenu = false; SetDescription(_lastStatusText, false); };
             }
-            SetGameDescription("Hover over a game menu for details.");
+            SetDescription("Hover over a game menu for details.", false);
 
             // Unified RE audio tools.
             xWBToolStripMenuItem.Enabled = true;
@@ -177,14 +184,14 @@ namespace Tool_Hazard
         //Rebirth Status Bar Update Helper
         private void UpdateRebirthStatus(string status)
         {
+            _lastStatusText = status;
             if (InvokeRequired)
             {
-                Invoke(new Action(() =>
-                    toolStripStatusLabel1.Text = status));
+                Invoke(new Action(() => SetDescription(status, false)));
             }
             else
             {
-                toolStripStatusLabel1.Text = status;
+                SetDescription(status, false);
             }
         }
 
@@ -216,6 +223,14 @@ namespace Tool_Hazard
                 {
                     toolStripStatusLabel1.Text = text;
                 }
+                _lastStatusText = text;
+                if (!_hoveringGameMenu)
+                {
+                    if (InvokeRequired)
+                        Invoke(new Action(() => SetDescription(text, false)));
+                    else
+                        SetDescription(text, false);
+                }
             }
             //Fail safe/exeption message triggered if a exception is caught
             catch (Exception ex)
@@ -224,9 +239,10 @@ namespace Tool_Hazard
             }
         }
 
-        private void SetGameDescription(string text)
+        private void SetDescription(string text, bool scroll)
         {
-            _gameDescriptionText = string.IsNullOrWhiteSpace(text) ? " " : text + "     ";
+            _descriptionScroll = scroll;
+            _gameDescriptionText = string.IsNullOrWhiteSpace(text) ? " " : text + (scroll ? "     " : "");
             _gameDescriptionLabel.Text = _gameDescriptionText;
             _gameDescriptionOffset = _gameDescriptionPanel.ClientSize.Width;
             _gameDescriptionLabel.Left = _gameDescriptionOffset;
@@ -236,7 +252,7 @@ namespace Tool_Hazard
 
         private void ScrollGameDescription()
         {
-            if (_gameDescriptionLabel.Width <= _gameDescriptionPanel.ClientSize.Width)
+            if (!_descriptionScroll || _gameDescriptionLabel.Width <= _gameDescriptionPanel.ClientSize.Width)
             {
                 _gameDescriptionLabel.Left = 0;
                 return;
@@ -1439,34 +1455,28 @@ namespace Tool_Hazard
         private void toolStripMenuItem1_Click(object sender, EventArgs e)
         {
             CurrentBioVersion = BioVersion.Biohazard1;
-            UpdateStatus("Selected Resident Evil 1/Biohazard 1");
         }
         private void bIO151997ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             CurrentBioVersion = BioVersion.Biohazard1_5;
-            UpdateStatus("Selected Resident Evil 1.5/Biohazard 1.5");
         }
         private void bIO2RE21998ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             CurrentBioVersion = BioVersion.Biohazard2;
-            UpdateStatus("Selected Resident Evil 2/Biohazard 2");
         }
 
         private void bIORE31999ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             CurrentBioVersion = BioVersion.Biohazard3;
-            UpdateStatus("Selected Resident Evil 3/Biohazard 3");
         }
         private void rESURVVBIOGUNSURVToolStripMenuItem_Click(object sender, EventArgs e)
         {
             CurrentBioVersion = BioVersion.BiohazardSurvivor;
-            UpdateStatus("Selected Resident Evil Survivor/Biohazard Gun Survivor");
         }
 
         private void rECVBIOCV2000ToolStripMenuItem_Click(object sender, EventArgs e)
         {
             CurrentBioVersion = BioVersion.BiohazardCv;
-            UpdateStatus("Selected Resident Evil CODE: Veronica/Biohazard CODE: Veronica");
         }
 
         // --- Resident Evil EMD/PLD Unpack/Repack Menu Hooks ---
