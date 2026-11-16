@@ -34,6 +34,12 @@ public static class ScdService
             if (version == BioVersion.Biohazard1)
             {
                 var rdt1 = (Rdt1)rdtFile;
+
+                rdt1.InitSCD.Data.WriteToFile(
+                    Path.Combine(outputDir, "init.scd"));
+                rdt1.MainSCD.Data.WriteToFile(
+                    Path.Combine(outputDir, "main.scd"));
+
                 var eventScd = rdt1.EventSCD;
 
                 for (int i = 0; i < eventScd.Count; i++)
@@ -81,17 +87,93 @@ public static class ScdService
         string outputRdtPath,
         BioVersion version)
     {
-        /*
-        var rdt = new RdtFile(
-            File.ReadAllBytes(originalRdtPath),
-            version);
+        if (!File.Exists(originalRdtPath))
+            throw new FileNotFoundException("Original RDT not found.", originalRdtPath);
+        if (!File.Exists(scdPath))
+            throw new FileNotFoundException("Compiled SCD not found.", scdPath);
 
-        rdt.Script = new ScdFile(
-            File.ReadAllBytes(scdPath),
-            version);
+        var scriptName = Path.GetFileNameWithoutExtension(scdPath).ToLowerInvariant();
+        var scriptData = File.ReadAllBytes(scdPath);
+        byte[] output;
 
-        File.WriteAllBytes(outputRdtPath, rdt.ToBytes());
-        */
+        if (version == BioVersion.Biohazard1)
+        {
+            var builder = new Rdt1(originalRdtPath).ToBuilder();
+            if (scriptName == "init")
+            {
+                builder.InitSCD = new ScdProcedureContainer(scriptData);
+            }
+            else if (scriptName == "main")
+            {
+                builder.MainSCD = new ScdProcedureContainer(scriptData);
+            }
+            else if (scriptName == "event")
+            {
+                builder.EventSCD = new ScdEventList(scriptData);
+            }
+            else if (scriptName.StartsWith("event_", StringComparison.Ordinal) &&
+                     int.TryParse(scriptName.AsSpan(6), System.Globalization.NumberStyles.HexNumber,
+                         provider: null, out var eventIndex))
+            {
+                var events = builder.EventSCD.ToBuilder();
+                if ((uint)eventIndex >= (uint)events.Events.Count)
+                    throw new ArgumentOutOfRangeException(nameof(scdPath),
+                        $"BIO1 event index {eventIndex:X2} is outside this room's event table.");
+                events.Events[eventIndex] = new ScdEvent(scriptData);
+                builder.EventSCD = events.ToEventList();
+            }
+            else
+            {
+                throw new ArgumentException(
+                    "BIO1 SCD filename must be init.scd, main.scd, event.scd, or event_XX.scd.",
+                    nameof(scdPath));
+            }
+
+            output = builder.ToRdt().Data.ToArray();
+            _ = new Rdt1(output);
+        }
+        else if (version == BioVersion.Biohazard2 || version == BioVersion.Biohazard3)
+        {
+            var builder = new Rdt2(version, originalRdtPath).ToBuilder();
+            var script = new ScdProcedureList(version, scriptData);
+            if (scriptName == "init")
+            {
+                builder.SCDINIT = script;
+            }
+            else if (scriptName == "main" && version == BioVersion.Biohazard2)
+            {
+                builder.SCDMAIN = script;
+            }
+            else
+            {
+                var expected = version == BioVersion.Biohazard2
+                    ? "init.scd or main.scd"
+                    : "init.scd";
+                throw new ArgumentException($"{version} SCD filename must be {expected}.", nameof(scdPath));
+            }
+
+            output = builder.ToRdt().Data.ToArray();
+            _ = new Rdt2(version, output);
+        }
+        else if (version == BioVersion.BiohazardCv)
+        {
+            if (scriptName != "main")
+                throw new ArgumentException("Code Veronica SCD filename must be main.scd.", nameof(scdPath));
+
+            var builder = new RdtCv(originalRdtPath).ToBuilder();
+            builder.Script = new ScdProcedureList(version, scriptData);
+            output = builder.ToRdt().Data.ToArray();
+            _ = new RdtCv(output);
+        }
+        else
+        {
+            throw new NotSupportedException($"Unsupported BioVersion: {version}");
+        }
+
+        var outputDirectory = Path.GetDirectoryName(Path.GetFullPath(outputRdtPath));
+        if (!string.IsNullOrEmpty(outputDirectory))
+            Directory.CreateDirectory(outputDirectory);
+        File.WriteAllBytes(outputRdtPath, output);
     }
 
     // SCD → .S/.LST; Decompile .SCD to readable Biohazard Script Op Code instructions

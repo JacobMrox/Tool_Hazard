@@ -4947,6 +4947,45 @@ public sealed class BiohazardModelViewerForm : Form
             return builder.ToMesh();
         }
 
+        public Md1 ToMd1(int selectedGroup = -1)
+        {
+            var builder = new Md1.Builder();
+            IEnumerable<int> indices = selectedGroup >= 0 ? new[] { selectedGroup } : Enumerable.Range(0, _groups.Length);
+            foreach (int groupIndex in indices)
+            {
+                SurvivorGroup group = _groups[groupIndex];
+                var part = new Md1.Builder.Part();
+                int first = group.TriangleStart * 3;
+                for (int triangle = 0; triangle < group.TriangleCount; triangle++)
+                {
+                    int source = first + triangle * 3;
+                    byte baseIndex = (byte)part.Positions.Count;
+                    for (int corner = 0; corner < 3; corner++)
+                    {
+                        Vector3 p = _vertices[source + corner];
+                        Vector3 n = _normals[source + corner];
+                        part.Positions.Add(new Md1.Vector(ToShort(p.X), ToShort(p.Y), ToShort(p.Z)));
+                        part.Normals.Add(new Md1.Vector(ToShort(n.X), ToShort(n.Y), ToShort(n.Z)));
+                    }
+                    Vector2 a = _uv[source], b = _uv[source + 1], c = _uv[source + 2];
+                    part.Triangles.Add(new Md1.Triangle
+                    {
+                        v0 = baseIndex, v1 = (byte)(baseIndex + 1), v2 = (byte)(baseIndex + 2),
+                        n0 = baseIndex, n1 = (byte)(baseIndex + 1), n2 = (byte)(baseIndex + 2)
+                    });
+                    part.TriangleTextures.Add(new Md1.TriangleTexture
+                    {
+                        u0 = ToByte(a.X), v0 = ToByte(a.Y),
+                        u1 = ToByte(b.X), v1 = ToByte(b.Y),
+                        u2 = ToByte(c.X), v2 = ToByte(c.Y),
+                        page = group.TexturePage, clutId = (ushort)(0x7800 | group.TexturePage * 0x40)
+                    });
+                }
+                builder.Parts.Add(part);
+            }
+            return builder.ToMesh();
+        }
+
         public void ReplaceWith(SurvivorNab incoming, int selectedGroup)
         {
             if (selectedGroup < 0)

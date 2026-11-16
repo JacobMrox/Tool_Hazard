@@ -11,12 +11,16 @@ namespace Tool_Hazard.Biohazard.MSG
     {
         public IReadOnlyDictionary<byte, string> ByteToText => _byteToText;
         public IReadOnlyDictionary<string, byte> TextToByte => _textToByte;
+        public IReadOnlyDictionary<byte, int> WidthByByte => _widthByByte;
 
         private readonly Dictionary<byte, string> _byteToText = new();
         private readonly Dictionary<string, byte> _textToByte = new(StringComparer.Ordinal);
+        private readonly Dictionary<byte, int> _widthByByte = new();
 
         // For longest-match encoding
         public int MaxTokenLength { get; private set; } = 1;
+
+        public int DefaultWidth { get; private set; } = 8;
 
         public string? SourcePath { get; private set; }
 
@@ -68,6 +72,11 @@ namespace Tool_Hazard.Biohazard.MSG
                     continue;
 
                 _byteToText[b] = token;
+
+                // Optional per-glyph advance width (falls back to DefaultWidth)
+                var widthStr = GetAttr("width", "W");
+                if (widthStr != null && TryParseByte(widthStr, out var w))
+                    _widthByByte[b] = w;
             }
 
             if (_byteToText.Count == 0)
@@ -87,6 +96,17 @@ namespace Tool_Hazard.Biohazard.MSG
                 if (token.Length > MaxTokenLength)
                     MaxTokenLength = token.Length;
             }
+        }
+
+        /// <summary>
+        /// Returns the advance width for a given byte value, falling back to
+        /// <see cref="DefaultWidth"/> when no per-glyph width was specified.
+        /// </summary>
+        public int GetWidth(byte b)
+        {
+            if (_widthByByte.TryGetValue(b, out var w))
+                return w;
+            return DefaultWidth;
         }
 
         private static bool TryParseByte(string s, out byte b)

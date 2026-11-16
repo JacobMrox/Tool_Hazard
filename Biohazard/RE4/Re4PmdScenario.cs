@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using IntelOrca.Biohazard.Model;
 
 namespace Tool_Hazard.Biohazard.RE4
 {
@@ -184,6 +185,72 @@ namespace Tool_Hazard.Biohazard.RE4
         }
 
         public void Save(string path) => File.WriteAllBytes(path, RawBytes);
+
+        /// <summary>
+        /// Converts the PMD mesh parts to a classic RE2 MD1 model. Each PMD part
+        /// (material group) becomes one MD1 part, with indexed triangles rebuilt
+        /// from the unique vertex/normal/UV arrays and UVs quantised to MD1 bytes.
+        /// </summary>
+        public Md1 ToMd1()
+        {
+            var builder = new Md1.Builder();
+            foreach (var part in Parts)
+            {
+                if (part.Vertices.Length == 0 || part.Indices.Length == 0) continue;
+
+                var md1Part = new Md1.Builder.Part();
+
+                // Unique positions and normals (PMD stores per-unique-vertex arrays).
+                for (int i = 0; i < part.VertexCount; i++)
+                {
+                    int o = i * 3;
+                    md1Part.Positions.Add(new Md1.Vector((short)part.Vertices[o], (short)part.Vertices[o + 1], (short)part.Vertices[o + 2]));
+                    if (part.UniqueNormals.Length >= o + 3)
+                        md1Part.Normals.Add(new Md1.Vector((short)part.UniqueNormals[o], (short)part.UniqueNormals[o + 1], (short)part.UniqueNormals[o + 2]));
+                    else
+                        md1Part.Normals.Add(new Md1.Vector(0, 1, 0));
+                }
+
+                // Indexed triangles -> MD1 triangles (position + normal index are the same).
+                for (int t = 0; t + 2 < part.Indices.Length; t += 3)
+                {
+                    int a = (int)part.Indices[t], b = (int)part.Indices[t + 1], c = (int)part.Indices[t + 2];
+                    if ((uint)a >= (uint)part.VertexCount || (uint)b >= (uint)part.VertexCount || (uint)c >= (uint)part.VertexCount)
+                        continue;
+                    md1Part.Triangles.Add(new Md1.Triangle
+                    {
+                        v0 = (ushort)a, v1 = (ushort)b, v2 = (ushort)c,
+                        n0 = (ushort)a, n1 = (ushort)b, n2 = (ushort)c
+                    });
+                }
+
+                // UVs are 0..1 normalised on the source texture; quantise to MD1 bytes
+                // (U within a 128px page, V full-range), using the material index as page.
+                int page = Math.Clamp(part.MaterialIndex, 0, 255);
+                for (int t = 0; t + 2 < part.Indices.Length; t += 3)
+                {
+                    int a = (int)part.Indices[t], b = (int)part.Indices[t + 1], c = (int)part.Indices[t + 2];
+                    if ((uint)a >= (uint)part.VertexCount || (uint)b >= (uint)part.VertexCount || (uint)c >= (uint)part.VertexCount)
+                        continue;
+                    int ua = (int)Math.Clamp(MathF.Round(part.UniqueUvs[a * 2] * 127f), 0, 127);
+                    int va = (int)Math.Clamp(MathF.Round(part.UniqueUvs[a * 2 + 1] * 255f), 0, 255);
+                    int ub = (int)Math.Clamp(MathF.Round(part.UniqueUvs[b * 2] * 127f), 0, 127);
+                    int vb = (int)Math.Clamp(MathF.Round(part.UniqueUvs[b * 2 + 1] * 255f), 0, 255);
+                    int uc = (int)Math.Clamp(MathF.Round(part.UniqueUvs[c * 2] * 127f), 0, 127);
+                    int vc = (int)Math.Clamp(MathF.Round(part.UniqueUvs[c * 2 + 1] * 255f), 0, 255);
+                    md1Part.TriangleTextures.Add(new Md1.TriangleTexture
+                    {
+                        u0 = (byte)ua, v0 = (byte)va,
+                        u1 = (byte)ub, v1 = (byte)vb,
+                        u2 = (byte)uc, v2 = (byte)vc,
+                        page = (byte)page, clutId = (ushort)(0x7800 | page * 0x40)
+                    });
+                }
+
+                builder.Parts.Add(md1Part);
+            }
+            return builder.ToMesh();
+        }
 
         public void ExportObj(string path)
         {

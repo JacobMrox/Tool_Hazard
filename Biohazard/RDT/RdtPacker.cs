@@ -15,22 +15,30 @@ namespace Tool_Hazard.Biohazard.RDT
         private readonly string _folderPath; // folder that contains header.ini and subfolders
         private readonly string _targetPath;
         private readonly bool _showDialogs;
+        private readonly BioVersion? _sourceVersion;
 
         public string BasePath => _folderPath;
         public string TargetPath => _targetPath;
 
-        public RdtPacker(BioVersion version, string folderPath, bool showDialogs = true)
+        public RdtPacker(
+            BioVersion version,
+            string folderPath,
+            bool showDialogs = true,
+            BioVersion? sourceVersion = null)
         {
             _version = version;
             _folderPath = folderPath;
             _targetPath = Path.Combine(folderPath, "packed.RDT");
             _showDialogs = showDialogs;
+            _sourceVersion = sourceVersion;
         }
 
         public bool Pack()
         {
             try
             {
+                ValidateConversionRequest();
+
                 var sourcePath = Path.Combine(BasePath, "_source.RDT");
                 if (_version != BioVersion.Biohazard1 && File.Exists(sourcePath))
                 {
@@ -102,8 +110,8 @@ namespace Tool_Hazard.Biohazard.RDT
                     // ---- Recompute MUST-MATCH header counts ----
                     b.Header = FixCounts_Rdt1(b.Header, b);
 
-                    var rdt = b.ToRdt();
-                    File.WriteAllBytes(TargetPath, rdt.Data.ToArray());
+                    var output = CanonicalizeAndValidateRepackedRdt1(b.ToRdt().Data.ToArray());
+                    File.WriteAllBytes(TargetPath, output);
                 }
                 else
                 {
@@ -169,8 +177,8 @@ namespace Tool_Hazard.Biohazard.RDT
                     // ---- Recompute MUST-MATCH header counts ----
                     b.Header = FixCounts_Rdt2(b.Header, b);
 
-                    var rdt = b.ToRdt();
-                    File.WriteAllBytes(TargetPath, rdt.Data.ToArray());
+                    var output = CanonicalizeAndValidateRepackedRdt(b.ToRdt().Data.ToArray());
+                    File.WriteAllBytes(TargetPath, output);
                 }
 
                 if (_showDialogs)
@@ -183,6 +191,24 @@ namespace Tool_Hazard.Biohazard.RDT
                     throw;
                 MessageBox.Show($"Pack error:\n\n{ex}", "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return false;
+            }
+        }
+
+        private void ValidateConversionRequest()
+        {
+            if (_sourceVersion is null || _sourceVersion == _version)
+                return;
+
+            // BIO1 uses different camera, lighting, script, model, effect and sound
+            // layouts. Reinterpreting its extracted chunks as BIO2/BIO3 (or vice
+            // versa) can produce invalid offsets and may make a target parser loop.
+            // A real conversion needs format-specific translation for each section.
+            if (_sourceVersion == BioVersion.Biohazard1 || _version == BioVersion.Biohazard1)
+            {
+                throw new NotSupportedException(
+                    $"RDT conversion from {_sourceVersion} to {_version} is not supported. " +
+                    "BIO1 room sections require semantic translation and cannot be safely rebuilt " +
+                    "with a BIO2/BIO3 layout.");
             }
         }
 
@@ -284,6 +310,16 @@ namespace Tool_Hazard.Biohazard.RDT
                     $"after normalization (bytes {canonical.Length}->{validated.Length}, " +
                     $"first difference 0x{firstDifference:X}).");
             }
+            return canonical;
+        }
+
+        private static byte[] CanonicalizeAndValidateRepackedRdt1(byte[] data)
+        {
+            var parsed = new Rdt1(data);
+            var canonical = parsed.ToBuilder().ToRdt().Data.ToArray();
+            var validated = new Rdt1(canonical).ToBuilder().ToRdt().Data.Span;
+            if (!validated.SequenceEqual(canonical))
+                throw new InvalidDataException("Repacked BIO1 RDT failed the byte-stability validation pass.");
             return canonical;
         }
 

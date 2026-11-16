@@ -899,7 +899,11 @@ namespace Tool_Hazard
                 // chunk layout (RE2 and RE3 do not), so rebuild from the decomposed blocks.
                 File.Delete(Path.Combine(workDir, "_source.RDT"));
 
-                var packer = new RdtPacker(targetVersion, workDir, showDialogs: false);
+                var packer = new RdtPacker(
+                    targetVersion,
+                    workDir,
+                    showDialogs: false,
+                    sourceVersion: sourceVersion);
                 if (!packer.Pack())
                     return;
 
@@ -1265,6 +1269,23 @@ namespace Tool_Hazard
                     ScdService.ExtractScdFromRdt(rdtPath, outputPath, BioVersion.Biohazard2);
                 }
             }
+        }
+
+        private void extractSCDFromRDTToolStripMenuItem2_Click(object sender, EventArgs e)
+        {
+            using var openFileDialog = new OpenFileDialog
+            {
+                Filter = "RDT files (*.rdt)|*.rdt|All files (*.*)|*.*",
+                Title = "Select a BIO1 RDT"
+            };
+            if (openFileDialog.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            var outputPath = Path.ChangeExtension(openFileDialog.FileName, ".scd");
+            ScdService.ExtractScdFromRdt(
+                openFileDialog.FileName,
+                outputPath,
+                BioVersion.Biohazard1);
         }
 
         private void extractSCDFromRDTToolStripMenuItem_Click(object sender, EventArgs e)

@@ -113,38 +113,17 @@ namespace IntelOrca.Biohazard.Room
         public ReadOnlySpan<Reaction> Reactions => GetChunkTypedSpan<Reaction>(RdtFileChunkKinds.RDTCVAction);
         public CvMsgList TextData => new CvMsgList(GetChunkMemory(RdtFileChunkKinds.RDTCVText));
         public ReadOnlyMemory<byte> SysmesData => GetChunkMemory(RdtFileChunkKinds.RDTCVSysmes);
-        public CvMotionList Motions
-        {
-            get
-            {
-                var chunk = _data.FindChunkByKind(RdtFileChunkKinds.RDTCVMotion);
-                if (chunk == null)
-                    throw new NotImplementedException();
-
-                return new CvMotionList(chunk.Value.Offset, chunk.Value.Memory);
-            }
-        }
-        public CvModelList Models
-        {
-            get
-            {
-                var chunk = _data.FindChunkByKind(RdtFileChunkKinds.RDTCVModel);
-                if (chunk == null)
-                    throw new NotImplementedException();
-
-                return new CvModelList(chunk.Value.Offset, chunk.Value.Memory);
-            }
-        }
+        public CvMotionList Motions => new CvMotionList(0, GetChunkMemory(RdtFileChunkKinds.RDTCVMotion));
+        public CvModelList Models => new CvModelList(0, GetChunkMemory(RdtFileChunkKinds.RDTCVModel));
         public ScdProcedureList Script => new ScdProcedureList(BioVersion.BiohazardCv, GetChunkMemory(RdtFileChunkKinds.RDTCVScript));
         public CvTextureList Textures
         {
             get
             {
-                var chunk = _data.FindChunkByKind(RdtFileChunkKinds.RDTCVTexture);
-                if (chunk == null)
-                    throw new NotImplementedException();
-
-                return new CvTextureList(chunk.Value.Offset, chunk.Value.Memory);
+                var memory = GetChunkMemory(RdtFileChunkKinds.RDTCVTexture);
+                if (memory.IsEmpty)
+                    return new CvTextureList.Builder { BaseOffset = 0, HeaderSize = 4 }.ToTextureList();
+                return new CvTextureList(0, memory);
             }
         }
         private ReadOnlySpan<T> GetTable<T>(int index) where T : struct

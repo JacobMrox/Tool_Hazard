@@ -378,6 +378,7 @@
             extractSCDFromRDTToolStripMenuItem2.Name = "extractSCDFromRDTToolStripMenuItem2";
             extractSCDFromRDTToolStripMenuItem2.Size = new Size(236, 26);
             extractSCDFromRDTToolStripMenuItem2.Text = "Extract SCD from RDT";
+            extractSCDFromRDTToolStripMenuItem2.Click += extractSCDFromRDTToolStripMenuItem2_Click;
             // 
             // toolStripSeparator21
             // 

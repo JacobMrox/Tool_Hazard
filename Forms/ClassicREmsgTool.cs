@@ -6,19 +6,73 @@ namespace Tool_Hazard.Forms
     {
         private EncodingDictionary? _dict;
         private string? _dictPath;
+        private MsgFontRenderer? _renderer;
 
         private string? _currentMsgPath;
         private byte[]? _currentMsgBytes;
         private bool _dirty;
+        private bool _suppressSync;
 
-        // Change this to wherever you ship the default encoding.xml
+        // Default resource paths
         private static string DefaultEncodingPath =>
             Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "Biohazard", "encoding.xml");
+        private static string DefaultFontPath =>
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "Biohazard", "font.png");
+        private static string DefaultFontEncodingPath =>
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "Biohazard", "encoding_file.xml");
+
+        // Available font textures (dumped from RE2 PC font*.tim files)
+        private static readonly string[] FontPaths =
+        {
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "Biohazard", "font.png"),
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "Biohazard", "font_japanese_0.png"),
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "Biohazard", "font_japanese_1.png"),
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "Biohazard", "font_japanese_2.png"),
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "Biohazard", "font_japanese_3.png"),
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "Biohazard", "font_japanese_4.png"),
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "Biohazard", "font_japanese_5.png"),
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "Biohazard", "font_japanese_6.png"),
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "Biohazard", "font_japanese_7.png"),
+        };
+
+        private static readonly string[] FontNames =
+        {
+            "Default (font.png)",
+            "Japanese font 0",
+            "Japanese font 1",
+            "Japanese font 2",
+            "Japanese font 3",
+            "Japanese font 4",
+            "Japanese font 5",
+            "Japanese font 6",
+            "Japanese font 7",
+        };
+
+        // Available encoding dictionaries
+        private static readonly string[] EncodingPaths =
+        {
+            DefaultEncodingPath,
+            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "Biohazard", "encoding_japanese.xml"),
+        };
+
+        private static readonly string[] EncodingNames =
+        {
+            "Default (encoding.xml)",
+            "Japanese (encoding_japanese.xml)",
+        };
 
         public ClassicREmsgTool()
         {
             InitializeComponent();
             HookEvents();
+
+            // Populate font dropdown
+            cboFont.Items.AddRange(FontNames);
+            cboFont.SelectedIndex = 0;
+
+            // Populate encoding dropdown
+            cboEncoding.Items.AddRange(EncodingNames);
+            cboEncoding.SelectedIndex = 0;
         }
 
         private void HookEvents()
@@ -30,11 +84,26 @@ namespace Tool_Hazard.Forms
 
             txtMsg.TextChanged += (_, __) =>
             {
-                if (_currentMsgBytes != null) // only consider dirty after something is loaded
+                if (_currentMsgBytes != null)
                 {
                     _dirty = true;
                     UpdateTitle();
                 }
+                UpdatePreview();
+            };
+
+            cboFont.SelectedIndexChanged += (_, __) =>
+            {
+                if (_suppressSync) return;
+                EnsureRendererLoaded();
+                SyncEncodingToFont();
+            };
+
+            cboEncoding.SelectedIndexChanged += (_, __) =>
+            {
+                if (_suppressSync) return;
+                ReloadDictionaryFromSelected();
+                SyncFontToEncoding();
             };
 
             this.FormClosing += (_, e) =>
@@ -43,26 +112,83 @@ namespace Tool_Hazard.Forms
                     e.Cancel = true;
             };
 
+            this.FormClosed += (_, _) =>
+            {
+                _renderer?.Dispose();
+                _renderer = null;
+            };
+
             UpdateTitle();
+        }
+
+        // When a Japanese font is picked, auto-select the Japanese encoding (if available).
+        private void SyncEncodingToFont()
+        {
+            if (cboFont.SelectedIndex >= 1 && cboFont.SelectedIndex <= FontNames.Length - 1)
+            {
+                // Japanese font selected -> switch to Japanese encoding
+                _suppressSync = true;
+                try { cboEncoding.SelectedIndex = 1; } finally { _suppressSync = false; }
+            }
+        }
+
+        // When the Japanese encoding is picked, auto-select a Japanese font (if available).
+        private void SyncFontToEncoding()
+        {
+            if (cboEncoding.SelectedIndex == 1)
+            {
+                _suppressSync = true;
+                try { cboFont.SelectedIndex = 2; } finally { _suppressSync = false; } // Japanese font 1 as default
+            }
         }
 
         private void EnsureDictionaryLoaded()
         {
             if (_dict != null) return;
 
-            if (File.Exists(DefaultEncodingPath))
+            string path = _dictPath ?? DefaultEncodingPath;
+            if (!File.Exists(path))
             {
-                _dictPath = DefaultEncodingPath;
-                _dict = EncodingDictionary.Load(_dictPath);
+                MessageBox.Show(this,
+                    "No encoding dictionary found.\n\n" +
+                    $"Expected at:\n{path}",
+                    "No Encoding Dictionary",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+                LoadDictionaryViaDialog();
                 return;
             }
-            MessageBox.Show(this,
-                "No encoding dictionary loaded and the default encoding.xml was not found.\n\n" +
-                $"Expected default at:\n{DefaultEncodingPath}",
-                "No Encoding Dictionary",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Error);
-            LoadDictionaryViaDialog();
+
+            _dictPath = path;
+            _dict = EncodingDictionary.Load(_dictPath);
+            EnsureRendererLoaded();
+        }
+
+        private void ReloadDictionaryFromSelected()
+        {
+            int idx = cboEncoding.SelectedIndex;
+            string path = idx >= 0 && idx < EncodingPaths.Length ? EncodingPaths[idx] : DefaultEncodingPath;
+
+            if (!File.Exists(path))
+            {
+                MessageBox.Show(this,
+                    $"Encoding file not found:\n{path}",
+                    "Encoding File Missing",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+
+            _dictPath = path;
+            _dict = EncodingDictionary.Load(_dictPath);
+
+            // Re-decode current msg if one is open
+            if (_currentMsgBytes != null)
+                txtMsg.Text = MsgCodec.Decode(_currentMsgBytes, _dict, stopAtZero: false);
+
+            EnsureRendererLoaded();
+            _dirty = false;
+            UpdateTitle();
         }
 
         private void LoadDictionaryViaDialog()
@@ -84,8 +210,68 @@ namespace Tool_Hazard.Forms
             if (_currentMsgBytes != null)
                 txtMsg.Text = MsgCodec.Decode(_currentMsgBytes, _dict, stopAtZero: false);
 
+            EnsureRendererLoaded();
+
+            // Mark encoding dropdown as custom
+            _suppressSync = true;
+            try
+            {
+                cboEncoding.SelectedIndex = -1;
+                cboEncoding.Text = Path.GetFileName(ofd.FileName);
+            }
+            finally { _suppressSync = false; }
+
             _dirty = false;
             UpdateTitle();
+        }
+
+        private void EnsureRendererLoaded()
+        {
+            if (_dict == null) return;
+
+            string fontPath = DefaultFontPath;
+            if (cboFont.SelectedIndex >= 0 && cboFont.SelectedIndex < FontPaths.Length)
+                fontPath = FontPaths[cboFont.SelectedIndex];
+            else if (!string.IsNullOrEmpty(cboFont.Text) && File.Exists(cboFont.Text))
+                fontPath = cboFont.Text;
+
+            if (!File.Exists(fontPath))
+                return;
+
+            // font.png has its own 8x8 atlas ordering (encoding_file.xml),
+            // which is different from the byte ordering used to serialize MSG
+            // files (encoding.xml). Keep the two mappings independent.
+            var rendererDictionary = cboFont.SelectedIndex == 0 && File.Exists(DefaultFontEncodingPath)
+                ? EncodingDictionary.Load(DefaultFontEncodingPath)
+                : _dict;
+
+            _renderer?.Dispose();
+            _renderer = new MsgFontRenderer(rendererDictionary);
+            _renderer.LoadFont(fontPath);
+            UpdatePreview();
+        }
+
+        private void UpdatePreview()
+        {
+            // Ensure the dictionary + renderer are initialized (in case the form
+            // was shown without going through the normal open/save flow).
+            EnsureDictionaryLoaded();
+            if (_renderer == null || picPreview == null) return;
+
+            try
+            {
+                var text = txtMsg.Text;
+                using var frame = _renderer.RenderPreviewFrame(text);
+                var bmp = new Bitmap(frame);
+                var old = picPreview.Image;
+                picPreview.Image = bmp;
+                old?.Dispose();
+                picPreview.Refresh();
+            }
+            catch
+            {
+                // Preview failures are non-fatal.
+            }
         }
 
         private void OpenMsgViaDialog()
@@ -120,7 +306,6 @@ namespace Tool_Hazard.Forms
 
             if (_currentMsgBytes == null && string.IsNullOrEmpty(_currentMsgPath))
             {
-                // Nothing loaded yet, still allow Save As
                 overwrite = false;
             }
 
@@ -164,8 +349,7 @@ namespace Tool_Hazard.Forms
 
         private bool PromptSaveIfDirty()
         {
-            if (!_dirty)
-                return true;
+            if (!_dirty) return true;
 
             var result = MessageBox.Show(this,
                 "You have unsaved changes. Save now?",
@@ -173,14 +357,12 @@ namespace Tool_Hazard.Forms
                 MessageBoxButtons.YesNoCancel,
                 MessageBoxIcon.Warning);
 
-            if (result == DialogResult.Cancel)
-                return false;
+            if (result == DialogResult.Cancel) return false;
             Close();
 
             if (result == DialogResult.Yes)
                 SaveMsg(overwrite: true);
 
-            // If they clicked Yes but cancelled the Save dialog, we’re still dirty.
             return !_dirty;
         }
 
