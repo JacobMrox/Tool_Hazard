@@ -6,13 +6,13 @@ using Tool_Hazard.Biohazard.SAP;
 
 namespace Tool_Hazard.Forms;
 
-public sealed class BiohazardAudioPlayerForm : Form
+public class ToolHazardSoundPlayerForm : Form
 {
     private sealed class PlayerEntry
     {
         public required int Index { get; init; }
         public required string Name { get; init; }
-        public required string Type { get; init; }
+        public required string Type { get; set; }
         public required int DataLength { get; set; }
         public required Func<byte[]> DataFactory { get; set; }
         public byte[] GetData() => DataFactory();
@@ -22,11 +22,18 @@ public sealed class BiohazardAudioPlayerForm : Form
     }
 
     private readonly ListView _list = new();
-    private readonly Button _play = new() { Text = "Play / Stop", Width = 120 };
-    private readonly Button _export = new() { Text = "Export selected", Width = 120 };
-    private readonly Button _extract = new() { Text = "Extract all", Width = 120 };
-    private readonly Button _replace = new() { Text = "Replace selected", Width = 120 };
-    private readonly Button _save = new() { Text = "Save bank", Width = 120 };
+    private readonly Button _play = new() { Text = "Play / Stop", Width = 135, Height = 30 };
+    private readonly Button _seek = new() { Text = "Seek", Width = 135, Height = 30 };
+    private readonly Button _export = new() { Text = "Export selected", Width = 135, Height = 30 };
+    private readonly Button _extract = new() { Text = "Extract all", Width = 135, Height = 30 };
+    private readonly Button _replace = new() { Text = "Replace selected", Width = 135, Height = 30 };
+    private readonly Button _save = new() { Text = "Save bank", Width = 135, Height = 30 };
+    private readonly TrackBar _seekBar = new() { Minimum = 0, Maximum = 1000, TickStyle = TickStyle.None, AutoSize = false, Height = 32 };
+    private readonly Label _positionLabel = new() { Text = "00:00.000 / 00:00.000", AutoSize = true };
+    private readonly System.Windows.Forms.Timer _positionTimer = new() { Interval = 200 };
+    private bool _seeking;
+    private VorbisReader? _vorbisReader;
+    private WaveFileReader? _wavReader;
     private readonly ToolStripMenuItem _openMenu = new("Open...");
     private readonly ToolStripMenuItem _saveMenu = new("Save");
     private readonly ToolStripMenuItem _saveAsMenu = new("Save As...");
@@ -44,9 +51,9 @@ public sealed class BiohazardAudioPlayerForm : Form
     private string? _workingDirectory;
     private bool _dirty;
 
-    public BiohazardAudioPlayerForm(string? initialPath = null)
+    public ToolHazardSoundPlayerForm(string? initialPath = null)
     {
-        Text = "Biohazard Audio Player";
+        Text = "Tool Hazard Sound Player";
         StartPosition = FormStartPosition.CenterScreen;
         MinimumSize = new Size(680, 390);
         Size = new Size(820, 520);
@@ -80,14 +87,20 @@ public sealed class BiohazardAudioPlayerForm : Form
         var buttons = new FlowLayoutPanel
         {
             Dock = DockStyle.Right,
-            Width = 145,
+            Width = 160,
             FlowDirection = FlowDirection.TopDown,
             Padding = new Padding(8),
             WrapContents = false
         };
-        buttons.Controls.AddRange(new Control[] { _play, _replace, _save, _export, _extract });
+        buttons.Controls.AddRange(new Control[] { _play, _seek, _replace, _save, _export, _extract });
 
         var content = new Panel { Dock = DockStyle.Fill, Padding = new Padding(8) };
+        var bottom = new Panel { Dock = DockStyle.Bottom, Height = 56, Padding = new Padding(4) };
+        _positionLabel.Dock = DockStyle.Top;
+        _seekBar.Dock = DockStyle.Fill;
+        bottom.Controls.Add(_seekBar);
+        bottom.Controls.Add(_positionLabel);
+        content.Controls.Add(bottom);
         content.Controls.Add(_list);
         content.Controls.Add(buttons);
         Controls.Add(content);
@@ -98,6 +111,18 @@ public sealed class BiohazardAudioPlayerForm : Form
         _saveAsMenu.Click += (_, _) => Save(true);
         exitMenu.Click += (_, _) => Close();
         _play.Click += (_, _) => TogglePlayback();
+        _seek.Click += (_, _) => SeekToBar();
+        _seekBar.Scroll += (_, _) =>
+        {
+            if (_waveOut == null) return;
+            PlayerEntry? entry = Selected;
+            if (entry == null || entry.Duration.TotalSeconds <= 0) return;
+            _seeking = true;
+            SeekTo(TimeSpan.FromSeconds(_seekBar.Value / 1000.0 * entry.Duration.TotalSeconds));
+            UpdatePosition();
+            _seeking = false;
+        };
+        _positionTimer.Tick += (_, _) => UpdatePosition();
         _export.Click += (_, _) => ExportSelected();
         _extract.Click += (_, _) => ExtractAll();
         _replace.Click += (_, _) => ReplaceSelected();
@@ -154,7 +179,7 @@ public sealed class BiohazardAudioPlayerForm : Form
         }
         catch (Exception ex)
         {
-            MessageBox.Show(this, $"Open failed:\n{ex.Message}", "Biohazard Audio Player", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(this, $"Open failed:\n{ex.Message}", "Tool Hazard Sound Player", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
@@ -250,7 +275,7 @@ public sealed class BiohazardAudioPlayerForm : Form
             _list.Items.Add(item);
         }
         _list.EndUpdate();
-        Text = $"Biohazard Audio Player - {_containerType} - {Path.GetFileName(_sourcePath)} ({_entries.Count} entries){(_dirty ? " *" : string.Empty)}";
+        Text = $"Tool Hazard Sound Player - {_containerType} - {Path.GetFileName(_sourcePath)} ({_entries.Count} entries){(_dirty ? " *" : string.Empty)}";
         UpdateUi();
     }
 
@@ -258,6 +283,7 @@ public sealed class BiohazardAudioPlayerForm : Form
     {
         bool selected = Selected != null;
         _play.Enabled = selected;
+        _seek.Enabled = _waveOut != null;
         _export.Enabled = selected;
         _extract.Enabled = _entries.Count > 0;
         _replace.Enabled = selected;
@@ -281,36 +307,128 @@ public sealed class BiohazardAudioPlayerForm : Form
             byte[] data = entry.GetData();
             if (entry.IsOgg)
             {
-                var vorbis = new VorbisReader(new MemoryStream(data, false), closeOnDispose: true);
+                _vorbisReader = new VorbisReader(new MemoryStream(data, false), closeOnDispose: true);
                 _waveOut = new WaveOutEvent();
-                _waveOut.Init(new VorbisProvider(vorbis));
+                _waveOut.Init(new VorbisProvider(_vorbisReader));
             }
             else
             {
-                var reader = new WaveFileReader(new MemoryStream(data, false));
-                _waveStream = WaveFormatConversionStream.CreatePcmStream(reader);
+                _wavReader = new WaveFileReader(new MemoryStream(data, false));
+                _waveStream = WaveFormatConversionStream.CreatePcmStream(_wavReader);
                 _waveOut = new WaveOutEvent();
                 _waveOut.Init(_waveStream);
             }
             _waveOut.PlaybackStopped += (_, _) => { if (!IsDisposed) BeginInvoke(new Action(StopPlayback)); };
             _waveOut.Play();
             _play.Text = "Stop";
+            _seekBar.Value = 0;
+            _positionTimer.Start();
+            UpdateUi();
         }
         catch (Exception ex)
         {
             StopPlayback();
-            MessageBox.Show(this, $"Playback failed:\n{ex.Message}", "Biohazard Audio Player", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(this, $"Playback failed:\n{ex.Message}", "Tool Hazard Sound Player", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
     private void StopPlayback()
     {
+        _positionTimer.Stop();
         try { _waveOut?.Stop(); } catch { }
         _waveStream?.Dispose();
         _waveStream = null;
+        _wavReader?.Dispose();
+        _wavReader = null;
+        _vorbisReader?.Dispose();
+        _vorbisReader = null;
         _waveOut?.Dispose();
         _waveOut = null;
         _play.Text = "Play / Stop";
+        _seekBar.Value = 0;
+        _positionLabel.Text = "00:00.000 / 00:00.000";
+        UpdateUi();
+    }
+
+    private void SeekToBar()
+    {
+        PlayerEntry? entry = Selected;
+        if (entry == null || _waveOut == null)
+        {
+            MessageBox.Show(this, "Start playback before seeking.", "Tool Hazard Sound Player", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+        double total = entry.Duration.TotalSeconds;
+        if (total <= 0) return;
+
+        using var dialog = new Form
+        {
+            Text = "Seek",
+            Width = 300,
+            Height = 130,
+            FormBorderStyle = FormBorderStyle.FixedDialog,
+            StartPosition = FormStartPosition.CenterParent,
+            MaximizeBox = false,
+            MinimizeBox = false
+        };
+        var label = new Label { Text = $"Seek to (0 - {total:0.###} seconds):", Left = 12, Top = 12, AutoSize = true };
+        var box = new TextBox { Left = 12, Top = 36, Width = 260, Text = (_seekBar.Value / 1000.0 * total).ToString("0.###") };
+        var ok = new Button { Text = "OK", Left = 112, Top = 64, Width = 75, DialogResult = DialogResult.OK };
+        var cancel = new Button { Text = "Cancel", Left = 197, Top = 64, Width = 75, DialogResult = DialogResult.Cancel };
+        dialog.Controls.AddRange(new Control[] { label, box, ok, cancel });
+        dialog.AcceptButton = ok;
+        dialog.CancelButton = cancel;
+        if (dialog.ShowDialog(this) != DialogResult.OK) return;
+        if (!double.TryParse(box.Text, out double seconds))
+        {
+            MessageBox.Show(this, "Invalid seek position.", "Tool Hazard Sound Player", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+        seconds = Math.Clamp(seconds, 0, total);
+        int barValue = (int)(seconds / total * 1000.0);
+        _seekBar.Value = Math.Clamp(barValue, 0, 1000);
+        SeekTo(TimeSpan.FromSeconds(seconds));
+        UpdatePosition();
+    }
+
+    private void SeekTo(TimeSpan position)
+    {
+        try
+        {
+            if (_vorbisReader != null)
+                _vorbisReader.TimePosition = position;
+            else if (_waveStream != null)
+                _waveStream.CurrentTime = position;
+            else if (_wavReader != null)
+                _wavReader.CurrentTime = position;
+        }
+        catch { }
+    }
+
+    private void UpdatePosition()
+    {
+        if (_waveOut == null)
+        {
+            _positionTimer.Stop();
+            return;
+        }
+        PlayerEntry? entry = Selected;
+        TimeSpan duration = entry?.Duration ?? TimeSpan.Zero;
+        TimeSpan current = TimeSpan.Zero;
+        try
+        {
+            if (_vorbisReader != null) current = _vorbisReader.TimePosition;
+            else if (_waveStream != null) current = _waveStream.CurrentTime;
+            else if (_wavReader != null) current = _wavReader.CurrentTime;
+        }
+        catch { }
+        if (duration > TimeSpan.Zero)
+        {
+            int value = (int)(current.TotalSeconds / duration.TotalSeconds * 1000.0);
+            value = Math.Clamp(value, 0, 1000);
+            if (!_seeking) _seekBar.Value = value;
+        }
+        _positionLabel.Text = $"{FormatDuration(current)} / {FormatDuration(duration)}";
     }
 
     private void ExportSelected()
@@ -338,7 +456,7 @@ public sealed class BiohazardAudioPlayerForm : Form
             string name = $"{entry.Index:D4}_{SafeName(entry.Name)}.{ext}";
             File.WriteAllBytes(Path.Combine(dialog.SelectedPath, name), entry.GetData());
         }
-        MessageBox.Show(this, $"Extracted {_entries.Count} audio entries.", "Biohazard Audio Player", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        MessageBox.Show(this, $"Extracted {_entries.Count} audio entries.", "Tool Hazard Sound Player", MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
     private void ReplaceSelected()
@@ -348,9 +466,7 @@ public sealed class BiohazardAudioPlayerForm : Form
         using var dialog = new OpenFileDialog
         {
             Title = $"Replace {entry.Name}",
-            Filter = entry.IsOgg
-                ? "Ogg Vorbis (*.ogg)|*.ogg|All files (*.*)|*.*"
-                : "Wave audio (*.wav)|*.wav|All files (*.*)|*.*"
+            Filter = "Wave audio (*.wav)|*.wav|Ogg Vorbis (*.ogg)|*.ogg|All files (*.*)|*.*"
         };
         if (dialog.ShowDialog(this) != DialogResult.OK) return;
 
@@ -362,11 +478,31 @@ public sealed class BiohazardAudioPlayerForm : Form
             {
                 if (_sapBank == null) throw new InvalidOperationException("No SAP bank is loaded.");
                 SapEntry sapEntry = _sapBank.Entries.Single(x => x.Index == entry.Index);
-                if (sapEntry.Kind == SapEntryKind.Ogg && !SapService.IsOgg(replacement))
-                    throw new InvalidDataException("This SAP entry requires an Ogg Vorbis file.");
-                if (sapEntry.Kind == SapEntryKind.Wav && !SapService.IsRiffWav(replacement))
-                    throw new InvalidDataException("This SAP entry requires a RIFF WAV file.");
+                bool isOgg = SapService.IsOgg(replacement);
+                bool isWav = SapService.IsRiffWav(replacement);
+                if (!isOgg && !isWav)
+                    throw new InvalidDataException("Replacement must be a RIFF WAV or an Ogg Vorbis file.");
+
+                if (isOgg)
+                {
+                    if (_sapBank.Entries.Count > 1)
+                        throw new InvalidDataException("OGG SAPs support a single audio track. This bank has multiple entries.");
+                    if (MessageBox.Show(this, "OGG SAPs are only supported by Classic Rebirth installations. The original game requires WAV banks. Continue?",
+                            "Tool Hazard Sound Player", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes)
+                        return;
+                    _sapBank.PayloadKind = SapPayloadKind.OggSingle;
+                    sapEntry.Kind = SapEntryKind.Ogg;
+                }
+                else
+                {
+                    if (_sapBank.PayloadKind == SapPayloadKind.OggSingle)
+                        _sapBank.PayloadKind = SapPayloadKind.WavBank;
+                    sapEntry.Kind = SapEntryKind.Wav;
+                }
+
                 sapEntry.Data = replacement;
+                entry.IsOgg = isOgg;
+                entry.Type = isOgg ? "OGG" : "WAV";
             }
             else if (_containerType == "XWB")
             {
@@ -392,7 +528,7 @@ public sealed class BiohazardAudioPlayerForm : Form
         }
         catch (Exception ex)
         {
-            MessageBox.Show(this, $"Replacement failed:\n{ex.Message}", "Biohazard Audio Player", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(this, $"Replacement failed:\n{ex.Message}", "Tool Hazard Sound Player", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
@@ -462,14 +598,14 @@ public sealed class BiohazardAudioPlayerForm : Form
         }
         catch (Exception ex)
         {
-            MessageBox.Show(this, $"Save failed:\n{ex.Message}", "Biohazard Audio Player", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(this, $"Save failed:\n{ex.Message}", "Tool Hazard Sound Player", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
     private bool ConfirmDiscardChanges()
     {
         if (!_dirty) return true;
-        DialogResult result = MessageBox.Show(this, "Save changes before continuing?", "Biohazard Audio Player",
+        DialogResult result = MessageBox.Show(this, "Save changes before continuing?", "Tool Hazard Sound Player",
             MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
         if (result == DialogResult.Cancel) return false;
         if (result == DialogResult.Yes)
@@ -539,10 +675,17 @@ public sealed class BiohazardAudioPlayerForm : Form
         public WaveFormat WaveFormat { get; }
         public int Read(byte[] buffer, int offset, int count)
         {
-            int requested = Math.Min(_samples.Length, count / sizeof(float));
-            int read = _reader.ReadSamples(_samples, 0, requested);
-            Buffer.BlockCopy(_samples, 0, buffer, offset, read * sizeof(float));
-            return read * sizeof(float);
+            int samplesToRead = count / sizeof(float);
+            int totalRead = 0;
+            while (totalRead < samplesToRead)
+            {
+                int chunk = Math.Min(_samples.Length, samplesToRead - totalRead);
+                int read = _reader.ReadSamples(_samples, 0, chunk);
+                if (read <= 0) break;
+                Buffer.BlockCopy(_samples, 0, buffer, offset + totalRead * sizeof(float), read * sizeof(float));
+                totalRead += read;
+            }
+            return totalRead * sizeof(float);
         }
     }
 }

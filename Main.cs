@@ -31,6 +31,18 @@ namespace Tool_Hazard
         //Rebirth Manager
         private readonly RebirthManager rebirth = new RebirthManager();
         private BioVersion CurrentBioVersion;
+
+    private readonly Panel _gameDescriptionPanel = new()
+    {
+        Dock = DockStyle.Bottom,
+        Height = 26,
+        Padding = new Padding(8, 4, 8, 4),
+        BackColor = SystemColors.ControlLight
+    };
+    private readonly Label _gameDescriptionLabel = new() { AutoSize = true, Text = "Hover over a game menu for details." };
+    private readonly System.Windows.Forms.Timer _gameDescriptionTimer = new() { Interval = 40 };
+    private int _gameDescriptionOffset;
+    private string _gameDescriptionText = "Hover over a game menu for details.";
         public Main()
         {
             try
@@ -48,10 +60,41 @@ namespace Tool_Hazard
             InitializeComponent();
             UpdateStatus("Ready");
 
+            // Remove tooltips from main game menus and show a scrolling description instead.
+            menuStrip1.ShowItemToolTips = false;
+            foreach (var m in new[] { toolStripMenuItem1, bIO151997ToolStripMenuItem, bIO2RE21998ToolStripMenuItem, bIORE31999ToolStripMenuItem, rESURVVBIOGUNSURVToolStripMenuItem, rECVBIOCV2000ToolStripMenuItem, whiteDayToolStripMenuItem, rEmake2002ToolStripMenuItem, rE42005ToolStripMenuItem })
+            {
+                m.AutoToolTip = false;
+                m.ToolTipText = string.Empty;
+            }
+
+            _gameDescriptionPanel.Controls.Add(_gameDescriptionLabel);
+            Controls.Add(_gameDescriptionPanel);
+            _gameDescriptionTimer.Tick += (_, _) => ScrollGameDescription();
+
+            var gameDescriptions = new (ToolStripMenuItem menu, string text)[]
+            {
+                (toolStripMenuItem1, "Handle and manage file formats utilized by Biohazard / Resident Evil (1996) and its subsequent releases Directors Cut and Dual Shock (1998)."),
+                (bIO151997ToolStripMenuItem, "Handle and manage file formats utilized by Biohazard 1.5 (1997 prototype)."),
+                (bIO2RE21998ToolStripMenuItem, "Handle and manage file formats utilized by Biohazard 2 / Resident Evil 2 (1998) and its subsequent releases such as Dual Shock (1998) and Sourcenext (2006)."),
+                (bIORE31999ToolStripMenuItem, "Handle and manage file formats utilized by Biohazard 3 / Resident Evil 3 (1999)."),
+                (rESURVVBIOGUNSURVToolStripMenuItem, "Handle and manage file formats utilized by Resident Evil Survivor / Biohazard Gun Survivor (2000)."),
+                (rECVBIOCV2000ToolStripMenuItem, "Handle and manage file formats utilized by Resident Evil CODE: Veronica / Biohazard CODE: Veronica (2000)."),
+                (whiteDayToolStripMenuItem, "Handle and manage file formats utilized by White Day: A Labyrinth Named School (2001)."),
+                (rEmake2002ToolStripMenuItem, "Handle and manage file formats utilized by Resident Evil (REmake) (2002)."),
+                (rE42005ToolStripMenuItem, "Handle and manage file formats utilized by Resident Evil 4 / Biohazard 4 (2005)."),
+            };
+            foreach (var (menu, text) in gameDescriptions)
+            {
+                menu.MouseEnter += (_, _) => SetGameDescription(text);
+                menu.MouseLeave += (_, _) => SetGameDescription("Hover over a game menu for details.");
+            }
+            SetGameDescription("Hover over a game menu for details.");
+
             // Unified RE audio tools.
             xWBToolStripMenuItem.Enabled = true;
-            xWBToolStripMenuItem.Text = "Biohazard Audio Player (SAP / VH-VB / XWB)";
-            xWBToolStripMenuItem.Click += (_, _) => new BiohazardAudioPlayerForm().Show(this);
+            xWBToolStripMenuItem.Text = "Tool Hazard Sound Player (SAP / VH-VB / XWB)";
+            xWBToolStripMenuItem.Click += (_, _) => new ToolHazardSoundPlayerForm().Show(this);
 
             // Resident Evil Survivor PC stores enemies in paired NAB/NAC files,
             // while scene characters/NPCs use PlayStation HMD containers.
@@ -179,6 +222,29 @@ namespace Tool_Hazard
             {
                 MessageBox.Show($"Error Updating Status Bar to '{text}'.\n\nThe error is: {ex}", "UpdateStatus Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private void SetGameDescription(string text)
+        {
+            _gameDescriptionText = string.IsNullOrWhiteSpace(text) ? " " : text + "     ";
+            _gameDescriptionLabel.Text = _gameDescriptionText;
+            _gameDescriptionOffset = _gameDescriptionPanel.ClientSize.Width;
+            _gameDescriptionLabel.Left = _gameDescriptionOffset;
+            if (!_gameDescriptionTimer.Enabled)
+                _gameDescriptionTimer.Start();
+        }
+
+        private void ScrollGameDescription()
+        {
+            if (_gameDescriptionLabel.Width <= _gameDescriptionPanel.ClientSize.Width)
+            {
+                _gameDescriptionLabel.Left = 0;
+                return;
+            }
+            _gameDescriptionOffset -= 2;
+            if (_gameDescriptionOffset < -_gameDescriptionLabel.Width)
+                _gameDescriptionOffset = _gameDescriptionPanel.ClientSize.Width;
+            _gameDescriptionLabel.Left = _gameDescriptionOffset;
         }
 
         //UDAS Extraction helper (for RE4 UHD UDAS Tool)
@@ -554,8 +620,39 @@ namespace Tool_Hazard
 
                 if (dlg.ShowDialog() == DialogResult.OK)
                 {
-                    UpdateRebirthStatus("Preparing Resident Evil 2 Classic Rebirth...");
+                    string bio2Exe = Path.Combine(dlg.SelectedPath, "bio2.exe");
+                    if (!File.Exists(bio2Exe))
+                    {
+                        MessageBox.Show(
+                            "bio2.exe was not found in the selected directory.\n\n" +
+                            "Please select a Resident Evil 2 (Sourcenext) installation containing bio2.exe.",
+                            "Classic Rebirth Installer",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Error);
+                        return;
+                    }
 
+                    string bio2Hash;
+                    using (var sha = System.Security.Cryptography.SHA256.Create())
+                    using (var stream = File.OpenRead(bio2Exe))
+                    {
+                        bio2Hash = BitConverter.ToString(sha.ComputeHash(stream)).Replace("-", "");
+                    }
+
+                    const string bio2V11Hash = "21B2A647CBEDDAC1EC389BE847F22A434A0264A18020589DE91CB2824DCB1BF5";
+                    if (!string.Equals(bio2Hash, bio2V11Hash, StringComparison.OrdinalIgnoreCase))
+                    {
+                        MessageBox.Show(
+                            "The selected bio2.exe does not match the supported Resident Evil 2 1.1 executable.\n\n" +
+                            "Classic Rebirth for RE2 requires the 1.1 (Sourcenext) version of bio2.exe.\n" +
+                            "Please update your installation to 1.1 before installing Classic Rebirth.",
+                            "Classic Rebirth Installer",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Error);
+                        return;
+                    }
+
+                    UpdateRebirthStatus("Preparing Resident Evil 2 Classic Rebirth...");
                     var rebirth = new RebirthManager(UpdateRebirthStatus);
 
                     await rebirth.Install(
@@ -696,7 +793,7 @@ namespace Tool_Hazard
             {
                 // Just create and show the form. 
                 // The SampleManagerForm will handle prompting for files in its Shown event.
-                BiohazardAudioPlayerForm managerForm = new BiohazardAudioPlayerForm();
+                ToolHazardSoundPlayerForm managerForm = new ToolHazardSoundPlayerForm();
                 managerForm.Show();
             }
             catch (Exception ex)
@@ -711,7 +808,7 @@ namespace Tool_Hazard
             {
                 // Just create and show the form. 
                 // The SampleManagerForm will handle prompting for files in its Shown event.
-                BiohazardAudioPlayerForm managerForm = new BiohazardAudioPlayerForm();
+                ToolHazardSoundPlayerForm managerForm = new ToolHazardSoundPlayerForm();
                 managerForm.Show();
             }
             catch (Exception ex)
@@ -2175,7 +2272,7 @@ namespace Tool_Hazard
         //Biohazard 2 SAP Viewer Menu Hook
         private void sAPToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            var editor = new BiohazardAudioPlayerForm();
+            var editor = new ToolHazardSoundPlayerForm();
             editor.Show(this);
 
         }
@@ -2480,7 +2577,7 @@ namespace Tool_Hazard
             {
                 // Just create and show the form. 
                 // The SampleManagerForm will handle prompting for files in its Shown event.
-                BiohazardAudioPlayerForm managerForm = new BiohazardAudioPlayerForm();
+                ToolHazardSoundPlayerForm managerForm = new ToolHazardSoundPlayerForm();
                 managerForm.Show();
             }
             catch (Exception ex)
