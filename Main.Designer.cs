@@ -815,7 +815,7 @@
             // 
             // installPatch110ToolStripMenuItem
             // 
-            installPatch110ToolStripMenuItem.Enabled = false;
+            installPatch110ToolStripMenuItem.Enabled = true;
             installPatch110ToolStripMenuItem.Name = "installPatch110ToolStripMenuItem";
             installPatch110ToolStripMenuItem.Size = new Size(281, 26);
             installPatch110ToolStripMenuItem.Text = "Install Sourcenext Patch 1.1.0";
@@ -1134,7 +1134,7 @@
             // 
             // installPatch110ToolStripMenuItem1
             // 
-            installPatch110ToolStripMenuItem1.Enabled = false;
+            installPatch110ToolStripMenuItem1.Enabled = true;
             installPatch110ToolStripMenuItem1.Name = "installPatch110ToolStripMenuItem1";
             installPatch110ToolStripMenuItem1.Size = new Size(281, 26);
             installPatch110ToolStripMenuItem1.Text = "Install Sourcenext Patch 1.1.0";

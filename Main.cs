@@ -103,6 +103,20 @@ namespace Tool_Hazard
             xWBToolStripMenuItem.Text = "Tool Hazard Sound Player (SAP / VH-VB / XWB)";
             xWBToolStripMenuItem.Click += (_, _) => new ToolHazardSoundPlayerForm().Show(this);
 
+            // Enable Sourcenext 1.1.0 patch installers (open official download pages).
+            installPatch110ToolStripMenuItem.Click += (_, _) =>
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "https://classicrebirth.com/index.php/download/biohazard-2-sourcenext-1-1-0-patch/",
+                    UseShellExecute = true
+                });
+            installPatch110ToolStripMenuItem1.Click += (_, _) =>
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "https://classicrebirth.com/index.php/download/biohazard-3-sourcenext-1-1-0-patch/",
+                    UseShellExecute = true
+                });
+
             // Resident Evil Survivor PC stores enemies in paired NAB/NAC files,
             // while scene characters/NPCs use PlayStation HMD containers.
             nACNABPCToolStripMenuItem.Enabled = true;
@@ -708,6 +722,38 @@ namespace Tool_Hazard
 
                 if (dlg.ShowDialog() == DialogResult.OK)
                 {
+                    string re3Exe = Path.Combine(dlg.SelectedPath, "BIOHAZARD(R) 3 PC.exe");
+                    if (!File.Exists(re3Exe))
+                    {
+                        MessageBox.Show(
+                            "BIOHAZARD(R) 3 PC.exe was not found in the selected directory.\n\n" +
+                            "Please select a Resident Evil 3 installation containing the main executable.",
+                            "Classic Rebirth Installer",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Error);
+                        return;
+                    }
+
+                    string re3Hash;
+                    using (var sha = System.Security.Cryptography.SHA256.Create())
+                    using (var stream = File.OpenRead(re3Exe))
+                    {
+                        re3Hash = BitConverter.ToString(sha.ComputeHash(stream)).Replace("-", "");
+                    }
+
+                    const string re3V11Hash = "EACF04458882B5BA24D6C8F2D48DC657F55210BFC8F7466FD05DD51B06D051A1";
+                    if (!string.Equals(re3Hash, re3V11Hash, StringComparison.OrdinalIgnoreCase))
+                    {
+                        MessageBox.Show(
+                            "The selected BIOHAZARD(R) 3 PC.exe does not match the supported Resident Evil 3 1.1 executable.\n\n" +
+                            "Classic Rebirth for RE3 requires the 1.1 (Sourcenext) version.\n" +
+                            "Please update your installation to 1.1 before installing Classic Rebirth.",
+                            "Classic Rebirth Installer",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Error);
+                        return;
+                    }
+
                     UpdateRebirthStatus("Preparing Resident Evil 3 Classic Rebirth...");
 
                     var rebirth = new RebirthManager(UpdateRebirthStatus);
