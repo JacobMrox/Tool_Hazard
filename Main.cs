@@ -12,6 +12,7 @@ using Tool_Hazard.Biohazard.GCA;
 using Tool_Hazard.Biohazard.RDT;
 using Tool_Hazard.Biohazard.RE4;
 using Tool_Hazard.Forms;
+using Tool_Hazard.Localization;
 using Tool_Hazard.Nintendo;
 using Tool_Hazard.Sony_PS1;
 using Tool_Hazard.White_Day;
@@ -31,6 +32,7 @@ namespace Tool_Hazard
         //Rebirth Manager
         private readonly RebirthManager rebirth = new RebirthManager();
         private BioVersion CurrentBioVersion;
+        private ToolStripMenuItem? _languageMenu;
 
     private readonly Panel _gameDescriptionPanel = new()
     {
@@ -43,6 +45,7 @@ namespace Tool_Hazard
     private readonly System.Windows.Forms.Timer _gameDescriptionTimer = new() { Interval = 40 };
     private int _gameDescriptionOffset;
     private string _gameDescriptionText = "Hover over a game menu for details.";
+    private string _descriptionSource = "Hover over a game menu for details.";
     private bool _descriptionScroll;
     private bool _hoveringGameMenu;
     private string _lastStatusText = "Ready";
@@ -188,9 +191,74 @@ namespace Tool_Hazard
                 Properties.Settings.Default.Save();
             };
 
+            // Settings -> Language: switch the UI language live, no restart required.
+            BuildLanguageMenu();
+            LocalizationManager.LanguageChanged += RefreshDynamicText;
+
+            // Capture the designer/default English text as translation source and apply
+            // the persisted language to this window (including all menus built above).
+            LocalizationManager.Apply(this);
+
             // White Day PET model viewer — opens the unified Model Viewer with a PET file prompt.
             pETToolStripMenuItem.Click += pETToolStripMenuItem_Click;
         }
+
+        // --------------------------------------------------------------------
+        // Localization helpers
+        // --------------------------------------------------------------------
+
+        /// <summary>Translates a dynamic English string with the active language.</summary>
+        private static string L(string text) => LocalizationManager.Translate(text);
+
+        /// <summary>
+        /// Builds the Settings → Language submenu. Each language is discovered from the
+        /// embedded Localization/*.json files, so adding a file needs no code changes.
+        /// </summary>
+        private void BuildLanguageMenu()
+        {
+            _languageMenu = new ToolStripMenuItem("Language");
+            foreach (LanguageInfo language in LocalizationManager.AvailableLanguages)
+            {
+                var item = new ToolStripMenuItem(language.DisplayName)
+                {
+                    Tag = language.Code
+                };
+                item.Click += (_, _) => LocalizationManager.SetLanguage(language.Code);
+                _languageMenu.DropDownItems.Add(item);
+            }
+
+            helpToolStripMenuItem.DropDownItems.Add(new ToolStripSeparator());
+            helpToolStripMenuItem.DropDownItems.Add(_languageMenu);
+
+            LocalizationManager.LanguageChanged += UpdateLanguageMenuChecks;
+            UpdateLanguageMenuChecks();
+        }
+
+        private void UpdateLanguageMenuChecks()
+        {
+            if (_languageMenu is null)
+                return;
+
+            foreach (ToolStripItem item in _languageMenu.DropDownItems)
+            {
+                if (item is ToolStripMenuItem menuItem && menuItem.Tag is string code)
+                    menuItem.Checked = string.Equals(code, LocalizationManager.CurrentLanguage, StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
+        /// <summary>
+        /// Refreshes text that is assigned at runtime (status label and scrolling menu
+        /// description) after a language switch, since their captured source is dynamic.
+        /// </summary>
+        private void RefreshDynamicText()
+        {
+            if (IsDisposed)
+                return;
+
+            toolStripStatusLabel1.Text = L(_lastStatusText);
+            SetDescription(_descriptionSource, _descriptionScroll);
+        }
+
         // --------------------------------------------------------------------
         // Helpers
         // --------------------------------------------------------------------
@@ -231,11 +299,11 @@ namespace Tool_Hazard
                 //statusStrip1.Refresh();
                 if (InvokeRequired)
                 {
-                    Invoke(new Action(() => toolStripStatusLabel1.Text = text));
+                    Invoke(new Action(() => toolStripStatusLabel1.Text = L(text)));
                 }
                 else
                 {
-                    toolStripStatusLabel1.Text = text;
+                    toolStripStatusLabel1.Text = L(text);
                 }
                 _lastStatusText = text;
                 if (!_hoveringGameMenu)
@@ -256,8 +324,11 @@ namespace Tool_Hazard
         private void SetDescription(string text, bool scroll)
         {
             _descriptionScroll = scroll;
-            _gameDescriptionText = string.IsNullOrWhiteSpace(text) ? " " : text + (scroll ? "     " : "");
-            _gameDescriptionLabel.Text = _gameDescriptionText;
+            _descriptionSource = text;
+            string baseText = string.IsNullOrWhiteSpace(text) ? " " : text;
+            _gameDescriptionText = baseText + (scroll ? "     " : "");
+            // Translate the source before adding the scrolling padding so the key matches.
+            _gameDescriptionLabel.Text = L(baseText) + (scroll ? "     " : "");
             _gameDescriptionOffset = _gameDescriptionPanel.ClientSize.Width;
             _gameDescriptionLabel.Left = _gameDescriptionOffset;
             if (!_gameDescriptionTimer.Enabled)

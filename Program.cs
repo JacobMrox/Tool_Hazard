@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Globalization;
 using MainForm = Tool_Hazard.Main;
+using Tool_Hazard.Localization;
 using Tool_Hazard.UI;
 
 namespace Tool_Hazard
@@ -25,6 +26,9 @@ namespace Tool_Hazard
             // To customize application configuration such as set high DPI settings or default font,
             // see https://aka.ms/applicationconfiguration.
             ApplicationConfiguration.Initialize();
+            // Load translation dictionaries and apply the persisted language before any
+            // form (including the main window) is constructed.
+            LocalizationManager.Initialize();
             FluentTheme.Initialize();
 
             // Launched elevated via "Game Boost" (UAC relaunch) - open just that panel.
