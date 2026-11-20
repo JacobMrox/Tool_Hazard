@@ -126,6 +126,12 @@ namespace Tool_Hazard
             nACNABPCToolStripMenuItem.Text = "NAB / NAC / HMD Model Viewer";
             nACNABPCToolStripMenuItem.Click += (_, _) => new BiohazardModelViewerForm().Show(this);
 
+            // The PC release ships its game data in InstallShield cabinets on the
+            // disc image. Extract them so the viewers above have files to open.
+            var survivorDiscExtractorMenuItem = new ToolStripMenuItem("Extract Game Data from Disc Image (.BIN/.ISO)...");
+            survivorDiscExtractorMenuItem.Click += SurvivorDiscExtractorMenuItem_Click;
+            rESURVVBIOGUNSURVToolStripMenuItem.DropDownItems.Add(survivorDiscExtractorMenuItem);
+
             var tplExplorerMenuItem = new ToolStripMenuItem("TPL Explorer (UHD refs / GC-Wii)");
             tplExplorerMenuItem.Click += (_, _) => new TplExplorerForm().Show(this);
             rE42005ToolStripMenuItem.DropDownItems.Add(tplExplorerMenuItem);
@@ -1589,6 +1595,67 @@ namespace Tool_Hazard
         private void rESURVVBIOGUNSURVToolStripMenuItem_Click(object sender, EventArgs e)
         {
             CurrentBioVersion = BioVersion.BiohazardSurvivor;
+        }
+
+        /// <summary>
+        /// Extracts the InstallShield cabinets from a Biohazard Gun Survivor PC
+        /// disc image so the Survivor viewers can open the game's real files.
+        /// </summary>
+        private async void SurvivorDiscExtractorMenuItem_Click(object? sender, EventArgs e)
+        {
+            using var openDialog = new OpenFileDialog
+            {
+                Title = "Open Biohazard Gun Survivor disc image",
+                Filter = "Disc images (*.bin;*.iso;*.img)|*.bin;*.iso;*.img|All files (*.*)|*.*",
+                CheckFileExists = true
+            };
+            if (openDialog.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            using var folderDialog = new FolderBrowserDialog
+            {
+                Description = "Choose where to extract the game data",
+                UseDescriptionForTitle = true
+            };
+            if (folderDialog.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            string imagePath = openDialog.FileName;
+            string outputDir = Path.Combine(folderDialog.SelectedPath, "Biohazard Gun Survivor Game Data");
+
+            UpdateStatus("Extracting game data from disc image...");
+            try
+            {
+                int lastPercent = -1;
+                int fileCount = await Task.Run(() =>
+                    Tool_Hazard.Biohazard.Survivor.SurvivorIsoExtractor.Extract(
+                        imagePath,
+                        outputDir,
+                        (message, percent) =>
+                        {
+                            if (percent != lastPercent)
+                            {
+                                lastPercent = percent;
+                                UpdateStatus($"{message} - {percent}%");
+                            }
+                        }));
+
+                MessageBox.Show(this,
+                    $"Extracted {fileCount} file entries to:\n{outputDir}",
+                    "Survivor Disc Extractor",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+                UpdateStatus($"Extracted {fileCount} Survivor game data files");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this,
+                    "Failed to extract the disc image:\n\n" + ex.Message,
+                    "Survivor Disc Extractor",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+                UpdateStatus("Survivor disc extraction failed");
+            }
         }
 
         private void rECVBIOCV2000ToolStripMenuItem_Click(object sender, EventArgs e)
