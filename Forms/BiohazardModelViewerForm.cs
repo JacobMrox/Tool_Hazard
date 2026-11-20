@@ -65,10 +65,8 @@ public sealed class BiohazardModelViewerForm : Form
         var file = new ToolStripMenuItem("File");
         var open = new ToolStripMenuItem("Open...", null, (_, _) => PromptOpen()) { ShortcutKeys = Keys.Control | Keys.O };
         var saveAs = new ToolStripMenuItem("Save model as...", null, (_, _) => SaveModelAs()) { ShortcutKeys = Keys.Control | Keys.Shift | Keys.S };
-        var openTexture = new ToolStripMenuItem("Load TIM texture...", null, (_, _) => PromptTexture());
-        var clearTexture = new ToolStripMenuItem("Clear texture", null, (_, _) => { _texture = null; _texturePath = null; LoadSelectedMesh(); });
         var exit = new ToolStripMenuItem("Exit", null, (_, _) => Close());
-        file.DropDownItems.AddRange(new ToolStripItem[] { open, saveAs, new ToolStripSeparator(), openTexture, clearTexture, new ToolStripSeparator(), exit });
+        file.DropDownItems.AddRange(new ToolStripItem[] { open, saveAs, new ToolStripSeparator(), exit });
         var view = new ToolStripMenuItem("View");
         var smooth = new ToolStripMenuItem("Smooth shading") { CheckOnClick = true, Checked = true };
         smooth.CheckedChanged += (_, _) => _viewport.SmoothShading = smooth.Checked;
@@ -121,6 +119,9 @@ public sealed class BiohazardModelViewerForm : Form
             new ToolStripMenuItem("Weld vertices by distance + recalculate normals (outside)...", null, (_, _) => WeldSurvivorNormals()) });
         var textureMenu = new ToolStripMenuItem("Texture");
         textureMenu.DropDownItems.AddRange(new ToolStripItem[] {
+            new ToolStripMenuItem("Load texture...", null, (_, _) => PromptTexture()),
+            new ToolStripMenuItem("Clear texture", null, (_, _) => { _texture = null; _texturePath = null; LoadSelectedMesh(); }),
+            new ToolStripSeparator(),
             new ToolStripMenuItem("View texture...", null, (_, _) => ViewTexture()),
             new ToolStripMenuItem("Export texture image...", null, (_, _) => ExportTexture()),
             new ToolStripMenuItem("Replace/import texture image...", null, (_, _) => ReplaceTextureImage())
@@ -1893,14 +1894,19 @@ public sealed class BiohazardModelViewerForm : Form
     private void LoadSurvivorHmd()
     {
         if (_survivorHmd == null) return;
-        var (parts, texture, textureDesc) = LoadHmdTexturedParts(_survivorHmd, _path!);
-        _renderParts = parts;
+        // HMDs never pick a texture on their own: sibling TIM/RSD names are
+        // unreliable and probing them can fail. Load the texture explicitly with
+        // Texture > Load texture... instead.
+        _renderParts = _survivorHmd.CreateRenderParts();
         _parts.Items.Clear();
         for (int i = 0; i < _renderParts.Count; i++) _parts.Items.Add($"Block {i:D2}", true);
-        _viewport.SetModel(_renderParts, texture);
+        _viewport.SetModel(_renderParts, _texture == null ? null : new TimTexture(_texture));
+        _viewport.SetSkeleton(null, null);
         string pointers = string.Join(", ", _survivorHmd.BlockPointers.Select((p, i) => $"{i}:{p:X8}"));
         int triangles = _renderParts.Sum(p => p.Faces.Count);
-        _details.Text = $"Game: Resident Evil Survivor PC\r\nType: HMD scene / NPC model\r\nBlocks: {_survivorHmd.BlockCount:N0}  Render parts: {_renderParts.Count:N0}  Triangles: {triangles:N0}\r\nTexture: {textureDesc}\r\nPrimitive header: 0x{_survivorHmd.PrimitiveHeaderOffset:X}\r\nBlock pointers (word offsets): {pointers}";
+        string texture = _texture == null ? "None (use Texture > Load texture...)"
+            : $"{Path.GetFileName(_texturePath)} ({_texture.Width}x{_texture.Height})";
+        _details.Text = $"Game: Resident Evil Survivor PC\r\nType: HMD scene / NPC model\r\nBlocks: {_survivorHmd.BlockCount:N0}  Render parts: {_renderParts.Count:N0}  Triangles: {triangles:N0}\r\nTexture: {texture}\r\nPrimitive header: 0x{_survivorHmd.PrimitiveHeaderOffset:X}\r\nBlock pointers (word offsets): {pointers}";
     }
 
     private void LoadSurvivorMesh()
@@ -2035,23 +2041,82 @@ public sealed class BiohazardModelViewerForm : Form
 
     private void PromptTexture()
     {
+        if (_petModel != null || _re4Bin != null || _re4Pmd != null || _re4Pack != null ||
+            _re4GenericParts != null || _re4Scenario != null)
+        {
+            MessageBox.Show(this, "White Day PET and RE4 models keep several textures per object and use their own texture options.",
+                Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
         using var dialog = new OpenFileDialog
         {
-            Title = "Load PlayStation TIM texture",
-            Filter = "PlayStation texture (*.tim)|*.tim|All files (*.*)|*.*",
+            Title = "Load texture",
+            Filter = "Supported textures (*.tim;*.pix;*.png;*.bmp;*.jpg;*.jpeg;*.tga;*.gif)|*.tim;*.pix;*.png;*.bmp;*.jpg;*.jpeg;*.tga;*.gif|" +
+                     "PlayStation TIM / PIX (*.tim;*.pix)|*.tim;*.pix|Images (*.png;*.bmp;*.jpg;*.jpeg;*.tga;*.gif)|*.png;*.bmp;*.jpg;*.jpeg;*.tga;*.gif|All files (*.*)|*.*",
             InitialDirectory = _path == null ? null : Path.GetDirectoryName(_path)
         };
         if (dialog.ShowDialog(this) != DialogResult.OK) return;
         try
         {
-            _texture = new TimFile(dialog.FileName);
-            _texturePath = dialog.FileName;
-            LoadSelectedMesh();
+            string extension = Path.GetExtension(dialog.FileName).ToLowerInvariant();
+            Bitmap? bitmap = null;
+            TimFile tim;
+            if (extension is ".tim" or ".pix")
+            {
+                byte[] bytes = File.ReadAllBytes(dialog.FileName);
+                var blocks = Tool_Hazard.Biohazard.PIX.TimPack.Parse(bytes);
+                if (blocks.Count == 0) throw new InvalidDataException("No PlayStation TIM texture was found in this file.");
+                tim = new TimFile(blocks[0].Data);
+            }
+            else
+            {
+                bitmap = new Bitmap(dialog.FileName);
+                tim = new TimFile(bitmap.Width, bitmap.Height, 16);
+                for (int y = 0; y < bitmap.Height; y++)
+                    for (int x = 0; x < bitmap.Width; x++)
+                        tim.SetPixel(x, y, 0, (uint)bitmap.GetPixel(x, y).ToArgb());
+            }
+            ApplyLoadedTexture(tim, bitmap, dialog.FileName);
         }
         catch (Exception ex)
         {
             MessageBox.Show(this, $"Texture load failed:\n{ex.Message}", "Tool Hazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
+    }
+
+    private void ApplyLoadedTexture(TimFile tim, Bitmap? bitmap, string path)
+    {
+        _texture = tim;
+        _texturePath = path;
+        if (_survivor != null)
+        {
+            // The NAB stores its texture inside the model, so applying it here is
+            // what makes "Save model as" carry the new texture with it.
+            _survivor.ReplaceTexture(bitmap ?? TimToBitmap(tim));
+            LoadSurvivorMesh();
+            return;
+        }
+        // Classic models can carry the TIM in a texture chunk. HMDs have no
+        // embedded texture; theirs is written beside the model when saving.
+        if (_model != null && CountChunksOfKind(_model, ModelFile.ChunkKind.Texture) > 0)
+            _model.SetTim(0, tim);
+        LoadSelectedMesh();
+    }
+
+    private static Bitmap TimToBitmap(TimFile tim)
+    {
+        var bitmap = new Bitmap(tim.Width, tim.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+        for (int y = 0; y < tim.Height; y++)
+            for (int x = 0; x < tim.Width; x++)
+                bitmap.SetPixel(x, y, Color.FromArgb(unchecked((int)tim.GetPixel(x, y, 0))));
+        return bitmap;
+    }
+
+    private void SaveSidecarTexture(string path)
+    {
+        if (_texture == null || string.Equals(_texturePath, path, StringComparison.OrdinalIgnoreCase)) return;
+        try { File.WriteAllBytes(path, _texture.GetBytes()); }
+        catch (Exception ex) { MessageBox.Show(this, $"Could not save the texture beside the model:\n{ex.Message}", Text, MessageBoxButtons.OK, MessageBoxIcon.Warning); }
     }
 
     private IViewerTexture? CurrentTexture
@@ -2174,13 +2239,14 @@ public sealed class BiohazardModelViewerForm : Form
             }
             else
             {
-                if (_texture == null || _model == null) throw new InvalidOperationException("Load a TIM texture before importing an image.");
+                if (_texture == null) throw new InvalidOperationException("Load a texture before importing an image.");
                 if (_texture.HasCluts) ImportTimPages(_texture, bitmap, GetTimAtlasPages(_texture));
                 else ImportTimAtlas(_texture, bitmap);
-                if (string.Equals(_texturePath, "Embedded TIM", StringComparison.Ordinal))
+                if (_model != null && string.Equals(_texturePath, "Embedded TIM", StringComparison.Ordinal))
                     _model.SetTim(0, _texture);
-                else if (!string.IsNullOrWhiteSpace(_texturePath))
+                else if (_survivorHmd == null && !string.IsNullOrWhiteSpace(_texturePath) && File.Exists(_texturePath))
                     _texture.Save(_texturePath);
+                // HMD textures are written beside the model by Save model as.
                 LoadSelectedMesh();
             }
         }
@@ -2904,9 +2970,24 @@ public sealed class BiohazardModelViewerForm : Form
             }
             return;
         }
+        if (_survivorHmd != null && _path != null)
+        {
+            using var hmdDialog = new SaveFileDialog { FileName = Path.GetFileName(_path), Filter = "PlayStation HMD (*.hmd)|*.hmd|All files (*.*)|*.*" };
+            if (hmdDialog.ShowDialog(this) != DialogResult.OK) return;
+            File.WriteAllBytes(hmdDialog.FileName, _survivorHmd.Data);
+            SaveSidecarTexture(Path.ChangeExtension(hmdDialog.FileName, ".tim"));
+            return;
+        }
         if (_model == null || _path == null) return;
         using var dialog = new SaveFileDialog { FileName = Path.GetFileName(_path), Filter = "Biohazard model (*.emd;*.pld)|*.emd;*.pld|All files (*.*)|*.*" };
-        if (dialog.ShowDialog(this) == DialogResult.OK) _model.Save(dialog.FileName);
+        if (dialog.ShowDialog(this) == DialogResult.OK)
+        {
+            bool embeddedTexture = CountChunksOfKind(_model, ModelFile.ChunkKind.Texture) > 0;
+            if (_texture != null && embeddedTexture) _model.SetTim(0, _texture);
+            _model.Save(dialog.FileName);
+            if (_texture != null && !embeddedTexture)
+                SaveSidecarTexture(Path.ChangeExtension(dialog.FileName, ".tim"));
+        }
     }
 
     // Porting aid: the selected part's bounding box makes it possible to choose a
@@ -3714,7 +3795,7 @@ public sealed class BiohazardModelViewerForm : Form
         using var dialog = new OpenFileDialog
         {
             Filter = native
-                ? "Supported native model (*.nab;*.emd;*.pld;*.md2)|*.nab;*.emd;*.pld;*.md2|All files (*.*)|*.*"
+                ? "Supported native model (*.nab;*.hmd;*.emd;*.pld;*.md2)|*.nab;*.hmd;*.emd;*.pld;*.md2|All files (*.*)|*.*"
                 : "Wavefront OBJ (*.obj)|*.obj"
         };
         if (dialog.ShowDialog(this) != DialogResult.OK) return;
@@ -3727,6 +3808,11 @@ public sealed class BiohazardModelViewerForm : Form
             {
                 SurvivorNab incoming = SurvivorNab.FromFile(dialog.FileName);
                 _survivor.ReplaceWith(incoming, selected);
+            }
+            else if (extension == ".hmd")
+            {
+                SurvivorHmd incoming = SurvivorHmd.FromFile(dialog.FileName);
+                _survivor.ReplaceFromParts(SurvivorNab.FromHmd(incoming), selected);
             }
             else if (!native)
             {
@@ -4655,37 +4741,56 @@ public sealed class BiohazardModelViewerForm : Form
             return pointer;
         }
 
+        // The animation selector (Q) table ends a fixed 0x1C bytes before the node table. Each record
+        // has a 0x60-byte header followed by one 8-byte pair per selector, so the on-disk stride is
+        // 0x60 + selectorCount * 8 (0x1B0 for the 42-selector zombie banks, 0x110/0x118 for Mr. X).
+        // Deriving the start from that gap is important: scanning backwards for a header that merely
+        // "looks right" also accepts qCount - 1 records, which shifts the node table by one 0x108
+        // record and scrambles every group's bind transform and animation track.
+        private const int QTableGap = 0x1C;
+        private const int QTableHeaderSize = 0x60;
+        private const int QTableSelectorPairSize = 8;
+
+        private static bool TryFindQTable(byte[] data, int rootNodeOffset, int qCount, int minStart,
+            out int qStart, out int stride, out int selectorCount)
+        {
+            qStart = stride = selectorCount = 0;
+            if (qCount <= 0 || rootNodeOffset <= QTableGap) return false;
+            for (int selectors = 1; selectors <= 256; selectors++)
+            {
+                int recordStride = QTableHeaderSize + selectors * QTableSelectorPairSize;
+                int candidate = rootNodeOffset - QTableGap - qCount * recordStride;
+                if (candidate < minStart || candidate + QTableHeaderSize > data.Length) continue;
+                if (BitConverter.ToInt32(data, candidate + 0x0C) != selectors) continue;
+                bool valid = true;
+                for (int q = 0; q < qCount; q++)
+                {
+                    int header = candidate + q * recordStride;
+                    if (header + QTableHeaderSize > data.Length ||
+                        BitConverter.ToInt32(data, header) != 4 ||
+                        BitConverter.ToInt32(data, header + 0x0C) != selectors)
+                    {
+                        valid = false;
+                        break;
+                    }
+                }
+                if (valid)
+                {
+                    qStart = candidate;
+                    stride = recordStride;
+                    selectorCount = selectors;
+                    return true;
+                }
+            }
+            return false;
+        }
+
         private static int FindNodeCount(byte[] data, uint rootNodePointer, int minimum, int contentEnd)
         {
             for (int count = minimum; count <= 256; count++)
             {
                 int rootOffset = data.Length - count * 0x108;
-                int qCount = count - 1;
-                if (qCount <= 0 || rootOffset - 0x60 < contentEnd) continue;
-                int maxStride = 0x60 + 256 * 8;
-                int first = Math.Max(contentEnd, rootOffset - 0x40 - qCount * maxStride);
-                bool found = false;
-                for (int qStart = first; qStart <= rootOffset - 0x60; qStart++)
-                {
-                    if (qStart + 0x60 > data.Length) break;
-                    int selectors = BitConverter.ToInt32(data, qStart + 0x0C);
-                    if (selectors <= 0 || selectors > 256) continue;
-                    int stride = 0x60 + selectors * 8;
-                    if ((long)qStart + (long)qCount * stride > rootOffset) continue;
-                    bool valid = true;
-                    for (int q = 0; q < qCount; q++)
-                    {
-                        int header = qStart + q * stride;
-                        if (header + 0x60 > data.Length || BitConverter.ToInt32(data, header) != 4 ||
-                            BitConverter.ToInt32(data, header + 0x0C) != selectors)
-                        {
-                            valid = false;
-                            break;
-                        }
-                    }
-                    if (valid) { found = true; break; }
-                }
-                if (found) return count;
+                if (TryFindQTable(data, rootOffset, count - 1, contentEnd, out _, out _, out _)) return count;
             }
             return minimum;
         }
@@ -4706,41 +4811,18 @@ public sealed class BiohazardModelViewerForm : Form
             File.WriteAllBytes(path, bytes);
         }
 
-        private static int FindQStart(byte[] data, int rootNodeOffset, int qCount, int stride, int selectorCount)
-        {
-            int first = Math.Max(0, rootNodeOffset - 0x40 - qCount * stride);
-            for (int candidate = first; candidate <= rootNodeOffset - 0x60; candidate++)
-            {
-                if (candidate + 0x60 > data.Length) break;
-                if ((long)candidate + (long)qCount * stride > rootNodeOffset) continue;
-                bool valid = true;
-                for (int node = 0; node < qCount; node++)
-                {
-                    int header = candidate + node * stride;
-                    if (BitConverter.ToInt32(data, header) != 4 ||
-                        BitConverter.ToInt32(data, header + 0x0C) != selectorCount)
-                    {
-                        valid = false;
-                        break;
-                    }
-                }
-                if (valid) return candidate;
-            }
-            return -1;
-        }
-
         public void ValidateAnimationBankCompatibility(SurvivorNab source)
         {
             if (!HasAnimations || !source.HasAnimations || source.NodeCount != NodeCount || source.SelectorCount != SelectorCount ||
                 !_parentIndices.SequenceEqual(source._parentIndices))
                 throw new InvalidDataException("The source and target must have readable animation banks with matching node hierarchies and selector counts.");
             int qCount = NodeCount - 1;
-            int stride = 0x60 + SelectorCount * 8;
             int targetRoot = _data.Length - NodeCount * 0x108;
             int sourceRoot = source._data.Length - source.NodeCount * 0x108;
-            int targetQ = FindQStart(_data, targetRoot, qCount, stride, SelectorCount);
-            int sourceQ = FindQStart(source._data, sourceRoot, qCount, stride, SelectorCount);
-            if (targetQ < 0 || sourceQ < 0) throw new InvalidDataException("The NAB selector table is truncated.");
+            if (!TryFindQTable(_data, targetRoot, qCount, 0, out int targetQ, out int stride, out int selectors) ||
+                !TryFindQTable(source._data, sourceRoot, qCount, 0, out int sourceQ, out _, out int sourceSelectors) ||
+                selectors != SelectorCount || sourceSelectors != SelectorCount)
+                throw new InvalidDataException("The NAB selector table is truncated.");
             for (int node = 0; node < qCount; node++)
                 for (int selector = 0; selector < SelectorCount; selector++)
                 {
@@ -5100,6 +5182,12 @@ public sealed class BiohazardModelViewerForm : Form
             // animated skeleton parts. They are not candidate limbs for retargeting.
             if (skeleton != null)
                 source = source.Take(Math.Min(skeleton.NumParts, source.Length)).ToArray();
+            ReplaceFromParts(source, selectedGroup);
+        }
+
+        // Fits pre-converted parts (classic meshes, HMD blocks, ...) onto the NAB.
+        public void ReplaceFromParts(SurvivorPart[] source, int selectedGroup)
+        {
             source = source.Where(part => part.Vertices.Length != 0).ToArray();
             if (source.Length == 0) throw new InvalidDataException("The incoming mesh has no parts.");
             SurvivorPart[] target = GetParts().ToArray();
@@ -5109,8 +5197,44 @@ public sealed class BiohazardModelViewerForm : Form
                 ApplyParts(target);
                 return;
             }
-
             ApplyMappedClassicParts(source, target);
+        }
+
+        // Converts decoded HMD render parts into the per-corner triangle streams the
+        // NAB writer uses. The part matcher fits each block onto a Survivor group and
+        // keeps that group's texture page, so source pages are not carried over.
+        public static SurvivorPart[] FromHmd(SurvivorHmd hmd)
+        {
+            // Geometry only - probing sibling TIM/RSD files for texture pages is
+            // both unreliable and unnecessary for a mesh import.
+            List<RenderPart> renderParts = hmd.CreateRenderParts();
+            var result = new List<SurvivorPart>();
+            foreach (RenderPart part in renderParts)
+            {
+                var vertices = new List<Vector3>();
+                var normals = new List<Vector3>();
+                var uv = new List<Vector2>();
+                foreach (RenderFace face in part.Faces)
+                {
+                    if (face.Indices.Length != 3 || face.UV.Length != 3) continue;
+                    if (face.Indices.Any(i => (uint)i >= (uint)part.Vertices.Length)) continue;
+                    for (int corner = 0; corner < 3; corner++)
+                    {
+                        int index = face.Indices[corner];
+                        Vector3 normal = part.Normals[index];
+                        vertices.Add(part.Vertices[index]);
+                        normals.Add(normal.LengthSquared() == 0 ? Vector3.UnitY : Vector3.Normalize(normal));
+                        uv.Add(face.UV[corner]);
+                    }
+                }
+                if (vertices.Count != 0) result.Add(new SurvivorPart(vertices.ToArray(), normals.ToArray(), uv.ToArray(), 0, 0));
+            }
+            if (result.Count == 0) throw new InvalidDataException("The HMD contains no importable mesh parts.");
+            // Body-part assignment is exponential in the source part count, so a
+            // scene HMD with many tiny props would otherwise be unusable here.
+            if (result.Count > 20)
+                result = result.OrderByDescending(p => p.Vertices.Length).Take(20).ToList();
+            return result.ToArray();
         }
 
         private SurvivorPart[] MapClassicParts(SurvivorPart[] source, SurvivorPart[] target)
@@ -5315,7 +5439,7 @@ public sealed class BiohazardModelViewerForm : Form
         private static (float Cost, int[] Map) AssignParts(Vector3[] source, Vector3[] target)
         {
             if (source.Length < target.Length)
-                throw new InvalidDataException($"The source has {source.Length} mesh parts, but Survivor requires {target.Length}.");
+                throw new InvalidDataException($"The source has {source.Length} mesh part(s), but this Survivor model needs {target.Length} for whole-mesh import. Use 'Selected part' import instead, or supply a model with at least that many parts.");
             if (source.Length > 20)
                 throw new InvalidDataException("Automatic part matching supports at most 20 source parts; this model needs manual part mapping.");
             int limit = 1 << source.Length;
@@ -5645,53 +5769,11 @@ public sealed class BiohazardModelViewerForm : Form
 
             private SurvivorAnimationBank(Track[][] selectors) => _selectors = selectors;
 
-            // The Q record stride is 0x60 + selectorCount * 8. Zombie banks have 42 selectors (0x1B0),
-            // but Mr. X has 22 or 23, so a fixed stride reads the animation tables from the wrong offset.
-            // Find the first record by validating every record header instead.
-            private static bool TryFindQTable(byte[] nab, int rootNodeOffset, int qCount,
-                out int qStart, out int qDiskSize)
-            {
-                qStart = 0;
-                qDiskSize = 0;
-                if (qCount <= 0 || rootNodeOffset <= QHeaderSize) return false;
-                int maxStride = QHeaderSize + 256 * SelectorPairSize;
-                int minStart = Math.Max(0, rootNodeOffset - 0x40 - qCount * maxStride);
-                for (int candidate = minStart; candidate <= rootNodeOffset - QHeaderSize; candidate++)
-                {
-                    if (candidate + QHeaderSize > nab.Length) break;
-                    int selectorCount = BitConverter.ToInt32(nab, candidate + 0x0C);
-                    if (selectorCount <= 0 || selectorCount > 256) continue;
-                    int stride = QHeaderSize + selectorCount * SelectorPairSize;
-                    if ((long)candidate + (long)qCount * stride > rootNodeOffset) continue;
-                    bool valid = true;
-                    for (int q = 0; q < qCount; q++)
-                    {
-                        int header = candidate + q * stride;
-                        if (header + QHeaderSize > nab.Length ||
-                            BitConverter.ToInt32(nab, header) != 4 ||
-                            BitConverter.ToInt32(nab, header + 0x0C) != selectorCount)
-                        {
-                            valid = false;
-                            break;
-                        }
-                    }
-                    if (valid)
-                    {
-                        qStart = candidate;
-                        qDiskSize = stride;
-                        return true;
-                    }
-                }
-                return false;
-            }
-
             public static SurvivorAnimationBank? TryLoad(byte[] nab, string nacPath, int rootNodeOffset, int nodeCount, uint rootNodePointer)
             {
                 int qCount = nodeCount - 1;
                 if (qCount <= 0) return null;
-                if (!TryFindQTable(nab, rootNodeOffset, qCount, out int qStart, out int qDiskSize)) return null;
-                int selectorCount = BitConverter.ToInt32(nab, qStart + 0x0C);
-                if (selectorCount <= 0 || selectorCount > 256) return null;
+                if (!TryFindQTable(nab, rootNodeOffset, qCount, 0, out int qStart, out int qDiskSize, out int selectorCount)) return null;
 
                 byte[] nac = File.ReadAllBytes(nacPath);
                 if (nac.Length < 8) return null;
@@ -5814,7 +5896,7 @@ public sealed class BiohazardModelViewerForm : Form
         }
 
         private sealed record SurvivorGroup(int TriangleStart, int TriangleCount, byte TexturePage, int NodeIndex, Matrix4x4 BindTransform);
-        private sealed record SurvivorPart(Vector3[] Vertices, Vector3[] Normals, Vector2[] UV, byte TexturePage, int NodeIndex);
+        internal sealed record SurvivorPart(Vector3[] Vertices, Vector3[] Normals, Vector2[] UV, byte TexturePage, int NodeIndex);
     }
 
     // Clut < 0 marks an untextured (flat/vertex-coloured) face. VtColors holds
@@ -5980,6 +6062,7 @@ public sealed class BiohazardModelViewerForm : Form
     private sealed class SurvivorHmd
     {
         private readonly byte[] _data;
+        public byte[] Data => _data;
         public int PrimitiveHeaderOffset { get; }
         public int BlockCount => BlockPointers.Length;
         public uint[] BlockPointers { get; }
