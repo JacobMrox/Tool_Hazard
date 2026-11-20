@@ -4694,20 +4694,46 @@ public sealed class BiohazardModelViewerForm : Form
             File.WriteAllBytes(path, bytes);
         }
 
+        private static int FindQStart(byte[] data, int rootNodeOffset, int qCount, int stride, int selectorCount)
+        {
+            int first = Math.Max(0, rootNodeOffset - 0x40 - qCount * stride);
+            for (int candidate = first; candidate <= rootNodeOffset - 0x60; candidate++)
+            {
+                if (candidate + 0x60 > data.Length) break;
+                if ((long)candidate + (long)qCount * stride > rootNodeOffset) continue;
+                bool valid = true;
+                for (int node = 0; node < qCount; node++)
+                {
+                    int header = candidate + node * stride;
+                    if (BitConverter.ToInt32(data, header) != 4 ||
+                        BitConverter.ToInt32(data, header + 0x0C) != selectorCount)
+                    {
+                        valid = false;
+                        break;
+                    }
+                }
+                if (valid) return candidate;
+            }
+            return -1;
+        }
+
         public void ValidateAnimationBankCompatibility(SurvivorNab source)
         {
             if (!HasAnimations || !source.HasAnimations || source.NodeCount != NodeCount || source.SelectorCount != SelectorCount ||
                 !_parentIndices.SequenceEqual(source._parentIndices))
                 throw new InvalidDataException("The source and target must have readable animation banks with matching node hierarchies and selector counts.");
             int qCount = NodeCount - 1;
-            int targetQ = _data.Length - NodeCount * 0x108 - 0x1C - qCount * 0x1B0;
-            int sourceQ = source._data.Length - source.NodeCount * 0x108 - 0x1C - qCount * 0x1B0;
+            int stride = 0x60 + SelectorCount * 8;
+            int targetRoot = _data.Length - NodeCount * 0x108;
+            int sourceRoot = source._data.Length - source.NodeCount * 0x108;
+            int targetQ = FindQStart(_data, targetRoot, qCount, stride, SelectorCount);
+            int sourceQ = FindQStart(source._data, sourceRoot, qCount, stride, SelectorCount);
             if (targetQ < 0 || sourceQ < 0) throw new InvalidDataException("The NAB selector table is truncated.");
             for (int node = 0; node < qCount; node++)
                 for (int selector = 0; selector < SelectorCount; selector++)
                 {
-                    int offset = node * 0x1B0 + 0x60 + selector * 8 + 4;
-                    if (0x60 + selector * 8 + 8 > 0x1B0 || BitConverter.ToInt32(_data, targetQ + offset) != BitConverter.ToInt32(source._data, sourceQ + offset))
+                    int offset = node * stride + 0x60 + selector * 8 + 4;
+                    if (BitConverter.ToInt32(_data, targetQ + offset) != BitConverter.ToInt32(source._data, sourceQ + offset))
                         throw new InvalidDataException($"The NAC command mapping differs for node {node + 1}, selector {selector}; this bank requires retargeting.");
                 }
         }
@@ -5602,18 +5628,56 @@ public sealed class BiohazardModelViewerForm : Form
         {
             private const int QHeaderSize = 0x60;
             private const int SelectorPairSize = 8;
-            private const int QDiskSize = 0x1B0;
             private readonly Track[][] _selectors;
             public int SelectorCount => _selectors.Length;
 
             private SurvivorAnimationBank(Track[][] selectors) => _selectors = selectors;
 
+            // The Q record stride is 0x60 + selectorCount * 8. Zombie banks have 42 selectors (0x1B0),
+            // but Mr. X has 22 or 23, so a fixed stride reads the animation tables from the wrong offset.
+            // Find the first record by validating every record header instead.
+            private static bool TryFindQTable(byte[] nab, int rootNodeOffset, int qCount,
+                out int qStart, out int qDiskSize)
+            {
+                qStart = 0;
+                qDiskSize = 0;
+                if (qCount <= 0 || rootNodeOffset <= QHeaderSize) return false;
+                int maxStride = QHeaderSize + 256 * SelectorPairSize;
+                int minStart = Math.Max(0, rootNodeOffset - 0x40 - qCount * maxStride);
+                for (int candidate = minStart; candidate <= rootNodeOffset - QHeaderSize; candidate++)
+                {
+                    if (candidate + QHeaderSize > nab.Length) break;
+                    int selectorCount = BitConverter.ToInt32(nab, candidate + 0x0C);
+                    if (selectorCount <= 0 || selectorCount > 256) continue;
+                    int stride = QHeaderSize + selectorCount * SelectorPairSize;
+                    if ((long)candidate + (long)qCount * stride > rootNodeOffset) continue;
+                    bool valid = true;
+                    for (int q = 0; q < qCount; q++)
+                    {
+                        int header = candidate + q * stride;
+                        if (header + QHeaderSize > nab.Length ||
+                            BitConverter.ToInt32(nab, header) != 4 ||
+                            BitConverter.ToInt32(nab, header + 0x0C) != selectorCount)
+                        {
+                            valid = false;
+                            break;
+                        }
+                    }
+                    if (valid)
+                    {
+                        qStart = candidate;
+                        qDiskSize = stride;
+                        return true;
+                    }
+                }
+                return false;
+            }
+
             public static SurvivorAnimationBank? TryLoad(byte[] nab, string nacPath, int rootNodeOffset, int nodeCount, uint rootNodePointer)
             {
                 int qCount = nodeCount - 1;
                 if (qCount <= 0) return null;
-                int qStart = rootNodeOffset - 0x1C - qCount * QDiskSize;
-                if (qStart < 0) return null;
+                if (!TryFindQTable(nab, rootNodeOffset, qCount, out int qStart, out int qDiskSize)) return null;
                 int selectorCount = BitConverter.ToInt32(nab, qStart + 0x0C);
                 if (selectorCount <= 0 || selectorCount > 256) return null;
 
@@ -5641,7 +5705,7 @@ public sealed class BiohazardModelViewerForm : Form
                     var tracks = new List<Track>();
                     for (int q = 0; q < qCount; q++)
                     {
-                        int header = qStart + q * QDiskSize;
+                        int header = qStart + q * qDiskSize;
                         if (BitConverter.ToInt32(nab, header) != 4 || BitConverter.ToInt32(nab, header + 0x0C) != selectorCount)
                             return null;
                         int nodeIndex = q + 1;
