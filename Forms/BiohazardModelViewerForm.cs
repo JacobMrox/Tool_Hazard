@@ -4575,6 +4575,8 @@ public sealed class BiohazardModelViewerForm : Form
                 uint delta = rawGroups[i].NodePointer - rootNodePointer;
                 if (delta % 0x104 != 0) throw new InvalidDataException($"Invalid NAB node pointer for group {i}.");
                 int nodeIndex = checked((int)(delta / 0x104));
+                if (nodeIndex < 0 || nodeIndex >= nodeCount)
+                    throw new InvalidDataException($"Mesh group {i} refers to node {nodeIndex} outside the node table.");
                 groups[i] = new SurvivorGroup(rawGroups[i].Start, rawGroups[i].Count, rawGroups[i].TexturePage, nodeIndex, nodeTransforms[nodeIndex]);
             }
             string animationPath = Path.ChangeExtension(path, ".NAC");
@@ -4659,21 +4661,31 @@ public sealed class BiohazardModelViewerForm : Form
             {
                 int rootOffset = data.Length - count * 0x108;
                 int qCount = count - 1;
-                int qStart = rootOffset - 0x1C - qCount * 0x1B0;
-                if (qStart < contentEnd || qStart + 0x60 > data.Length) continue;
-                int selectors = BitConverter.ToInt32(data, qStart + 0x0C);
-                if (selectors <= 0 || selectors > 256) continue;
-                bool valid = true;
-                for (int q = 0; q < qCount; q++)
+                if (qCount <= 0 || rootOffset - 0x60 < contentEnd) continue;
+                int maxStride = 0x60 + 256 * 8;
+                int first = Math.Max(contentEnd, rootOffset - 0x40 - qCount * maxStride);
+                bool found = false;
+                for (int qStart = first; qStart <= rootOffset - 0x60; qStart++)
                 {
-                    int header = qStart + q * 0x1B0;
-                    if (BitConverter.ToInt32(data, header) != 4 || BitConverter.ToInt32(data, header + 0x0C) != selectors)
+                    if (qStart + 0x60 > data.Length) break;
+                    int selectors = BitConverter.ToInt32(data, qStart + 0x0C);
+                    if (selectors <= 0 || selectors > 256) continue;
+                    int stride = 0x60 + selectors * 8;
+                    if ((long)qStart + (long)qCount * stride > rootOffset) continue;
+                    bool valid = true;
+                    for (int q = 0; q < qCount; q++)
                     {
-                        valid = false;
-                        break;
+                        int header = qStart + q * stride;
+                        if (header + 0x60 > data.Length || BitConverter.ToInt32(data, header) != 4 ||
+                            BitConverter.ToInt32(data, header + 0x0C) != selectors)
+                        {
+                            valid = false;
+                            break;
+                        }
                     }
+                    if (valid) { found = true; break; }
                 }
-                if (valid) return count;
+                if (found) return count;
             }
             return minimum;
         }
