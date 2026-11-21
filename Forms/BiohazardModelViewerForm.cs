@@ -3049,6 +3049,11 @@ public sealed class BiohazardModelViewerForm : Form
             ExportRe4Mesh("obj");
             return;
         }
+        if (_survivorHmd != null)
+        {
+            ExportSurvivorHmdMesh(selectedPart, native);
+            return;
+        }
         if (_survivor != null)
         {
             int selected = selectedPart ? SelectedPartIndex() : -1;
@@ -3100,6 +3105,11 @@ public sealed class BiohazardModelViewerForm : Form
             ImportRe4Mesh();
             return;
         }
+        if (_survivorHmd != null)
+        {
+            ReplaceSurvivorHmdMesh(selectedPart, native);
+            return;
+        }
         if (_survivor != null)
         {
             ReplaceSurvivorMesh(selectedPart, native);
@@ -3131,6 +3141,65 @@ public sealed class BiohazardModelViewerForm : Form
             LoadSelectedMesh();
         }
         catch (Exception ex) { MessageBox.Show(this, $"Mesh replacement failed:\n{ex.Message}", "Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+    }
+
+    private void ExportSurvivorHmdMesh(bool selectedPart, bool native)
+    {
+        if (_survivorHmd == null) return;
+        int selected = selectedPart ? SelectedPartIndex() : -1;
+        if (selectedPart && selected < 0) return;
+        if (native && selectedPart)
+        {
+            MessageBox.Show(this,
+                "An HMD part is not a self-contained native file. Export the selected part as OBJ, or export the whole HMD natively.",
+                "Tool Hazard Model Viewer", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+        string extension = native ? "hmd" : "obj";
+        using var dialog = new SaveFileDialog
+        {
+            FileName = selectedPart ? $"hmd_part_{selected:D2}.obj" : $"{Path.GetFileNameWithoutExtension(_path)}.{extension}",
+            Filter = native ? "PlayStation HMD (*.hmd)|*.hmd" : "Wavefront OBJ (*.obj)|*.obj"
+        };
+        if (dialog.ShowDialog(this) != DialogResult.OK) return;
+        try
+        {
+            if (native) File.WriteAllBytes(dialog.FileName, _survivorHmd.Data);
+            else _survivorHmd.ExportObj(dialog.FileName, selected);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, $"HMD mesh export failed:\n{ex.Message}", "Tool Hazard Model Viewer",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private void ReplaceSurvivorHmdMesh(bool selectedPart, bool native)
+    {
+        if (_survivorHmd == null) return;
+        int selected = selectedPart ? SelectedPartIndex() : -1;
+        if (selectedPart && selected < 0) return;
+        using var dialog = new OpenFileDialog
+        {
+            Filter = native
+                ? "PlayStation HMD (*.hmd)|*.hmd|All files (*.*)|*.*"
+                : "Wavefront OBJ (*.obj)|*.obj"
+        };
+        if (dialog.ShowDialog(this) != DialogResult.OK) return;
+        try
+        {
+            if (native)
+                _survivorHmd.ReplaceFromHmd(SurvivorHmd.FromFile(dialog.FileName), selected);
+            else
+                _survivorHmd.ReplaceFromObj(dialog.FileName, selected);
+            LoadSurvivorHmd();
+            if (selected >= 0 && selected < _parts.Items.Count) _parts.SelectedIndex = selected;
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, $"HMD mesh replacement failed:\n{ex.Message}", "Tool Hazard Model Viewer",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
 
     private void ScaleMesh(bool selectedPart)
@@ -4487,6 +4556,10 @@ public sealed class BiohazardModelViewerForm : Form
         private int _metadataVertexCount;
         private int _metadataTriangleCount;
         private SurvivorGroup[] _metadataGroups;
+        private bool[] _groupTextured;
+        private uint[] _groupSurfacePointers;
+        private bool[] _metadataGroupTextured;
+        private uint[] _metadataGroupSurfacePointers;
         private readonly int[] _parentIndices;
         private readonly Matrix4x4[] _bindLocalTransforms;
         private SurvivorAnimationBank? _animationBank;
@@ -4499,7 +4572,8 @@ public sealed class BiohazardModelViewerForm : Form
         public bool HasAnimations => _animationBank != null && _animationBank.SelectorCount != 0;
         public int SelectorCount => _animationBank?.SelectorCount ?? 0;
 
-        private SurvivorNab(byte[] data, Vector3[] vertices, Vector3[] normals, Vector2[] uv, SurvivorGroup[] groups, int[] parentIndices,
+        private SurvivorNab(byte[] data, Vector3[] vertices, Vector3[] normals, Vector2[] uv, SurvivorGroup[] groups,
+            bool[] groupTextured, uint[] groupSurfacePointers, int[] parentIndices,
             Matrix4x4[] bindLocalTransforms, int triangleCount, SurvivorTexture texture, string animationPath,
             SurvivorAnimationBank? animationBank, int originalVertexEnd, int originalGroupCountOffset)
         {
@@ -4508,6 +4582,8 @@ public sealed class BiohazardModelViewerForm : Form
             _normals = normals;
             _uv = uv;
             _groups = groups;
+            _groupTextured = groupTextured;
+            _groupSurfacePointers = groupSurfacePointers;
             _parentIndices = parentIndices;
             _bindLocalTransforms = bindLocalTransforms;
             _animationBank = animationBank;
@@ -4520,6 +4596,8 @@ public sealed class BiohazardModelViewerForm : Form
             _metadataVertexCount = vertices.Length;
             _metadataTriangleCount = triangleCount;
             _metadataGroups = (SurvivorGroup[])groups.Clone();
+            _metadataGroupTextured = (bool[])groupTextured.Clone();
+            _metadataGroupSurfacePointers = (uint[])groupSurfacePointers.Clone();
         }
 
         public static SurvivorNab FromFile(string path)
@@ -4595,6 +4673,8 @@ public sealed class BiohazardModelViewerForm : Form
 
             uint minimumNodePointer = uint.MaxValue;
             var rawGroups = new (int Start, int Count, uint NodePointer, byte TexturePage)[groupCount];
+            var groupTextured = new bool[groupCount];
+            var groupSurfacePointers = new uint[groupCount];
             var surfacePages = new Dictionary<uint, byte>();
             int expectedTriangle = 0;
             int groupRecord = groupTable;
@@ -4620,6 +4700,8 @@ public sealed class BiohazardModelViewerForm : Form
                 expectedTriangle += count;
                 minimumNodePointer = Math.Min(minimumNodePointer, nodePointer);
                 rawGroups[i] = (start, count, nodePointer, texturePage);
+                groupTextured[i] = surfacePointer != 0;
+                groupSurfacePointers[i] = surfacePointer;
                 // Textured group records are 32 bytes; untextured ones omit the four texture words.
                 groupRecord += surfacePointer != 0 ? 32 : 28;
             }
@@ -4669,7 +4751,8 @@ public sealed class BiohazardModelViewerForm : Form
             SurvivorAnimationBank? animationBank = File.Exists(animationPath)
                 ? SurvivorAnimationBank.TryLoad(data, animationPath, rootNodeOffset, nodeCount, rootNodePointer)
                 : null;
-            return new SurvivorNab(data, vertices, normals, uv, groups, parentIndices, bindLocalTransforms, triangleCount,
+            return new SurvivorNab(data, vertices, normals, uv, groups, groupTextured, groupSurfacePointers,
+                parentIndices, bindLocalTransforms, triangleCount,
                 new SurvivorTexture(data, surfaces), animationPath, animationBank, vertexEnd, groupCountOffset);
         }
 
@@ -5027,7 +5110,7 @@ public sealed class BiohazardModelViewerForm : Form
                     writer.WriteLine(FormattableString.Invariant($"vt {u:R} {v:R}"));
                 }
                 for (int i = 0; i < count; i += 3)
-                    writer.WriteLine($"f {index + i + 2}/{index + i + 2}/{index + i + 2} {index + i + 1}/{index + i + 1}/{index + i + 1} {index + i}/{index + i}/{index + i}");
+                    writer.WriteLine($"f {index + i}/{index + i}/{index + i} {index + i + 1}/{index + i + 1}/{index + i + 1} {index + i + 2}/{index + i + 2}/{index + i + 2}");
                 index += count;
             }
         }
@@ -5157,17 +5240,31 @@ public sealed class BiohazardModelViewerForm : Form
                         throw new InvalidDataException($"OBJ part {objectIndex} contains non-finite data.");
                     vertices.Add(position); normals.Add(normal); uv.Add(texture);
                 }
-                foreach (var triangle in obj.Objects[objectIndex].Triangles)
+                void AddTriangle(WavefrontObjFile.FaceVertex a, WavefrontObjFile.FaceVertex b, WavefrontObjFile.FaceVertex c)
                 {
-                    // OBJ export reverses the Survivor winding.
-                    Add(triangle.c); Add(triangle.b); Add(triangle.a);
+                    int first = vertices.Count;
+                    Add(a); Add(b); Add(c);
+                    Vector3 face = Vector3.Cross(vertices[first + 1] - vertices[first], vertices[first + 2] - vertices[first]);
+                    Vector3 supplied = normals[first] + normals[first + 1] + normals[first + 2];
+                    // Some older Tool Hazard OBJ exports reversed the face order while retaining outward
+                    // normals. Survivor culls by winding, so make the geometric face agree with the supplied
+                    // normals instead of assuming that every OBJ producer uses one historical convention.
+                    if (face.LengthSquared() > 1e-12f && supplied.LengthSquared() > 1e-12f && Vector3.Dot(face, supplied) < 0f)
+                    {
+                        (vertices[first + 1], vertices[first + 2]) = (vertices[first + 2], vertices[first + 1]);
+                        (normals[first + 1], normals[first + 2]) = (normals[first + 2], normals[first + 1]);
+                        (uv[first + 1], uv[first + 2]) = (uv[first + 2], uv[first + 1]);
+                    }
                 }
+                foreach (var triangle in obj.Objects[objectIndex].Triangles)
+                    AddTriangle(triangle.a, triangle.b, triangle.c);
                 foreach (var quad in obj.Objects[objectIndex].Quads)
                 {
-                    Add(quad.c); Add(quad.b); Add(quad.a);
-                    Add(quad.d); Add(quad.c); Add(quad.a);
+                    AddTriangle(quad.a, quad.b, quad.c);
+                    AddTriangle(quad.a, quad.c, quad.d);
                 }
-                target[targetIndex] = new SurvivorPart(vertices.ToArray(), normals.ToArray(), uv.ToArray(), original.TexturePage, original.NodeIndex);
+                target[targetIndex] = new SurvivorPart(vertices.ToArray(), normals.ToArray(), uv.ToArray(),
+                    original.TexturePage, original.NodeIndex, true);
             }
             ApplyParts(target);
         }
@@ -5564,11 +5661,12 @@ public sealed class BiohazardModelViewerForm : Form
 
         private IEnumerable<SurvivorPart> GetParts()
         {
-            foreach (SurvivorGroup group in _groups)
+            for (int groupIndex = 0; groupIndex < _groups.Length; groupIndex++)
             {
+                SurvivorGroup group = _groups[groupIndex];
                 int first = group.TriangleStart * 3, count = group.TriangleCount * 3;
                 yield return new SurvivorPart(_vertices.AsSpan(first, count).ToArray(), _normals.AsSpan(first, count).ToArray(),
-                    _uv.AsSpan(first, count).ToArray(), group.TexturePage, group.NodeIndex);
+                    _uv.AsSpan(first, count).ToArray(), group.TexturePage, group.NodeIndex, _groupTextured[groupIndex]);
             }
         }
 
@@ -5577,6 +5675,8 @@ public sealed class BiohazardModelViewerForm : Form
             if (parts.Length != _groups.Length) throw new InvalidDataException($"Expected {_groups.Length} Survivor mesh parts, found {parts.Length}.");
             var vertices = new List<Vector3>(); var normals = new List<Vector3>(); var uv = new List<Vector2>();
             var groups = new SurvivorGroup[parts.Length];
+            var textured = new bool[parts.Length];
+            var surfacePointers = new uint[parts.Length];
             int triangleStart = 0;
             for (int i = 0; i < parts.Length; i++)
             {
@@ -5585,12 +5685,26 @@ public sealed class BiohazardModelViewerForm : Form
                     throw new InvalidDataException($"Replacement part {i} is not a valid triangle stream.");
                 int triangles = part.Vertices.Length / 3;
                 groups[i] = new SurvivorGroup(triangleStart, triangles, part.TexturePage, part.NodeIndex, GetBindGlobal(part.NodeIndex));
+                textured[i] = part.Textured;
+                if (part.Textured)
+                {
+                    surfacePointers[i] = _groupSurfacePointers[i];
+                    if (surfacePointers[i] == 0)
+                    {
+                        int source = Enumerable.Range(0, _groups.Length).FirstOrDefault(index =>
+                            _groupTextured[index] && _groups[index].TexturePage == part.TexturePage);
+                        surfacePointers[i] = _groupSurfacePointers[source];
+                    }
+                    if (surfacePointers[i] == 0)
+                        throw new InvalidDataException($"Replacement part {i} requests texture page {part.TexturePage}, but the NAB has no textured group for that page.");
+                }
                 triangleStart += triangles;
                 vertices.AddRange(part.Vertices);
                 normals.AddRange(part.Normals.Select(n => (n.LengthSquared() == 0 ? Vector3.UnitY : Vector3.Normalize(n)) * 4096f));
                 uv.AddRange(part.UV);
             }
             _vertices = vertices.ToArray(); _normals = normals.ToArray(); _uv = uv.ToArray(); _groups = groups;
+            _groupTextured = textured; _groupSurfacePointers = surfacePointers;
             TriangleCount = triangleStart;
             _data = SerializeMesh();
         }
@@ -5611,10 +5725,38 @@ public sealed class BiohazardModelViewerForm : Form
             int oldTriangleAux = checked(oldVertexAux + _metadataVertexCount * 60);
             int oldTail = checked(oldTriangleAux + _metadataTriangleCount * 20);
             if (oldTail > _suffix.Length) throw new InvalidDataException("NAB auxiliary mesh records are truncated.");
-            int newTriangleAux = checked(oldVertexAux + _vertices.Length * 60);
+            var newGroupOffsets = new int[_groups.Length];
+            var groupRecords = new List<byte>();
+            for (int group = 0; group < _groups.Length; group++)
+            {
+                bool textured = _groupTextured[group];
+                int template = group;
+                if (_metadataGroupTextured[template] != textured)
+                {
+                    template = Enumerable.Range(0, _groups.Length).FirstOrDefault(index =>
+                        _metadataGroupTextured[index] == textured &&
+                        (!textured || _metadataGroups[index].TexturePage == _groups[group].TexturePage));
+                    if (_metadataGroupTextured[template] != textured)
+                        throw new InvalidDataException($"NAB has no {(textured ? "textured" : "untextured")} group record template.");
+                }
+                int length = textured ? 32 : 28;
+                byte[] record = _suffix.AsSpan(groupOffsets[template], length).ToArray();
+                BitConverter.GetBytes(textured ? _groupSurfacePointers[group] : 0u).CopyTo(record, 0);
+                BitConverter.GetBytes(_groups[group].TriangleStart).CopyTo(record, 8);
+                BitConverter.GetBytes(_groups[group].TriangleCount).CopyTo(record, 12);
+                // Keep the target group's original node pointer. Selected replacements preserve its
+                // node, and the final word mirrors the node index used by stock textured records.
+                _suffix.AsSpan(groupOffsets[group] + 16, 4).CopyTo(record.AsSpan(16));
+                BitConverter.GetBytes(_groups[group].NodeIndex).CopyTo(record, textured ? 28 : 24);
+                newGroupOffsets[group] = checked(groupOffset + groupRecords.Count);
+                groupRecords.AddRange(record);
+            }
+            int newVertexAux = checked(groupOffset + groupRecords.Count);
+            int newTriangleAux = checked(newVertexAux + _vertices.Length * 60);
             int newTail = checked(newTriangleAux + TriangleCount * 20);
             byte[] suffix = new byte[checked(newTail + _suffix.Length - oldTail)];
-            Buffer.BlockCopy(_suffix, 0, suffix, 0, oldVertexAux);
+            Buffer.BlockCopy(_suffix, 0, suffix, 0, groupOffset);
+            groupRecords.CopyTo(suffix, groupOffset);
             Buffer.BlockCopy(_suffix, oldTail, suffix, newTail, _suffix.Length - oldTail);
             bool countsChanged = _metadataVertexCount != _vertices.Length || _metadataGroups.Where((g, i) =>
                 g.TriangleStart != _groups[i].TriangleStart || g.TriangleCount != _groups[i].TriangleCount).Any();
@@ -5622,8 +5764,6 @@ public sealed class BiohazardModelViewerForm : Form
             {
                 SurvivorGroup previous = _metadataGroups[group], current = _groups[group];
                 bool reindex = countsChanged && HasVisibleTrianglesInGroup(group);
-                BitConverter.GetBytes(current.TriangleStart).CopyTo(suffix, groupOffsets[group] + 8);
-                BitConverter.GetBytes(current.TriangleCount).CopyTo(suffix, groupOffsets[group] + 12);
                 for (int triangle = 0; triangle < current.TriangleCount; triangle++)
                 {
                     int sourceTriangle = previous.TriangleStart + Math.Min(triangle, previous.TriangleCount - 1);
@@ -5632,7 +5772,7 @@ public sealed class BiohazardModelViewerForm : Form
                     for (int corner = 0; corner < 3; corner++)
                     {
                         int source = sourceTriangle * 3 + corner, destination = destinationTriangle * 3 + corner;
-                        int aux = oldVertexAux + destination * 60;
+                        int aux = newVertexAux + destination * 60;
                         Buffer.BlockCopy(_suffix, oldVertexAux + source * 60, suffix, aux, 60);
                         Vector3 p = _vertices[destination], n = _normals[destination];
                         WriteFloat(suffix, aux + 4, p.X); WriteFloat(suffix, aux + 8, p.Y); WriteFloat(suffix, aux + 12, p.Z);
@@ -5669,6 +5809,8 @@ public sealed class BiohazardModelViewerForm : Form
             _metadataVertexCount = _vertices.Length;
             _metadataTriangleCount = TriangleCount;
             _metadataGroups = (SurvivorGroup[])_groups.Clone();
+            _metadataGroupTextured = (bool[])_groupTextured.Clone();
+            _metadataGroupSurfacePointers = (uint[])_groupSurfacePointers.Clone();
             return result;
         }
 
@@ -5896,7 +6038,8 @@ public sealed class BiohazardModelViewerForm : Form
         }
 
         private sealed record SurvivorGroup(int TriangleStart, int TriangleCount, byte TexturePage, int NodeIndex, Matrix4x4 BindTransform);
-        internal sealed record SurvivorPart(Vector3[] Vertices, Vector3[] Normals, Vector2[] UV, byte TexturePage, int NodeIndex);
+        internal sealed record SurvivorPart(Vector3[] Vertices, Vector3[] Normals, Vector2[] UV, byte TexturePage,
+            int NodeIndex, bool Textured = true);
     }
 
     // Clut < 0 marks an untextured (flat/vertex-coloured) face. VtColors holds
@@ -6061,6 +6204,8 @@ public sealed class BiohazardModelViewerForm : Form
 
     private sealed class SurvivorHmd
     {
+        private sealed record HmdMeshPart(int VertexTop, RenderPart RenderPart);
+
         private readonly byte[] _data;
         public byte[] Data => _data;
         public int PrimitiveHeaderOffset { get; }
@@ -6149,9 +6294,9 @@ public sealed class BiohazardModelViewerForm : Form
             };
         }
 
-        public List<RenderPart> CreateRenderParts(Func<int, int>? pageMapper = null)
+        private List<HmdMeshPart> DecodeMeshParts(Func<int, int>? pageMapper = null)
         {
-            var result = new List<RenderPart>();
+            var result = new List<HmdMeshPart>();
             foreach (uint rawBlock in BlockPointers)
             {
                 if (rawBlock == 0 || rawBlock == 0xFFFFFFFF) continue;
@@ -6248,7 +6393,7 @@ public sealed class BiohazardModelViewerForm : Form
                         var renderFaces = faces;
                         var part = new RenderPart(vertices, renderFaces);
                         part.ApplyTransform(Matrix4x4.Identity);
-                        result.Add(part);
+                        result.Add(new HmdMeshPart(vertexTop, part));
                     }
                     if (next == 0xFFFFFFFF || next == 0) break;
                     primitive = WordPointer(next);
@@ -6256,6 +6401,175 @@ public sealed class BiohazardModelViewerForm : Form
             }
             if (result.Count == 0) throw new InvalidDataException("No supported standard polygon primitives were found in this HMD.");
             return result;
+        }
+
+        public List<RenderPart> CreateRenderParts(Func<int, int>? pageMapper = null) =>
+            DecodeMeshParts(pageMapper).Select(x => x.RenderPart).ToList();
+
+        // HMD polygon packets carry topology, UVs, colours and texture-page state in fixed layouts.
+        // OBJ replacement therefore updates positions only and requires the exported topology to stay
+        // intact. This makes multipart HMD editing useful without rebuilding unrelated primitive,
+        // animation, light or skeleton blocks in the same container.
+        public void ExportObj(string path, int selectedPart = -1)
+        {
+            List<HmdMeshPart> parts = DecodeMeshParts();
+            if (selectedPart >= parts.Count)
+                throw new InvalidDataException("The selected HMD part no longer exists.");
+            IEnumerable<int> indices = selectedPart >= 0 ? new[] { selectedPart } : Enumerable.Range(0, parts.Count);
+            using var writer = new StreamWriter(path, false, new UTF8Encoding(false));
+            writer.WriteLine("# Survivor HMD: one object per polygon primitive; edit positions without changing topology");
+            int vertexBase = 1, normalBase = 1, textureBase = 1;
+            foreach (int partIndex in indices)
+            {
+                RenderPart part = parts[partIndex].RenderPart;
+                writer.WriteLine($"o part_{partIndex:D2}");
+                foreach (Vector3 position in part.LocalVertices)
+                    writer.WriteLine(FormattableString.Invariant(
+                        $"v {position.X / 1000f:R} {position.Y / 1000f:R} {position.Z / 1000f:R}"));
+                foreach (Vector3 normal in part.Normals)
+                    writer.WriteLine(FormattableString.Invariant($"vn {normal.X:R} {normal.Y:R} {normal.Z:R}"));
+                foreach (RenderFace face in part.Faces)
+                    foreach (Vector2 uv in face.UV)
+                        writer.WriteLine(FormattableString.Invariant($"vt {uv.X / 256f:R} {1f - uv.Y / 256f:R}"));
+
+                int nextTexture = textureBase;
+                foreach (RenderFace face in part.Faces)
+                {
+                    if (face.Indices.Length != 3 || face.UV.Length != 3)
+                        throw new InvalidDataException($"HMD part {partIndex} contains a non-triangle render face.");
+                    writer.Write("f");
+                    for (int corner = 0; corner < 3; corner++)
+                    {
+                        int local = face.Indices[corner];
+                        if ((uint)local >= (uint)part.LocalVertices.Length)
+                            throw new InvalidDataException($"HMD part {partIndex} contains an invalid vertex index.");
+                        writer.Write($" {vertexBase + local}/{nextTexture++}/{normalBase + local}");
+                    }
+                    writer.WriteLine();
+                }
+                vertexBase += part.LocalVertices.Length;
+                normalBase += part.Normals.Length;
+                textureBase = nextTexture;
+            }
+        }
+
+        public void ReplaceFromObj(string path, int selectedPart = -1)
+        {
+            var obj = new WavefrontObjFile(path);
+            List<HmdMeshPart> targets = DecodeMeshParts();
+            if (selectedPart >= targets.Count)
+                throw new InvalidDataException("The selected HMD part no longer exists.");
+            if (selectedPart >= 0 && obj.Objects.Count != 1)
+                throw new InvalidDataException("A selected-part HMD replacement must contain exactly one OBJ object.");
+            if (selectedPart < 0 && obj.Objects.Count != targets.Count)
+                throw new InvalidDataException($"Expected {targets.Count} OBJ objects, one per HMD part; found {obj.Objects.Count}.");
+            int expectedVertices = selectedPart >= 0
+                ? targets[selectedPart].RenderPart.LocalVertices.Length
+                : targets.Sum(p => p.RenderPart.LocalVertices.Length);
+            if (obj.Vertices.Count != expectedVertices)
+                throw new InvalidDataException(
+                    $"The OBJ must retain all {expectedVertices} exported HMD vertices; found {obj.Vertices.Count}.");
+
+            int vertexCursor = 0;
+            for (int objectIndex = 0; objectIndex < obj.Objects.Count; objectIndex++)
+            {
+                int targetIndex = selectedPart >= 0 ? selectedPart : objectIndex;
+                HmdMeshPart target = targets[targetIndex];
+                var group = obj.Objects[objectIndex];
+                if (group.Quads.Count != 0)
+                    throw new InvalidDataException($"OBJ part {objectIndex} contains quads; keep the exported triangle topology.");
+                if (group.Triangles.Count == 0)
+                    throw new InvalidDataException($"OBJ part {objectIndex} contains no triangles.");
+
+                int[] referenced = group.Triangles
+                    .SelectMany(t => new[] { t.a.Vertex, t.b.Vertex, t.c.Vertex })
+                    .ToArray();
+                int vertexCount = target.RenderPart.LocalVertices.Length;
+                int first = vertexCursor, last = first + vertexCount - 1;
+                if (referenced.Any(v => v < first || v > last))
+                    throw new InvalidDataException($"OBJ part {objectIndex} refers to a vertex outside its object range.");
+
+                static (int A, int B, int C) Canonical(int a, int b, int c)
+                {
+                    if (b <= a && b <= c) return (b, c, a);
+                    if (c <= a && c <= b) return (c, a, b);
+                    return (a, b, c);
+                }
+                var expectedFaces = target.RenderPart.Faces
+                    .Select(f => Canonical(f.Indices[0], f.Indices[1], f.Indices[2]))
+                    .OrderBy(f => f.A).ThenBy(f => f.B).ThenBy(f => f.C).ToArray();
+                var incomingFaces = group.Triangles
+                    .Select(t => Canonical(t.a.Vertex - first, t.b.Vertex - first, t.c.Vertex - first))
+                    .OrderBy(f => f.A).ThenBy(f => f.B).ThenBy(f => f.C).ToArray();
+                if (!expectedFaces.SequenceEqual(incomingFaces))
+                    throw new InvalidDataException(
+                        $"OBJ part {objectIndex} changed polygon topology. HMD replacement supports position edits while preserving exported faces.");
+
+                for (int i = 0; i < vertexCount; i++)
+                {
+                    WavefrontObjFile.Vertex position = obj.Vertices[first + i];
+                    WriteVertex(target.VertexTop, i, position.x * 1000.0, position.y * 1000.0, position.z * 1000.0,
+                        $"OBJ part {objectIndex}, vertex {i + 1}");
+                }
+                vertexCursor += vertexCount;
+            }
+        }
+
+        public void ReplaceFromHmd(SurvivorHmd incoming, int selectedPart = -1)
+        {
+            List<HmdMeshPart> targets = DecodeMeshParts();
+            List<HmdMeshPart> sources = incoming.DecodeMeshParts();
+            if (selectedPart >= targets.Count)
+                throw new InvalidDataException("The selected HMD part no longer exists.");
+            if (selectedPart < 0 && sources.Count != targets.Count)
+                throw new InvalidDataException($"The replacement HMD has {sources.Count} mesh parts; expected {targets.Count}.");
+            IEnumerable<(HmdMeshPart Target, HmdMeshPart Source, int Index)> replacements;
+            if (selectedPart >= 0)
+            {
+                int sourceIndex = sources.Count == 1 ? 0 : selectedPart;
+                if (sourceIndex >= sources.Count)
+                    throw new InvalidDataException("The replacement HMD does not contain the selected part.");
+                replacements = new[] { (targets[selectedPart], sources[sourceIndex], selectedPart) };
+            }
+            else
+            {
+                replacements = targets.Select((target, index) => (target, sources[index], index));
+            }
+            foreach ((HmdMeshPart target, HmdMeshPart source, int index) in replacements)
+            {
+                Vector3[] vertices = source.RenderPart.LocalVertices;
+                if (vertices.Length != target.RenderPart.LocalVertices.Length)
+                    throw new InvalidDataException(
+                        $"HMD part {index} has {vertices.Length} vertices; expected {target.RenderPart.LocalVertices.Length}.");
+                for (int i = 0; i < vertices.Length; i++)
+                    WriteVertex(target.VertexTop, i, vertices[i].X, vertices[i].Y, vertices[i].Z,
+                        $"HMD part {index}, vertex {i + 1}");
+            }
+        }
+
+        private void WriteVertex(int vertexTop, int index, double x, double y, double z, string context)
+        {
+            static short Coordinate(double value, string context)
+            {
+                if (!double.IsFinite(value)) throw new InvalidDataException($"{context} is not finite.");
+                double rounded = Math.Round(value, MidpointRounding.AwayFromZero);
+                if (rounded < short.MinValue || rounded > short.MaxValue)
+                    throw new InvalidDataException($"{context} is outside the HMD signed 16-bit coordinate range.");
+                return (short)rounded;
+            }
+            int offset = checked(vertexTop + index * 8);
+            if (offset < 0 || offset + 8 > _data.Length)
+                throw new InvalidDataException("The HMD vertex section is truncated.");
+            short[] coordinates =
+            {
+                Coordinate(x, context + " X"), Coordinate(y, context + " Y"), Coordinate(z, context + " Z")
+            };
+            for (int axis = 0; axis < 3; axis++)
+            {
+                byte[] bytes = BitConverter.GetBytes(coordinates[axis]);
+                _data[offset + axis * 2] = bytes[0];
+                _data[offset + axis * 2 + 1] = bytes[1];
+            }
         }
 
         // Maps a polygon's (ordered) vertex-index key to the texture-page slot
