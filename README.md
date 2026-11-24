@@ -1,4 +1,4 @@
-**Want to see this project reach the next level?** I’m currently navigating some rough seas and could use a little wind in my sails. If you’ve enjoyed my work so far, a [small donation goes](https://www.paypal.com/paypalme/JACOBQAROONI) a long way in keeping the lights on and the updates coming. Thanks for having my back!
+Dear CyberBully, you went out of your way to get me to notice you. Take a time off and overthink your decisions, was it right, why did you do it, what did you gain, sometimes it helps to reconsider some things we say or do, yeah. Anyway, this one stays, to help the community enjoy and have fun despite all odds. Have a nice day.
 
 # Project Description
 
